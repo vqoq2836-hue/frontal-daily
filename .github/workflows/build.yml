@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,3 +29,12 @@ jobs:
         with:
           name: frontal-daily-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      # 폰에서 바로 받을 수 있게 고정 주소(latest-apk)에 올립니다.
+      - name: Publish APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk frontal-daily.apk
+          gh release delete latest-apk --cleanup-tag -y || true
+          gh release create latest-apk frontal-daily.apk --target "$GITHUB_SHA" --title "전두엽 데일리 최신 버전" --notes "빌드 #${{ github.run_number }} · ${{ github.ref_name }}"
