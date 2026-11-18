@@ -235,6 +235,16 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .chk[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent)}
 .chk[aria-pressed="true"] .box::after{content:"";width:10px;height:6px;border-left:2px solid var(--accent-ink);border-bottom:2px solid var(--accent-ink);transform:rotate(-45deg) translate(1px,-1px)}
 .skip-note{font-size:13px;font-weight:600;color:var(--warn)}
+.todo-edit{display:flex;flex-direction:column;gap:8px}
+.todo-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--tile);border:1px solid var(--tile-line);border-radius:14px;padding:8px 10px;font-weight:600}
+.star{border:0;background:none;font-size:20px;line-height:1;color:var(--faint);padding:2px}
+.star.on{color:var(--accent)}
+.todo-add{display:grid;grid-template-columns:1fr auto;gap:8px}
+.todo-card .chk{padding:6px 0;font-size:15px;flex:1;min-width:0}
+.todo-line{display:flex;align-items:center;gap:6px}
+.xbtn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--tile-line);background:var(--tile);color:var(--muted);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+.top-star{color:var(--accent)}
+.warn-t{color:var(--warn);font-weight:700}
 
 /* ---- 탭 ---- */
 nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:5;width:min(440px,calc(100% - 28px));border-radius:26px;padding:6px}
@@ -387,11 +397,11 @@ const MISSIONS = [
    why:"잠이 부족한 날은 감정을 누르는 전두엽의 힘이 약해져요. 매일 숫자로 보면 늦게 자는 습관이 눈에 들어와요.",
    how:["일어나자마자 물 한 컵을 마셔요.","삼성헬스 수면 기록이 자동으로 들어왔는지 확인해요.","7시간이 안 됐다면 오늘 밤 취침 시각을 30분 당기기로 정해요."],
    tip:"수면이 6시간 미만인 날은 ‘바쁜 날 모드’로 바꾸고 목표를 낮추세요."},
-  {id:"plan", title:"손으로 오늘 계획 쓰기", pillar:"손·계획", kind:"check", time:"07:20",
-   cue:"도시락 챙기고 나서", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
-   why:"계획을 세우고 우선순위를 고르는 일이 바로 전두엽의 핵심 기능이에요. 손으로 쓰면 더 천천히, 더 분명하게 생각하게 돼요.",
-   how:["책상 위에 둔 노트와 펜을 펴요.","오늘 꼭 끝내야 할 일 3개를 적어요(학교·부업·나 자신 각 1개).","가장 중요한 1개에 동그라미를 쳐요.","그 일을 언제 할지 시간을 옆에 적어요."],
-   tip:"노트와 펜은 전날 밤 책상 위에 펼쳐 두세요. 찾는 데 드는 10초가 미루는 이유가 돼요."},
+  {id:"plan", title:"오늘 할 일 적기", pillar:"계획", kind:"plan", time:"07:35",
+   cue:"도시락 챙기고 나서", full:"할 일 3개 이상 적고 1순위 고르기", mini:"할 일 1개라도 적기",
+   why:"오늘 할 일을 정하고 우선순위를 고르는 게 바로 전두엽의 핵심 기능이에요. 머릿속에 들고 다니던 일을 적어 두면 '잊으면 어쩌지' 하는 긴장이 줄어요.",
+   how:["오늘 꼭 끝낼 일을 적어요(학교·부업·나 자신).","가장 중요한 하나에 별(★)을 눌러요.","남은 일은 점심·퇴근·저녁에 알림으로 다시 알려 줘요. 끝내면 체크해요."],
+   tip:"완벽한 목록보다 오늘 할 3가지가 중요해요. 2분이면 충분해요."},
   {id:"move", title:"몸 쓰기", pillar:"운동", kind:"check", time:"17:00",
    cue:"퇴근하고 운동복으로 갈아입으면", full:"근력 또는 러닝 세션 완료", mini:"10분 걷기",
    why:"운동은 실행기능에 꾸준히 좋은 효과를 보이는 몇 안 되는 습관이에요. 이미 하고 있는 운동을 기록으로 인정해요.",
@@ -647,11 +657,19 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting()}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, todoTimes:["12:50","16:45","21:00"]}));
   }catch(e){}
 }
 
 function vibrateSetting(){ const vb=(S.settings&&S.settings.vibrate)||{}; return {weekday: vb.weekday!==false, weekend: !!vb.weekend}; }
+function todoCard(v){
+  const td=v.todos||[]; if(!td.length) return "";
+  const left=td.filter(x=>!x.done).length;
+  const sorted=[...td].sort((a,b)=>(a.done-b.done)||((b.top?1:0)-(a.top?1:0)));
+  return `<section class="glass card todo-card"><div class="row" style="justify-content:space-between"><span class="eyebrow">아침에 적은 오늘 할 일</span><span class="small ${left?"warn-t":"muted"}">${left?left+"개 남았어요":"모두 끝!"}</span></div>
+    ${sorted.map(x=>`<div class="todo-line"><button class="chk" data-todo-toggle="${x.id}" aria-pressed="${!!x.done}"><span class="box"></span><span class="${x.done?"muted":""}" style="${x.done?"text-decoration:line-through":""}">${x.top?"<b class=\"top-star\">★</b> ":""}${esc(x.text)}</span></button><button class="xbtn" data-todo-del="${x.id}" aria-label="${esc(x.text)} 지우기">×</button></div>`).join("")}
+  </section>`;
+}
 /* ---------- 지금 화면 ---------- */
 function topbar(v){
   const dd=parse(v.date), dt=dayTypeOf(v), md=MODES[modeOf(v)];
@@ -675,6 +693,11 @@ function heroBody(t,v){
   if(m.kind==="check"){
     main=`<button class="big" data-do="${t.id}" data-l="2">제대로 했어요<small>${esc(m.full)} · 2점</small></button>`;
     extra=`<button class="ghost" data-do="${t.id}" data-l="1">조금만 했어요<small>${esc(m.mini)}</small></button>`;
+  } else if(m.kind==="plan"){
+    const td=v.todos||[];
+    top=`<div class="todo-edit">${td.map(x=>`<div class="todo-row"><button class="star ${x.top?"on":""}" data-todo-top="${x.id}" aria-label="1순위로 표시" aria-pressed="${!!x.top}">★</button><span>${esc(x.text)}</span><button class="btn sm" data-todo-del="${x.id}">삭제</button></div>`).join("")}
+      <div class="todo-add"><input type="text" id="todoIn" placeholder="오늘 할 일 (예: 4학년 학부모 문자 보내기)" enterkeyhint="done"><button class="btn primary" data-todo-add="1">추가</button></div></div>`;
+    main=`<button class="big" data-confirm="plan">다 적었어요<small>${td.length?td.length+"개 · ":""}3개 이상+★ 2점 · 1개 이상 1점</small></button>`;
   } else if(m.kind==="breath"){
     main=`<button class="big" data-breath="180">3분 호흡 시작<small>끝나면 자동으로 2점</small></button>`;
     extra=`<button class="ghost" data-breath="60">1분만<small>1점</small></button>`;
@@ -726,6 +749,7 @@ function renderNow(){
   } else {
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
+  h+=todoCard(v);
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
   const inTxt=t=>{ const m=toMin(t.time)-nowMin(); return m<=0?"지금":m<60?m+"분 뒤":Math.floor(m/60)+"시간 "+(m%60?m%60+"분 ":"")+"뒤"; };
   if(upcoming.length) h+=`<section class="glass next"><div class="row" style="justify-content:space-between"><span class="eyebrow">이어서 예정</span><span class="small muted">${upcoming.length}개</span></div>${upcoming.map(t=>`<button class="next-row" data-pick="${t.id}"><span class="t">${esc(t.time)}</span><span class="tb"><span class="n">${esc(t.title)}</span><span class="b">${esc(t.blockTitle)}${t.core?" · 핵심":""}</span></span><span class="in">${inTxt(t)}</span></button>`).join("")}</section>`;
@@ -743,7 +767,7 @@ function renderNow(){
 /* ---------- 하루 화면 (타임라인) ---------- */
 function renderDay(){
   const d=today(), v=day(d), tasks=dayTasks(d), f=focusTask(d), blocks=blocksFor(dayTypeOf(v));
-  let h=topbar(v)+`<div class="section-h"><h2>오늘 하루</h2><span class="small muted">누르면 그 할 일로 이동해요</span></div>`;
+  let h=topbar(v)+todoCard(v)+`<div class="section-h"><h2>오늘 하루</h2><span class="small muted">누르면 그 할 일로 이동해요</span></div>`;
   blocks.forEach(b=>{
     const its=tasks.filter(t=>t.block===b.id); if(!its.length) return;
     const dn=its.filter(t=>settled(v,t.id)).length;
@@ -786,6 +810,10 @@ function renderRoutine(){
     </ol><div class="row"><button class="btn" data-health="test">알림 테스트</button></div></section>
     <section class="glass card"><h2>진동</h2><p class="small muted">켜 두면 휴대폰이 무음이어도 알림마다 진동이 와요(알람과 같은 방식). 방해금지 모드에서 알람을 막아 두면 울리지 않아요.</p>
     ${[["weekday","평일에 알림마다 꼭 진동"],["weekend","주말에도 꼭 진동"]].map(([k,l])=>`<button class="chk" data-vib="${k}" aria-pressed="${vibrateSetting()[k]}"><span class="box"></span><span>${l}</span></button>`).join("")}
+    </section>
+    <section class="glass card"><h2>잠금화면 할 일</h2><p class="small muted">아침에 적은 할 일 중 남은 것을 잠금화면에 조용히 띄워 두고, 체크할 때마다 바로 바뀌어요. 맨 위 할 일은 잠금화면에서 바로 ‘끝’을 누를 수 있어요.</p>
+    <button class="chk" data-board="1" aria-pressed="${(S.settings||{}).todoBoard!==false}"><span class="box"></span><span>잠금화면에 오늘 할 일 띄우기</span></button>
+    <p class="small muted">잠금화면에 내용이 안 보이면: 설정 → 잠금화면 → 알림 → ‘세부 정보’와 ‘내용 표시’를 켜 주세요.</p>
     </section>
     <section class="glass card"><h2>삼성헬스 연결 점검</h2>
     <div class="row"><button class="btn primary" data-health="diag">점검하기</button><button class="btn" data-health="open">헬스 커넥트 열기</button><button class="btn" data-health="perm">권한 다시 요청</button></div>
@@ -830,9 +858,15 @@ document.addEventListener("click",e=>{
     const k=b.dataset.confirm;
     if(k==="sleep"){ if(v.sleepH==null){ toast("잔 시간을 입력하거나 삼성헬스에서 불러와 주세요"); return; } mark("sleep", v.sleepH>=7?2:1); return; }
     if(k==="steps"){ if(v.steps==null){ toast("걸음 수를 불러오거나 입력해 주세요"); return; } const l=v.steps>=STEP.full?2:v.steps>=STEP.mini?1:0; if(!l){ toast(STEP.mini.toLocaleString()+"보부터 점수가 들어가요. 10분만 걷고 다시 확인해요"); return; } mark("steps", l); return; }
+    if(k==="plan"){ const n=(v.todos||[]).length; if(!n){ toast("할 일을 하나라도 적어 주세요"); return; } mark("plan", n>=3&&(v.todos||[]).some(x=>x.top)?2:1); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.board){ S.settings.todoBoard = S.settings.todoBoard===false; saveSettings(); render(); return; }
   if(b.dataset.vib){ const cur=vibrateSetting(); cur[b.dataset.vib]=!cur[b.dataset.vib]; S.settings.vibrate=cur; saveSettings(); render(); return; }
+  if(b.dataset.todoAdd){ addTodo(); return; }
+  if(b.dataset.todoDel){ v.todos=(v.todos||[]).filter(x=>x.id!==b.dataset.todoDel); saveDay(d); render(); return; }
+  if(b.dataset.todoTop){ (v.todos||[]).forEach(x=>{ x.top = x.id===b.dataset.todoTop ? !x.top : false; }); saveDay(d); render(); return; }
+  if(b.dataset.todoToggle){ const x=(v.todos||[]).find(y=>y.id===b.dataset.todoToggle); if(x){ x.done=!x.done; saveDay(d); render(); const left=v.todos.filter(y=>!y.done).length; toast(x.done?(left?"좋아요 · 남은 일 "+left+"개":"오늘 적은 일을 모두 끝냈어요!"):"다시 남은 일로 돌렸어요"); } return; }
   if(b.dataset.stress){ v.stress=Number(b.dataset.stress); saveDay(d); render(); return; }
   if(b.id==="sheetBtn"){ S.sheet=!S.sheet; render(); return; }
   if(b.dataset.mode){ v.mode=b.dataset.mode; delete v.busy; saveDay(d); render(); toast(MODES[v.mode].label+" · 오늘 목표 "+goal(d)+"점"); return; }
@@ -853,6 +887,12 @@ document.addEventListener("click",e=>{
   if(b.id==="resetBlocks"){ ensureDraft(); S.draft[S.editType]=clone(DEFAULT_BLOCKS[S.editType]); render(); toast("기본 루틴으로 되돌렸어요. 저장을 눌러야 적용돼요."); return; }
   if(b.id==="saveStart"){ const val=document.getElementById("startDate").value.trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(val)||isNaN(parse(val))){ toast("2026-11-18 형식으로 입력해 주세요"); return; } S.settings.startDate=val; saveSettings(); render(); return; }
 });
+function addTodo(){
+  const inp=document.getElementById("todoIn"); const t=(inp&&inp.value||"").trim(); if(!t){ toast("할 일을 적어 주세요"); return; }
+  const v=day(today()); v.todos=v.todos||[]; v.todos.push({id:"td_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), text:t, done:false, top:v.todos.length===0});
+  saveDay(today()); render(); const n=document.getElementById("todoIn"); if(n) n.focus();
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Enter" && e.target && e.target.id==="todoIn"){ e.preventDefault(); addTodo(); } });
 document.addEventListener("input",e=>{
   const el=e.target, d=today(), v=day(d);
   if(el.dataset.j){ v.journal=v.journal||{}; v.journal[el.dataset.j]=el.value; saveDay(d,700); el.style.height="auto"; el.style.height=Math.max(46,el.scrollHeight+2)+"px"; return; }
@@ -894,9 +934,10 @@ function applyPending(){
   let arr=[]; try{ arr=JSON.parse(NATIVE.takePendingChecks()||"[]"); }catch(e){}
   if(!arr.length) return;
   const touched=new Set();
-  arr.forEach(p=>{ if(!p||!p.id||!p.date) return; const v=day(p.date); const cur=v.done[p.id]&&v.done[p.id].lvl||0; if(p.lvl>0 && p.lvl>cur) v.done[p.id]={lvl:p.lvl, at:p.at||Date.now()}; else if(!p.lvl && !cur) v.done[p.id]={lvl:0, skipped:true, at:p.at||Date.now()}; touched.add(p.date); });
+  arr.forEach(p=>{ if(!p||!p.id||!p.date) return; const v=day(p.date);
+    if(p.kind==="todo"){ const x=(v.todos||[]).find(y=>y.id===p.id); if(x) x.done=true; touched.add(p.date); return; } const cur=v.done[p.id]&&v.done[p.id].lvl||0; if(p.lvl>0 && p.lvl>cur) v.done[p.id]={lvl:p.lvl, at:p.at||Date.now()}; else if(!p.lvl && !cur) v.done[p.id]={lvl:0, skipped:true, at:p.at||Date.now()}; touched.add(p.date); });
   touched.forEach(d=>saveDay(d));
-  render(); toast("알림에서 체크한 "+arr.length+"개를 반영했어요");
+  render(); toast("알림·잠금화면에서 체크한 "+arr.length+"개를 반영했어요");
 }
 function refreshHealthMsg(){ document.querySelectorAll("[data-health-msg]").forEach(el=>{ el.textContent=S.health.msg; }); }
 function readHealth(){

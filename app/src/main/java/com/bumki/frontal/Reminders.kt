@@ -24,6 +24,9 @@ import java.time.ZonedDateTime
  */
 object Reminders {
     const val CHANNEL = "routine_alarm"
+    const val BOARD_CHANNEL = "todo_board"
+    const val BOARD_ID = 9200
+    const val ACTION_TODO_DONE = "com.bumki.frontal.TODO_DONE"
     const val NAG_MINUTES = 10L
     const val MAX_NAGS = 2
 
@@ -50,6 +53,16 @@ object Reminders {
             ch.enableVibration(true)
             ch.vibrationPattern = longArrayOf(0, 400, 200, 400)
             ch.enableLights(true)
+            ch.lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            nm.createNotificationChannel(ch)
+        }
+        if (nm.getNotificationChannel(BOARD_CHANNEL) == null) {
+            // 소리·진동 없이 잠금화면에 늘 떠 있는 '오늘 할 일' 판 (무음 알림 숨기기에 걸리지 않게 DEFAULT 중요도)
+            val ch = NotificationChannel(BOARD_CHANNEL, "잠금화면 할 일", NotificationManager.IMPORTANCE_DEFAULT)
+            ch.description = "아침에 적은 할 일 중 남은 것을 잠금화면에 늘 보여 줘요"
+            ch.setSound(null, null)
+            ch.enableVibration(false)
+            ch.setShowBadge(false)
             ch.lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             nm.createNotificationChannel(ch)
         }
@@ -218,6 +231,17 @@ object Reminders {
             setAlarm(ctx, tomorrow.atTime(lt).atZone(zone).toInstant().toEpochMilli(), alarmIntent(ctx, id, 0, false))
             scheduled.add(id)
         }
+        // 아침에 적은 할 일이 남아 있으면 정해진 시각(점심·퇴근·저녁)에 알려 줌
+        val st = state(ctx)
+        if (st.optString("date") == todayDate.toString() && remainingTodos(ctx).isNotEmpty()) {
+            val times = st.optJSONArray("todoTimes")
+            if (times != null) for (k in 0 until times.length()) {
+                val tm = times.optString(k)
+                val lt = parseTime(tm) ?: continue
+                val at = todayDate.atTime(lt).atZone(zone)
+                if (at.isAfter(now)) setAlarm(ctx, at.toInstant().toEpochMilli(), alarmIntent(ctx, "todo@$tm", 0, false))
+            }
+        }
         // 앱에서 '10분 뒤'를 누른 할 일
         val s = state(ctx)
         if (s.optString("date") == todayDate.toString()) {
@@ -227,6 +251,7 @@ object Reminders {
                 if (t > System.currentTimeMillis() && !isItemSettled(ctx, id)) setAlarm(ctx, t, alarmIntent(ctx, id, 1, true))
             }
         }
+        updateBoard(ctx)
     }
 
     fun scheduleNag(ctx: Context, id: String, nag: Int, minutes: Long = NAG_MINUTES) {
@@ -321,6 +346,115 @@ object Reminders {
         try {
             NotificationManagerCompat.from(ctx).notify(notificationId(id), b.build())
         } catch (_: SecurityException) { }
+    }
+
+    fun remainingTodos(ctx: Context): List<JSONObject> {
+        val s = state(ctx)
+        if (s.optString("date") != today()) return emptyList()
+        val arr = s.optJSONArray("todos") ?: return emptyList()
+        return (0 until arr.length()).map { arr.getJSONObject(it) }.filter { !it.optBoolean("done") }
+    }
+
+    private fun todayTodos(ctx: Context): List<JSONObject> {
+        val s = state(ctx)
+        if (s.optString("date") != today()) return emptyList()
+        val arr = s.optJSONArray("todos") ?: return emptyList()
+        return (0 until arr.length()).map { arr.getJSONObject(it) }
+    }
+
+    /** 잠금화면 버튼으로 끝낸 할 일: 판을 바로 고치고, 앱을 열면 기록에 반영되도록 줄 세워 둠 */
+    fun markTodoDone(ctx: Context, todoId: String) {
+        val s = state(ctx)
+        if (s.optString("date") != today()) return
+        val arr = s.optJSONArray("todos") ?: return
+        for (i in 0 until arr.length()) {
+            val t = arr.getJSONObject(i)
+            if (t.optString("id") == todoId) t.put("done", true)
+        }
+        saveState(ctx, s.toString())
+        val p = pendingArray(ctx)
+        p.put(JSONObject().put("date", today()).put("kind", "todo").put("id", todoId).put("at", System.currentTimeMillis()))
+        prefs(ctx).edit().putString(KEY_PENDING, p.toString()).apply()
+    }
+
+    /** 잠금화면에 고정되는 '오늘 할 일' 판. 할 일이 바뀔 때마다 같은 자리에서 조용히 고쳐 씀 */
+    fun updateBoard(ctx: Context) {
+        val nm = NotificationManagerCompat.from(ctx)
+        val all = todayTodos(ctx)
+        if (!state(ctx).optBoolean("todoBoard", true) || all.isEmpty() || !canNotify(ctx)) {
+            nm.cancel(BOARD_ID); return
+        }
+        ensureChannel(ctx)
+        val left = all.filter { !it.optBoolean("done") }.sortedBy { if (it.optBoolean("top")) 0 else 1 }
+        val done = all.filter { it.optBoolean("done") }
+        val zone = ZoneId.systemDefault()
+        val untilMidnight = LocalDate.now().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - System.currentTimeMillis()
+        val open = PendingIntent.getActivity(
+            ctx, BOARD_ID,
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val b = NotificationCompat.Builder(ctx, BOARD_CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentIntent(open)
+            .setOnlyAlertOnce(true)
+            .setShowWhen(false)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setTimeoutAfter(maxOf(60_000L, untilMidnight))
+        if (left.isEmpty()) {
+            b.setContentTitle("오늘 할 일 모두 끝 ✓")
+                .setContentText("적어 둔 ${done.size}개를 다 해냈어요")
+                .setOngoing(false).setAutoCancel(true)
+                .setTimeoutAfter(30 * 60_000L)
+        } else {
+            val mark = { t: JSONObject -> (if (t.optBoolean("top")) "★ " else "□ ") + t.optString("text") }
+            val style = NotificationCompat.InboxStyle()
+            left.take(6).forEach { style.addLine(mark(it)) }
+            done.take(maxOf(0, 7 - minOf(6, left.size))).forEach {
+                val sp = android.text.SpannableString("✓ " + it.optString("text"))
+                sp.setSpan(android.text.style.StrikethroughSpan(), 0, sp.length, 0)
+                style.addLine(sp)
+            }
+            if (left.size > 6) style.setSummaryText("외 ${left.size - 6}개 더")
+            b.setContentTitle("할 일 ${left.size}개 남음" + if (done.isNotEmpty()) " · ${done.size}개 끝" else "")
+                .setContentText(left.joinToString("  ") { mark(it) })
+                .setStyle(style)
+                .setOngoing(true)
+            val first = left.first()
+            val label = first.optString("text").let { if (it.length > 12) it.take(11) + "…" else it }
+            b.addAction(0, "✓ $label 끝", actionIntent(ctx, ACTION_TODO_DONE, first.optString("id"), 0, BOARD_ID + 1))
+        }
+        try { nm.notify(BOARD_ID, b.build()) } catch (_: SecurityException) { }
+    }
+
+    /** "오늘 할 일 2개 남았어요" 알림 */
+    fun showTodos(ctx: Context) {
+        if (!canNotify(ctx)) return
+        val left = remainingTodos(ctx)
+        if (left.isEmpty()) return
+        val body = left.sortedBy { if (it.optBoolean("top")) 0 else 1 }
+            .joinToString("\n") { (if (it.optBoolean("top")) "★ " else "• ") + it.optString("text") }
+        val open = PendingIntent.getActivity(
+            ctx, 9100,
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val n = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle("오늘 할 일 ${left.size}개 남았어요")
+            .setContentText(left.joinToString(" · ") { it.optString("text") })
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        try {
+            NotificationManagerCompat.from(ctx).notify(9100, n)
+        } catch (_: SecurityException) { }
+        buzz(ctx)
     }
 
     /** 평일(설정에 따라 주말도)에는 휴대폰이 무음이어도 알람처럼 진동합니다. */

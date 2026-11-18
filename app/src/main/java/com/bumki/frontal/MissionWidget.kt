@@ -49,7 +49,8 @@ class MissionWidget : AppWidgetProvider() {
             }
 
             val m = info.current
-            rv.setTextViewText(R.id.w_head, "오늘 ${info.doneCount}/${info.total} · ${info.score}/${info.goal}점")
+            val todoLeft = Reminders.remainingTodos(ctx).size
+            rv.setTextViewText(R.id.w_head, (if (todoLeft > 0) "할 일 ${todoLeft}개 남음 · " else "") + "${info.doneCount}/${info.total}")
             if (m == null) {
                 rv.setTextViewText(R.id.w_time, "")
                 rv.setTextViewText(R.id.w_title, "오늘 루틴 끝")

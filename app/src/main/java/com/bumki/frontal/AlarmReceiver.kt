@@ -8,7 +8,14 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getStringExtra(Reminders.EXTRA_ID) ?: return
         when (intent.action) {
+            Reminders.ACTION_TODO_DONE -> {
+                Reminders.markTodoDone(ctx, id)
+                Reminders.updateBoard(ctx)
+                MissionWidget.updateAll(ctx)
+            }
             Reminders.ACTION_ALARM -> {
+                Reminders.updateBoard(ctx)
+                if (id.startsWith("todo@")) { Reminders.showTodos(ctx); return }
                 val nag = intent.getIntExtra(Reminders.EXTRA_NAG, 0)
                 if (!Reminders.isSettled(ctx, id)) {
                     Reminders.showMission(ctx, id, nag)
