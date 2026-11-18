@@ -34,9 +34,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_SNOOZE -> {
-                val nag = intent.getIntExtra(Reminders.EXTRA_LVL, 0)
+                // 직접 미룬 건 횟수에 세지 않고 10분 뒤 다시 알려 줘요
                 Reminders.dismiss(ctx, id)
-                Reminders.scheduleNag(ctx, id, (nag + 1).coerceAtMost(Reminders.MAX_NAGS))
+                Reminders.scheduleNag(ctx, id, 1)
+                MissionWidget.updateAll(ctx)
             }
         }
     }

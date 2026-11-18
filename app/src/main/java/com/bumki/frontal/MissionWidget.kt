@@ -48,21 +48,16 @@ class MissionWidget : AppWidgetProvider() {
                 return rv
             }
 
-            rv.setTextViewText(
-                R.id.w_head,
-                "${info.blockTitle} ${info.blockRange} · ${info.blockDone}/${info.blockTotal} · 오늘 ${info.score}/${info.goal}점"
-            )
-
             val m = info.current
+            rv.setTextViewText(R.id.w_head, "오늘 ${info.doneCount}/${info.total} · ${info.score}/${info.goal}점")
             if (m == null) {
-                rv.setTextViewText(R.id.w_title, "이 시간대 할 일 끝!")
-                rv.setTextViewText(
-                    R.id.w_sub,
-                    if (info.nextTitle.isNotEmpty()) "다음은 ${info.nextTitle} (${info.nextStart}부터)" else "오늘 하루 수고했어요."
-                )
+                rv.setTextViewText(R.id.w_time, "")
+                rv.setTextViewText(R.id.w_title, "오늘 루틴 끝")
+                rv.setTextViewText(R.id.w_sub, if (info.score >= info.goal) "목표 달성! 푹 자는 것까지가 루틴이에요." else "내일 첫 알림부터 다시 시작해요.")
                 rv.setViewVisibility(R.id.w_buttons, View.GONE)
                 return rv
             }
+            rv.setTextViewText(R.id.w_time, (if (info.state == "next") "다음 " else "지금 ") + m.optString("time"))
 
             val id = m.optString("id")
             val two = m.optBoolean("two")
@@ -74,8 +69,7 @@ class MissionWidget : AppWidgetProvider() {
             }
             rv.setTextViewText(
                 R.id.w_sub,
-                if (two) extra + "작게: " + m.optString("mini") + "\n제대로: " + m.optString("full")
-                else extra + "하면 1점"
+                if (two) extra + "제대로: " + m.optString("full") else extra + m.optString("blockTitle") + " 루틴"
             )
             rv.setViewVisibility(R.id.w_buttons, View.VISIBLE)
 

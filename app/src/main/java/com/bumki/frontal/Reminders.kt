@@ -23,9 +23,9 @@ import java.time.ZonedDateTime
  * 웹 화면이 syncState 로 오늘의 체크 현황과 미션 시간을 넘겨주면 그것을 기준으로 판단합니다.
  */
 object Reminders {
-    const val CHANNEL = "missions"
-    const val NAG_MINUTES = 30L
-    const val MAX_NAGS = 3
+    const val CHANNEL = "routine_alarm"
+    const val NAG_MINUTES = 10L
+    const val MAX_NAGS = 2
 
     const val ACTION_ALARM = "com.bumki.frontal.ALARM"
     const val ACTION_DONE = "com.bumki.frontal.DONE"
@@ -45,8 +45,12 @@ object Reminders {
     fun ensureChannel(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         if (nm.getNotificationChannel(CHANNEL) == null) {
-            val ch = NotificationChannel(CHANNEL, "미션 알림", NotificationManager.IMPORTANCE_HIGH)
-            ch.description = "미션 시간과 '했어요?' 다시 묻기 알림"
+            val ch = NotificationChannel(CHANNEL, "루틴 알림", NotificationManager.IMPORTANCE_HIGH)
+            ch.description = "할 일 시각에 알려 주고, 안 했으면 10분 뒤 다시 알려 줘요"
+            ch.enableVibration(true)
+            ch.vibrationPattern = longArrayOf(0, 400, 200, 400)
+            ch.enableLights(true)
+            ch.lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             nm.createNotificationChannel(ch)
         }
     }
@@ -67,10 +71,20 @@ object Reminders {
     fun mission(ctx: Context, id: String): JSONObject? = missions(ctx).firstOrNull { it.optString("id") == id }
 
     /** 오늘 이미 체크했거나(웹 기록), 알림에서 체크했거나, 오늘 모드에서 쉬는 미션이면 true */
-    fun items(ctx: Context): List<JSONObject> {
-        val arr = state(ctx).optJSONArray("items") ?: return emptyList()
+    fun items(ctx: Context): List<JSONObject> = itemsFor(ctx, LocalDate.now())
+
+    /** 그날의 할 일 목록: 오늘 앱이 넘겨준 목록이 있으면 그것, 없으면 요일(평일/주말) 기본 목록 */
+    fun itemsFor(ctx: Context, date: LocalDate): List<JSONObject> {
+        val s = state(ctx)
+        val arr = if (s.optString("date") == date.toString()) s.optJSONArray("items") else {
+            val weekend = date.dayOfWeek == java.time.DayOfWeek.SATURDAY || date.dayOfWeek == java.time.DayOfWeek.SUNDAY
+            s.optJSONObject("itemsByType")?.optJSONArray(if (weekend) "weekend" else "weekday") ?: s.optJSONArray("items")
+        }
+        if (arr == null) return emptyList()
         return (0 until arr.length()).map { arr.getJSONObject(it) }
     }
+
+    fun item(ctx: Context, id: String): JSONObject? = items(ctx).firstOrNull { it.optString("id") == id }
 
     /** 시간대(b:로 시작) 알림은 그 시간대 할 일이 모두 끝났을 때 '끝난 것'으로 봅니다. */
     fun isSettled(ctx: Context, id: String): Boolean {
@@ -101,10 +115,8 @@ object Reminders {
 
     // ---------- 위젯에 보여 줄 정보 ----------
     data class WidgetInfo(
-        val current: JSONObject?, val score: Int, val goal: Int,
-        val blockTitle: String, val blockRange: String, val blockDone: Int, val blockTotal: Int,
-        val nextTitle: String, val nextStart: String,
-        val steps: Long?, val sleepH: Double?, val empty: Boolean
+        val current: JSONObject?, val state: String, val score: Int, val goal: Int,
+        val doneCount: Int, val total: Int, val steps: Long?, val sleepH: Double?, val empty: Boolean
     )
 
     fun widgetInfo(ctx: Context): WidgetInfo {
@@ -125,29 +137,21 @@ object Reminders {
         }
         val steps = if (sameDay && s.has("steps") && !s.isNull("steps")) s.optLong("steps") else null
         val sleepH = if (sameDay && s.has("sleepH") && !s.isNull("sleepH")) s.optDouble("sleepH") else null
-        if (its.isEmpty()) return WidgetInfo(null, score, goal, "", "", 0, 0, "", "", steps, sleepH, true)
+        if (its.isEmpty()) return WidgetInfo(null, "empty", score, goal, 0, 0, steps, sleepH, true)
 
-        // 시간대 목록 (순서 유지)
-        data class B(val id: String, val start: String, val end: String, val title: String)
-        val blocks = LinkedHashMap<String, B>()
-        val titles = missions(ctx).associate { it.optString("id") to it.optString("title") }
-        for (it in its) {
-            val b = it.optString("block")
-            if (b !in blocks) blocks[b] = B(b, it.optString("start"), it.optString("end"), titles[b] ?: "")
-        }
-        val list = blocks.values.toList()
         val now = LocalTime.now().let { "%02d:%02d".format(it.hour, it.minute) }
-        var idx = list.indexOfFirst { it.start <= now && now < it.end }
-        if (idx < 0) { idx = list.indexOfFirst { it.start > now }; if (idx < 0) idx = list.size - 1 }
-        val cb = list[idx]
-        val inBlock = its.filter { it.optString("block") == cb.id }
-        val left = inBlock.filter { !isItemSettled(ctx, it.optString("id")) }
-        val next = list.getOrNull(idx + 1)
-        return WidgetInfo(
-            left.firstOrNull(), score, goal, cb.title, cb.start + "–" + cb.end,
-            inBlock.size - left.size, inBlock.size, next?.title ?: "", next?.start ?: "",
-            steps, sleepH, false
-        )
+        val sorted = its.sortedBy { it.optString("time") }
+        // 지금 시간대(블록)
+        val cur = sorted.firstOrNull { it.optString("start") <= now && now < it.optString("end") }
+            ?: sorted.firstOrNull { it.optString("start") > now } ?: sorted.last()
+        val block = cur.optString("block")
+        val due = sorted.firstOrNull {
+            it.optString("block") == block && it.optString("time") <= now && !isItemSettled(ctx, it.optString("id"))
+        }
+        val next = due ?: sorted.firstOrNull { it.optString("time") > now && !isItemSettled(ctx, it.optString("id")) }
+        val doneCount = sorted.count { isItemSettled(ctx, it.optString("id")) }
+        return WidgetInfo(next, if (due != null) "now" else if (next != null) "next" else "done",
+            score, goal, doneCount, sorted.size, steps, sleepH, false)
     }
 
     // ---------- 알림에서 누른 체크 (웹이 다음에 열릴 때 가져감) ----------
@@ -186,17 +190,42 @@ object Reminders {
     }
 
     /** 각 미션의 '다음 알림 시각'을 예약합니다. 오늘 시간이 지났거나 이미 했으면 내일로. */
+    private fun parseTime(t: String): LocalTime? {
+        if (!Regex("^\\d{1,2}:\\d{2}$").matches(t)) return null
+        return runCatching { LocalTime.parse(if (t.length == 4) "0$t" else t) }.getOrNull()
+    }
+
+    /** 할 일마다 다음 알림 시각을 예약합니다. 오늘 이미 지났거나 했으면 내일 목록에서 찾습니다. */
     fun scheduleAll(ctx: Context) {
         val zone = ZoneId.systemDefault()
         val now = ZonedDateTime.now(zone)
-        for (m in missions(ctx)) {
-            val id = m.optString("id")
-            val time = m.optString("time")
-            if (id.isEmpty() || !Regex("^\\d{1,2}:\\d{2}$").matches(time)) continue
-            val lt = runCatching { LocalTime.parse(if (time.length == 4) "0$time" else time) }.getOrNull() ?: continue
-            var at = now.toLocalDate().atTime(lt).atZone(zone)
-            if (!at.isAfter(now) || isSettled(ctx, id)) at = at.plusDays(1)
-            setAlarm(ctx, at.toInstant().toEpochMilli(), alarmIntent(ctx, id, 0, false))
+        val todayDate = now.toLocalDate()
+        val scheduled = HashSet<String>()
+        for (it in itemsFor(ctx, todayDate)) {
+            val id = it.optString("id")
+            val lt = parseTime(it.optString("time")) ?: continue
+            val at = todayDate.atTime(lt).atZone(zone)
+            if (at.isAfter(now) && !isItemSettled(ctx, id)) {
+                setAlarm(ctx, at.toInstant().toEpochMilli(), alarmIntent(ctx, id, 0, false))
+                scheduled.add(id)
+            }
+        }
+        val tomorrow = todayDate.plusDays(1)
+        for (it in itemsFor(ctx, tomorrow)) {
+            val id = it.optString("id")
+            if (id in scheduled) continue
+            val lt = parseTime(it.optString("time")) ?: continue
+            setAlarm(ctx, tomorrow.atTime(lt).atZone(zone).toInstant().toEpochMilli(), alarmIntent(ctx, id, 0, false))
+            scheduled.add(id)
+        }
+        // 앱에서 '10분 뒤'를 누른 할 일
+        val s = state(ctx)
+        if (s.optString("date") == todayDate.toString()) {
+            val snz = s.optJSONObject("snoozed")
+            snz?.keys()?.forEach { id ->
+                val t = snz.optLong(id, 0)
+                if (t > System.currentTimeMillis() && !isItemSettled(ctx, id)) setAlarm(ctx, t, alarmIntent(ctx, id, 1, true))
+            }
         }
     }
 
@@ -225,6 +254,8 @@ object Reminders {
 
     fun showMission(ctx: Context, id: String, nag: Int) {
         if (!canNotify(ctx)) return
+        val it = item(ctx, id)
+        if (it != null) { showItem(ctx, it, nag); return }
         val m = mission(ctx, id) ?: return
         if (id.startsWith("b:")) { showBlock(ctx, id, m, nag); return }
         val title = m.optString("title", "미션")
@@ -289,6 +320,43 @@ object Reminders {
         b.addAction(0, "30분 뒤", actionIntent(ctx, ACTION_SNOOZE, id, nag, notificationId(id) * 4 + 3))
         try {
             NotificationManagerCompat.from(ctx).notify(notificationId(id), b.build())
+        } catch (_: SecurityException) { }
+    }
+
+    /** 할 일 하나 알림: 체크·미루기·넘기기 전까지 알림창 맨 위에 남아 있어요. */
+    private fun showItem(ctx: Context, it: JSONObject, nag: Int) {
+        val id = it.optString("id")
+        val title = it.optString("title")
+        val time = it.optString("time")
+        val head = if (nag == 0) "$time · $title" else "아직이에요 · $title"
+        val body = if (nag == 0) {
+            val cue = it.optString("cue")
+            if (cue.isNotEmpty() && cue != it.optString("blockTitle")) "$cue → $title" else "${it.optString("blockTitle")} 루틴 · 지금 할 시간이에요"
+        } else "괜찮아요, 지금 해도 돼요. 작게라도 하면 하루가 이어져요."
+        val open = PendingIntent.getActivity(
+            ctx, notificationId(id),
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val base = notificationId(id) * 4
+        val lvl = if (it.optBoolean("two")) 2 else 1
+        val n = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle(head)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(open)
+            .setOngoing(true)
+            .setOnlyAlertOnce(false)
+            .addAction(0, "했어요", actionIntent(ctx, ACTION_DONE, id, lvl, base + 1))
+            .addAction(0, "${NAG_MINUTES}분 뒤", actionIntent(ctx, ACTION_SNOOZE, id, nag, base + 3))
+            .addAction(0, "넘기기", actionIntent(ctx, ACTION_SKIP, id, 0, base + 2))
+            .build()
+        try {
+            NotificationManagerCompat.from(ctx).notify(notificationId(id), n)
         } catch (_: SecurityException) { }
     }
 
