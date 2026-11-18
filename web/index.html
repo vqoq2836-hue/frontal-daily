@@ -388,7 +388,7 @@ const MISSIONS = [
    how:["일어나자마자 물 한 컵을 마셔요.","삼성헬스 수면 기록이 자동으로 들어왔는지 확인해요.","7시간이 안 됐다면 오늘 밤 취침 시각을 30분 당기기로 정해요."],
    tip:"수면이 6시간 미만인 날은 ‘바쁜 날 모드’로 바꾸고 목표를 낮추세요."},
   {id:"plan", title:"손으로 오늘 계획 쓰기", pillar:"손·계획", kind:"check", time:"07:20",
-   cue:"아침 먹으면서", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
+   cue:"도시락 챙기고 나서", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
    why:"계획을 세우고 우선순위를 고르는 일이 바로 전두엽의 핵심 기능이에요. 손으로 쓰면 더 천천히, 더 분명하게 생각하게 돼요.",
    how:["책상 위에 둔 노트와 펜을 펴요.","오늘 꼭 끝내야 할 일 3개를 적어요(학교·부업·나 자신 각 1개).","가장 중요한 1개에 동그라미를 쳐요.","그 일을 언제 할지 시간을 옆에 적어요."],
    tip:"노트와 펜은 전날 밤 책상 위에 펼쳐 두세요. 찾는 데 드는 10초가 미루는 이유가 돼요."},
@@ -555,14 +555,14 @@ const C = (core,time) => ({core, time});
 const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), T("t_breakfast","아침 챙겨 먹기","07:15"), C("plan","07:35")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35")]},
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50")]},
     {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:[C("breath","16:45"), C("move","17:00"), C("newday","18:00"), T("t_dinner","저녁 챙겨 먹기","18:30"), T("t_prep","내일 도시락 준비","19:10")]},
     {id:"side", title:"부업 시간", start:"19:30", end:"21:00", tasks:[C("focus","19:30"), C("steps","20:50")]},
     {id:"night", title:"자기 전", start:"21:00", end:"23:00", tasks:[T("t_dishes","설거지","21:00"), T("t_tidy","10분 정리·청소","21:15"), T("t_clothes","내일 옷·가방 챙기기","21:30"), C("novel","21:40"), C("journal","21:50"), C("phone","22:00")]}
   ],
   weekend:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), T("t_breakfast","아침 챙겨 먹기","07:30"), C("plan","08:00")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), C("plan","08:00")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), C("breath","14:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
@@ -578,7 +578,7 @@ if(!MISSIONS.some(m=>m.id==="newday")) MISSIONS.push(NEWDAY_MISSION);
 
 /* ---------- 상태 ---------- */
 const NATIVE = (typeof window.NativeApp!=="undefined" && window.NativeApp) ? window.NativeApp : null;
-const DEFAULT_SETTINGS = () => ({ startDate: today(), blocks: clone(DEFAULT_BLOCKS), v4:true, v5:true });
+const DEFAULT_SETTINGS = () => ({ startDate: today(), blocks: clone(DEFAULT_BLOCKS), v4:true, v5:true, v6:true });
 const S = { settings:null, days:{}, weeks:{}, tab:"now", loaded:false, health:{status:"", msg:""}, update:null, sheet:false, pick:null, editType:null, draft:null };
 
 function taskInfo(t){
@@ -1108,6 +1108,9 @@ async function boot(){
     if(!S.settings){ S.settings=DEFAULT_SETTINGS(); await setDoc("meta/settings",S.settings); }
     if(!S.settings.v4){ S.settings.blocks=clone(DEFAULT_BLOCKS); S.settings.v4=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     if(!S.settings.v5){ S.settings.blocks.weekday=clone(DEFAULT_BLOCKS.weekday); S.settings.v5=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v6){ /* 아침 먹기 → 평일은 점심 도시락 챙기기, 주말은 빼기 */
+      ["weekday","weekend"].forEach(type=>{ (S.settings.blocks[type]||[]).forEach(b=>{ b.tasks=b.tasks.flatMap(t=>{ if(t&&t.id==="t_breakfast") return type==="weekday"?[{id:"t_lunch", title:"점심 도시락 챙기기", time:t.time}]:[]; return [t]; }); }); });
+      S.settings.v6=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
