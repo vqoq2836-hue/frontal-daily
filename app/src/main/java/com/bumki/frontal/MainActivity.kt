@@ -2,6 +2,7 @@ package com.bumki.frontal
 
 import android.Manifest
 import android.content.Intent
+import android.provider.Settings
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -79,6 +80,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        runCatching { Reminders.updateBoard(this) }
         if (::web.isInitialized) js("window.onNativeResume && window.onNativeResume()")
     }
 
@@ -145,8 +147,40 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun syncState(json: String) {
             Reminders.saveState(this@MainActivity, json)
-            Reminders.scheduleAll(this@MainActivity)
-            MissionWidget.updateAll(this@MainActivity)
+            // 알람 예약에서 문제가 나도 잠금화면 할 일과 위젯은 꼭 갱신되도록 따로 처리
+            runCatching { Reminders.scheduleAll(this@MainActivity) }
+            runCatching { Reminders.updateBoard(this@MainActivity) }
+            runCatching { MissionWidget.updateAll(this@MainActivity) }
+        }
+
+        @JavascriptInterface
+        fun boardStatus(): String = Reminders.boardStatus(this@MainActivity)
+
+        @JavascriptInterface
+        fun showBoard(): String {
+            runCatching { Reminders.ensureChannel(this@MainActivity); Reminders.updateBoard(this@MainActivity) }
+            return Reminders.boardStatus(this@MainActivity)
+        }
+
+        /** which: app(앱 알림) · channel(잠금화면 할 일 채널) · lock(휴대폰 잠금화면 설정) */
+        @JavascriptInterface
+        fun openNotifySettings(which: String) {
+            val pkg = packageName
+            val tries = when (which) {
+                "channel" -> listOf(
+                    Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, pkg).putExtra(Settings.EXTRA_CHANNEL_ID, Reminders.BOARD_CHANNEL),
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, pkg))
+                "lock" -> listOf(
+                    Intent("android.settings.LOCK_SCREEN_SETTINGS"),
+                    Intent().setClassName("com.android.settings", "com.android.settings.Settings\$LockscreenSettingsActivity"),
+                    Intent(Settings.ACTION_SETTINGS))
+                else -> listOf(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, pkg))
+            }
+            runOnUiThread {
+                for (i in tries) {
+                    if (runCatching { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess) break
+                }
+            }
         }
 
         /** 삼성헬스 앱을 열어 헬스 커넥트로 동기화를 재촉합니다. 돌아오면 onResume에서 다시 읽습니다. */

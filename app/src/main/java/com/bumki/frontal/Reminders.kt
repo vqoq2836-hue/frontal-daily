@@ -377,6 +377,26 @@ object Reminders {
         prefs(ctx).edit().putString(KEY_PENDING, p.toString()).apply()
     }
 
+    /** 잠금화면 판이 왜 안 보이는지 앱 화면에서 짚어 줄 수 있게 상태를 모아 줌 */
+    fun boardStatus(ctx: Context): String {
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        val ch = nm.getNotificationChannel(BOARD_CHANNEL)
+        val active = runCatching { nm.activeNotifications.any { it.id == BOARD_ID } }.getOrDefault(false)
+        val cr = ctx.contentResolver
+        val o = JSONObject()
+            .put("permission", canNotify(ctx))
+            .put("appEnabled", NotificationManagerCompat.from(ctx).areNotificationsEnabled())
+            .put("channel", ch?.importance ?: -1)
+            .put("channelLock", ch?.lockscreenVisibility ?: -999)
+            .put("todos", todayTodos(ctx).size)
+            .put("left", remainingTodos(ctx).size)
+            .put("setting", state(ctx).optBoolean("todoBoard", true))
+            .put("active", active)
+        runCatching { o.put("lsShow", android.provider.Settings.Secure.getInt(cr, "lock_screen_show_notifications")) }
+        runCatching { o.put("lsPrivate", android.provider.Settings.Secure.getInt(cr, "lock_screen_allow_private_notifications")) }
+        return o.toString()
+    }
+
     /** 잠금화면에 고정되는 '오늘 할 일' 판. 할 일이 바뀔 때마다 같은 자리에서 조용히 고쳐 씀 */
     fun updateBoard(ctx: Context) {
         val nm = NotificationManagerCompat.from(ctx)
