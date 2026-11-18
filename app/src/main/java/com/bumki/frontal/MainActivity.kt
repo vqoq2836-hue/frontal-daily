@@ -149,6 +149,14 @@ class MainActivity : ComponentActivity() {
             MissionWidget.updateAll(this@MainActivity)
         }
 
+        /** 삼성헬스 앱을 열어 헬스 커넥트로 동기화를 재촉합니다. 돌아오면 onResume에서 다시 읽습니다. */
+        @JavascriptInterface
+        fun openSamsungHealth(): Boolean {
+            val i = packageManager.getLaunchIntentForPackage("com.sec.android.app.shealth") ?: return false
+            runOnUiThread { runCatching { startActivity(i) } }
+            return true
+        }
+
         @JavascriptInterface
         fun checkUpdate() {
             lifecycleScope.launch {

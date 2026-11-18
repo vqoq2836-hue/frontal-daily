@@ -7,6 +7,11 @@ on:
 permissions:
   contents: write
 
+# 빌드가 겹치면 차례대로 (최신 APK 덮어쓰기가 꼬이지 않게)
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -53,6 +53,17 @@ class HealthReader(private val context: Context) {
             )
             val total = result[StepsRecord.COUNT_TOTAL]
             if (total != null) out.put("steps", total) else out.put("stepsMissing", true)
+            // 오늘 걸음이 헬스 커넥트에 마지막으로 들어온 시각 (동기화 지연 확인용)
+            runCatching {
+                val recs = client.readRecords(
+                    ReadRecordsRequest(StepsRecord::class, TimeRangeFilter.between(start, end))
+                ).records
+                val latest = recs.maxOfOrNull { it.endTime }
+                if (latest != null) {
+                    val t = latest.atZone(zone).toLocalTime()
+                    out.put("stepsLatest", "%02d:%02d".format(t.hour, t.minute))
+                }
+            }
         }
 
         if (SLEEP in granted) {

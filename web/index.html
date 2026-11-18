@@ -382,7 +382,7 @@ function readHealth(){
 function healthRow(){
   if(!NATIVE) return "";
   if(S.health.msg==="no_permission") return `<div class="row"><button class="btn primary" data-health="perm">삼성헬스 연결하기</button><span class="small muted">걸음·수면 읽기를 허용해 주세요</span></div>`;
-  return `<div class="row"><button class="btn" data-health="read">삼성헬스에서 다시 불러오기</button><span class="small muted" data-health-msg>${esc(S.health.msg)}</span></div>${S.health.hint?`<p class="small"><a href="#routine">숫자가 안 들어오면 ‘루틴·알림’ 탭의 연결 점검을 눌러 보세요</a></p>`:""}`;
+  return `<div class="row"><button class="btn" data-health="read">다시 불러오기</button>${NATIVE.openSamsungHealth?`<button class="btn" data-health="shealth">삼성헬스 열어 동기화</button>`:""}</div><p class="small muted" data-health-msg>${esc(S.health.msg)}</p><p class="small muted">숫자가 늦으면 ‘삼성헬스 열어 동기화’를 누르고, 삼성헬스 화면이 뜨면 바로 뒤로 돌아오세요. 돌아오는 순간 새로 불러와요.</p>${S.health.hint?`<p class="small"><a href="#routine">숫자가 안 들어오면 ‘루틴·알림’ 탭의 연결 점검을 눌러 보세요</a></p>`:""}`;
 }
 /* 연결 점검 결과를 사람이 읽을 수 있게 */
 function diagText(r){
@@ -432,7 +432,7 @@ window.onNativeHealth = function(str){
   let changed=false;
   if(typeof r.steps==="number"){ v.steps=r.steps; const l=r.steps>=STEP.full?2:r.steps>=STEP.mini?1:0; if(l) v.done.steps={lvl:l,at:Date.now()}; else delete v.done.steps; changed=true; }
   if(typeof r.sleepMinutes==="number"){ const h=Math.round(r.sleepMinutes/6)/10; v.sleepH=h; v.done.sleep={lvl:h>=7?2:1,at:Date.now()}; changed=true; }
-  const t=new Date(); S.health.msg="삼성헬스 동기화 "+pad(t.getHours())+":"+pad(t.getMinutes())+(r.stepsMissing?" · 오늘 걸음 데이터 없음":"")+(typeof r.sleepMinutes!=="number"?" · 어젯밤 수면 기록 없음":"");
+  const t=new Date(); S.health.msg="불러옴 "+pad(t.getHours())+":"+pad(t.getMinutes())+(r.stepsLatest?" · 걸음은 "+r.stepsLatest+"까지 반영":"")+(r.stepsMissing?" · 오늘 걸음 데이터 없음":"")+(typeof r.sleepMinutes!=="number"?" · 어젯밤 수면 기록 없음":"");
   if(r.stepsMissing || typeof r.sleepMinutes!=="number") S.health.hint=true;
   if(changed) saveDay(d);
   const a=document.activeElement; if(a&&a.matches&&a.matches("textarea,input")) refreshBoard(); else render();
@@ -723,7 +723,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.m){ setLevel(b.dataset.m, Number(b.dataset.l)); return; }
   if(b.dataset.mode){ const v=day(today()); v.mode=b.dataset.mode; delete v.busy; saveDay(today()); render(); toast(MODES[v.mode].label+" 모드 · 오늘 목표 "+MODES[v.mode].goal+"점"); return; }
   if(b.id==="reroll"){ const v=day(today()); v.novelty={idx:((v.novelty?v.novelty.idx:hashIdx(today()))+17)%QUOTES.length, rerolled:true}; saveDay(today()); render(); return; }
-  if(b.dataset.health && NATIVE){ const a=b.dataset.health; try{ if(a==="perm") NATIVE.requestHealthPermission(); else if(a==="read") readHealth(); else if(a==="diag"){ S.diag=null; toast("점검 중…"); NATIVE.diagnoseHealth(); } else if(a==="open") NATIVE.openHealthConnect(); else if(a==="test"){ NATIVE.testNotification(); toast("알림을 보냈어요. 안 보이면 알림 권한을 확인해 주세요."); } }catch(e){ toast("앱 기능을 부르지 못했어요"); } return; }
+  if(b.dataset.health && NATIVE){ const a=b.dataset.health; try{ if(a==="perm") NATIVE.requestHealthPermission(); else if(a==="read") readHealth(); else if(a==="diag"){ S.diag=null; toast("점검 중…"); NATIVE.diagnoseHealth(); } else if(a==="open") NATIVE.openHealthConnect(); else if(a==="shealth"){ if(!NATIVE.openSamsungHealth()) toast("삼성헬스 앱을 찾지 못했어요"); } else if(a==="test"){ NATIVE.testNotification(); toast("알림을 보냈어요. 안 보이면 알림 권한을 확인해 주세요."); } }catch(e){ toast("앱 기능을 부르지 못했어요"); } return; }
   if(b.dataset.pass){ const d=today(), v=day(d), m=MISSIONS.find(x=>x.id===b.dataset.pass); v.done[b.dataset.pass]={lvl:0, skipped:true, at:Date.now()}; saveDay(d); render(); toast((m?m.title:"미션")+" 넘김 · 다음 미션이 열렸어요"); return; }
   if(b.dataset.reopen){ const d=today(), v=day(d); delete v.done[b.dataset.reopen]; saveDay(d); render(); window.scrollTo(0,0); return; }
   if(b.id==="focusToggle"){ S.focus=!S.focus; try{ localStorage.setItem(LS+"focus", S.focus?"1":"0"); }catch(e){} render(); return; }
@@ -780,6 +780,8 @@ window.addEventListener("hashchange",route);
 
 /* ---------- 날짜가 바뀌면 새로 그림 ---------- */
 let renderedDay=today();
+/* 앱이 켜져 있는 동안 5분마다 삼성헬스 숫자를 새로 불러옴 */
+setInterval(()=>{ if(NATIVE && S.loaded && document.visibilityState==="visible") readHealth(); }, 5*60000);
 setInterval(()=>{ if(today()!==renderedDay){ renderedDay=today(); render(); } else if(S.tab==="today" && !document.activeElement.matches("textarea,input")) { const n=nowMissionId(today()); const cur=document.querySelector(".m.now"); if((cur&&cur.id!=="m-"+n)||(!cur&&n)) render(); } },60000);
 
 /* ---------- 시작 ---------- */
