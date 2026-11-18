@@ -566,10 +566,11 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting()}));
   }catch(e){}
 }
 
+function vibrateSetting(){ const vb=(S.settings&&S.settings.vibrate)||{}; return {weekday: vb.weekday!==false, weekend: !!vb.weekend}; }
 /* ---------- 지금 화면 ---------- */
 function topbar(v){
   const dd=parse(v.date), dt=dayTypeOf(v), md=MODES[modeOf(v)];
@@ -699,6 +700,9 @@ function renderRoutine(){
       <li>설정 → 애플리케이션 → 전두엽 데일리 → 배터리를 ‘제한 없음’으로 바꿔 주세요.</li>
       <li>설정 → 알림에서 ‘루틴 알림’ 채널을 ‘소리 및 팝업’으로 켜 두세요.</li>
     </ol><div class="row"><button class="btn" data-health="test">알림 테스트</button></div></section>
+    <section class="glass card"><h2>진동</h2><p class="small muted">켜 두면 휴대폰이 무음이어도 알림마다 진동이 와요(알람과 같은 방식). 방해금지 모드에서 알람을 막아 두면 울리지 않아요.</p>
+    ${[["weekday","평일에 알림마다 꼭 진동"],["weekend","주말에도 꼭 진동"]].map(([k,l])=>`<button class="chk" data-vib="${k}" aria-pressed="${vibrateSetting()[k]}"><span class="box"></span><span>${l}</span></button>`).join("")}
+    </section>
     <section class="glass card"><h2>삼성헬스 연결 점검</h2>
     <div class="row"><button class="btn primary" data-health="diag">점검하기</button><button class="btn" data-health="open">헬스 커넥트 열기</button><button class="btn" data-health="perm">권한 다시 요청</button></div>
     ${S.diag?`<table class="small" style="width:100%;border-collapse:collapse">${diagText(S.diag).map(([k,val,st])=>`<tr><td style="padding:6px 8px 6px 0;color:var(--muted);vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;color:${st==="bad"?"var(--warn)":"var(--ink)"};font-weight:${st==="bad"?600:400}">${esc(val)}</td></tr>`).join("")}</table>${diagAdvice(S.diag)?`<p class="skip-note">${esc(diagAdvice(S.diag))}</p>`:""}`:""}
@@ -744,6 +748,7 @@ document.addEventListener("click",e=>{
     if(k==="steps"){ if(v.steps==null){ toast("걸음 수를 불러오거나 입력해 주세요"); return; } const l=v.steps>=STEP.full?2:v.steps>=STEP.mini?1:0; if(!l){ toast(STEP.mini.toLocaleString()+"보부터 점수가 들어가요. 10분만 걷고 다시 확인해요"); return; } mark("steps", l); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.vib){ const cur=vibrateSetting(); cur[b.dataset.vib]=!cur[b.dataset.vib]; S.settings.vibrate=cur; saveSettings(); render(); return; }
   if(b.dataset.stress){ v.stress=Number(b.dataset.stress); saveDay(d); render(); return; }
   if(b.id==="sheetBtn"){ S.sheet=!S.sheet; render(); return; }
   if(b.dataset.mode){ v.mode=b.dataset.mode; delete v.busy; saveDay(d); render(); toast(MODES[v.mode].label+" · 오늘 목표 "+goal(d)+"점"); return; }

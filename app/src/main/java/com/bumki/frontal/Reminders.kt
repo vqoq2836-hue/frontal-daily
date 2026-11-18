@@ -323,6 +323,35 @@ object Reminders {
         } catch (_: SecurityException) { }
     }
 
+    /** 평일(설정에 따라 주말도)에는 휴대폰이 무음이어도 알람처럼 진동합니다. */
+    fun buzz(ctx: Context, force: Boolean = false) {
+        if (!force) {
+            val v = state(ctx).optJSONObject("vibrate")
+            val d = LocalDate.now().dayOfWeek
+            val weekend = d == java.time.DayOfWeek.SATURDAY || d == java.time.DayOfWeek.SUNDAY
+            val on = if (weekend) v?.optBoolean("weekend", false) ?: false else v?.optBoolean("weekday", true) ?: true
+            if (!on) return
+        }
+        try {
+            val effect = android.os.VibrationEffect.createWaveform(longArrayOf(0, 500, 250, 500, 250, 700), -1)
+            val alarmAudio = android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            if (Build.VERSION.SDK_INT >= 33) {
+                val vib = ctx.getSystemService(android.os.VibratorManager::class.java).defaultVibrator
+                vib.vibrate(effect, android.os.VibrationAttributes.createForUsage(android.os.VibrationAttributes.USAGE_ALARM))
+            } else if (Build.VERSION.SDK_INT >= 31) {
+                val vib = ctx.getSystemService(android.os.VibratorManager::class.java).defaultVibrator
+                vib.vibrate(effect, alarmAudio)
+            } else {
+                @Suppress("DEPRECATION")
+                val vib = ctx.getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+                vib.vibrate(effect, alarmAudio)
+            }
+        } catch (_: Exception) { }
+    }
+
     /** 할 일 하나 알림: 체크·미루기·넘기기 전까지 알림창 맨 위에 남아 있어요. */
     private fun showItem(ctx: Context, it: JSONObject, nag: Int) {
         val id = it.optString("id")
@@ -358,6 +387,7 @@ object Reminders {
         try {
             NotificationManagerCompat.from(ctx).notify(notificationId(id), n)
         } catch (_: SecurityException) { }
+        buzz(ctx)
     }
 
     /** 할 일을 체크한 뒤: 끝난 시간대의 알림·재알림은 정리하고, 남은 시간대 알림은 목록을 새로 고칩니다. */
@@ -388,5 +418,6 @@ object Reminders {
         try {
             NotificationManagerCompat.from(ctx).notify(1, n)
         } catch (_: SecurityException) { }
+        buzz(ctx, force = true)
     }
 }
