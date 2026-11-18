@@ -1,6 +1,6 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light dark}body{margin:0;font-family:system-ui,sans-serif;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>전두엽 데일리</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Outfit:wght@200;300;500;700&family=Gowun+Batang:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Outfit:wght@200;300;500;700&family=Gowun+Batang:wght@400;700&family=Black+Han+Sans&display=swap">
 <style>
 /* 시간대 하늘 위에 유리 카드를 겹겹이 올린 루틴 관리자.
    레이어: 하늘 그라데이션 → 해/달 오브 → 안개 → 별(밤) → 결 → 유리 카드 */
@@ -8,6 +8,7 @@
   --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   --num:'Outfit','IBM Plex Sans KR',sans-serif;
   --serif:'Gowun Batang',Georgia,serif;
+  --display:'Black Han Sans','IBM Plex Sans KR',sans-serif;
   --sky1:#050816; --sky2:#0E1A3A; --sky3:#1D2F5C; --orb:#E8EEFF; --haze:#3D5BA8;
   --ink:#EEF3FF; --muted:rgba(238,243,255,.68); --faint:rgba(238,243,255,.42);
   --glass:rgba(255,255,255,.09); --glass-2:rgba(255,255,255,.14); --line:rgba(255,255,255,.18);
@@ -95,7 +96,7 @@ nav.tabs.glass{border-color:var(--tile-line)}
 
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .topbar .date{display:flex;flex-direction:column;text-shadow:0 1px 12px color-mix(in srgb,var(--sky1) 55%,transparent)}
-.topbar .date b{font-family:var(--serif);font-weight:700;font-size:24px;letter-spacing:-.01em}
+.topbar .date b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:0}
 .pill{border:1px solid var(--line);background:var(--glass-2);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:600;display:inline-flex;gap:6px;align-items:center;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
 
@@ -116,11 +117,11 @@ nav.tabs.glass{border-color:var(--tile-line)}
 .state.next i{background:var(--faint);animation:none}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 70%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
 .hero-time{font-family:var(--num);font-weight:200;font-size:84px;line-height:.9;letter-spacing:-.03em}
-.hero-title{font-family:var(--serif);font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.25;word-break:keep-all}
+.hero-title{font-family:var(--display);font-size:34px;font-weight:400;letter-spacing:-.01em;line-height:1.2;word-break:keep-all}
 .hero-cue{font-size:13px;color:var(--muted);letter-spacing:.01em}
-.big{width:100%;border:0;border-radius:22px;padding:18px 20px;font-size:18px;font-weight:700;
+.big{width:100%;border:0;border-radius:22px;padding:18px 20px;font-family:var(--display);font-size:21px;font-weight:400;
   background:linear-gradient(135deg,var(--accent),var(--accent-2));color:var(--accent-ink);box-shadow:0 12px 30px color-mix(in srgb,var(--accent) 35%,transparent);display:flex;flex-direction:column;align-items:center;gap:2px}
-.big small{font-size:12px;font-weight:500;opacity:.8}
+.big small{font-family:var(--font);font-size:12px;font-weight:500;opacity:.8}
 .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .ghost{border:1px solid var(--tile-line);background:var(--tile);border-radius:18px;padding:12px 8px;font-size:14px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.3}
 .ghost small{font-size:11px;font-weight:500;color:var(--muted)}
@@ -147,7 +148,7 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .next-row{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;width:100%;border:1px solid var(--tile-line);background:var(--tile);border-radius:18px;text-align:left;padding:10px 12px}
 .next-row .tb{display:flex;flex-direction:column;gap:1px;min-width:0}
 .next-row .t{font-family:var(--num);font-weight:300;font-size:22px;letter-spacing:-.01em;border-right:1px solid var(--tile-line);padding-right:10px}
-.next-row .n{font-weight:600;font-size:15px;line-height:1.35}
+.next-row .n{font-family:var(--display);font-weight:400;font-size:17px;line-height:1.3}
 .next-row .b{font-size:11px;color:var(--faint);letter-spacing:.04em}
 .next-row .in{font-family:var(--num);font-size:11px;font-weight:500;color:var(--accent);white-space:nowrap}
 .progress{padding:16px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
@@ -168,7 +169,7 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 /* ---- 하루 타임라인 ---- */
 .tl-block{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
 .tl-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-.tl-h h3{font-size:16px}
+.tl-h h3{font-family:var(--display);font-weight:400;font-size:19px}
 .tl-row{display:grid;grid-template-columns:52px 18px 1fr auto;gap:10px;align-items:center;padding:9px 0;border:0;background:none;text-align:left;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);width:100%}
 .tl-row:first-of-type{border-top:0}
 .tl-row .t{font-family:var(--num);font-weight:300;color:var(--muted)}
@@ -182,7 +183,7 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 
 /* ---- 카드 공통 (루틴·기록) ---- */
 .card{padding:18px;display:flex;flex-direction:column;gap:12px}
-.card h2{font-size:18px}
+.card h2{font-family:var(--display);font-weight:400;font-size:20px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn{border:1px solid var(--line);background:var(--glass-2);border-radius:14px;padding:9px 14px;font-size:14px;font-weight:600}
 .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:var(--accent-ink)}
@@ -210,7 +211,7 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .jr{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:2px}
 .jr:first-of-type{border-top:0;padding-top:0}
 .section-h{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;padding:0 4px}
-.section-h h2{font-size:17px}
+.section-h h2{font-family:var(--display);font-weight:400;font-size:20px}
 .ev{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px}
 .ev:first-of-type{border-top:0;padding-top:0}
 .grade{font-family:var(--num);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:2px;white-space:nowrap}
