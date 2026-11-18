@@ -16,12 +16,20 @@ class AlarmReceiver : BroadcastReceiver() {
                 }
                 // 내일 같은 시간 알림 예약
                 if (nag == 0) Reminders.scheduleAll(ctx)
+                MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_DONE -> {
                 val lvl = intent.getIntExtra(Reminders.EXTRA_LVL, 1)
                 Reminders.addPending(ctx, id, lvl)
                 Reminders.cancelNag(ctx, id)
                 Reminders.dismiss(ctx, id)
+                MissionWidget.updateAll(ctx)
+            }
+            Reminders.ACTION_SKIP -> {
+                Reminders.addPending(ctx, id, 0)
+                Reminders.cancelNag(ctx, id)
+                Reminders.dismiss(ctx, id)
+                MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_SNOOZE -> {
                 val nag = intent.getIntExtra(Reminders.EXTRA_LVL, 0)
@@ -36,5 +44,6 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         Reminders.ensureChannel(ctx)
         Reminders.scheduleAll(ctx)
+        MissionWidget.updateAll(ctx)
     }
 }

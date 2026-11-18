@@ -30,6 +30,7 @@ object Reminders {
     const val ACTION_ALARM = "com.bumki.frontal.ALARM"
     const val ACTION_DONE = "com.bumki.frontal.DONE"
     const val ACTION_SNOOZE = "com.bumki.frontal.SNOOZE"
+    const val ACTION_SKIP = "com.bumki.frontal.SKIP"
     const val EXTRA_ID = "id"
     const val EXTRA_NAG = "nag"
     const val EXTRA_LVL = "lvl"
@@ -79,6 +80,37 @@ object Reminders {
             if (p.optString("date") == today() && p.optString("id") == id) return true
         }
         return false
+    }
+
+    // ---------- 위젯에 보여 줄 정보 ----------
+    data class WidgetInfo(
+        val current: JSONObject?, val score: Int, val goal: Int,
+        val passed: Int, val total: Int, val steps: Long?, val sleepH: Double?
+    )
+
+    fun widgetInfo(ctx: Context): WidgetInfo {
+        val s = state(ctx)
+        val ms = missions(ctx)
+        val sameDay = s.optString("date") == today()
+        val done = if (sameDay) s.optJSONObject("done") else null
+        var score = if (sameDay) s.optInt("score", 0) else 0
+        val goal = if (sameDay) s.optInt("goal", 9) else 9
+        // 앱을 열기 전 알림·위젯에서 누른 체크도 점수에 미리 반영
+        val counted = HashSet<String>()
+        val pending = pendingArray(ctx)
+        for (i in 0 until pending.length()) {
+            val p = pending.getJSONObject(i)
+            val id = p.optString("id")
+            if (p.optString("date") != today() || id in counted) continue
+            if ((done?.optInt(id, 0) ?: 0) == 0) score += p.optInt("lvl", 0)
+            counted.add(id)
+        }
+        val ids = ms.map { it.optString("id") }
+        val passed = ids.count { isSettled(ctx, it) }
+        val current = ms.firstOrNull { !isSettled(ctx, it.optString("id")) }
+        val steps = if (sameDay && s.has("steps") && !s.isNull("steps")) s.optLong("steps") else null
+        val sleepH = if (sameDay && s.has("sleepH") && !s.isNull("sleepH")) s.optDouble("sleepH") else null
+        return WidgetInfo(current, score, goal, passed, ms.size, steps, sleepH)
     }
 
     // ---------- 알림에서 누른 체크 (웹이 다음에 열릴 때 가져감) ----------
@@ -148,7 +180,7 @@ object Reminders {
 
     fun notificationId(id: String) = (id.hashCode() and 0x0FFFFFFF)
 
-    private fun actionIntent(ctx: Context, action: String, id: String, lvl: Int, code: Int): PendingIntent {
+    fun actionIntent(ctx: Context, action: String, id: String, lvl: Int, code: Int): PendingIntent {
         val i = Intent(ctx, AlarmReceiver::class.java).setAction(action)
             .putExtra(EXTRA_ID, id).putExtra(EXTRA_LVL, lvl)
         return PendingIntent.getBroadcast(ctx, code, i, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)

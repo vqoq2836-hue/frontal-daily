@@ -146,6 +146,33 @@ class MainActivity : ComponentActivity() {
         fun syncState(json: String) {
             Reminders.saveState(this@MainActivity, json)
             Reminders.scheduleAll(this@MainActivity)
+            MissionWidget.updateAll(this@MainActivity)
+        }
+
+        @JavascriptInterface
+        fun checkUpdate() {
+            lifecycleScope.launch {
+                val json = Updater.check(this@MainActivity)
+                js("window.onNativeUpdate && window.onNativeUpdate(" + JSONObject.quote(json) + ")")
+            }
+        }
+
+        @JavascriptInterface
+        fun startUpdate() {
+            lifecycleScope.launch {
+                val r = try {
+                    Updater.downloadAndInstall(this@MainActivity)
+                } catch (e: Exception) {
+                    "error:" + e.javaClass.simpleName
+                }
+                val out = JSONObject()
+                when {
+                    r == "started" -> out.put("status", "installing")
+                    r == "need_permission" -> out.put("status", "need_permission")
+                    else -> out.put("status", "error").put("message", r.removePrefix("error:"))
+                }
+                js("window.onNativeUpdate && window.onNativeUpdate(" + JSONObject.quote(out.toString()) + ")")
+            }
         }
 
         @JavascriptInterface

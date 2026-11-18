@@ -36,5 +36,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk frontal-daily.apk
+          echo "{\"versionCode\": $((100 + GITHUB_RUN_NUMBER)), \"versionName\": \"0.2.${GITHUB_RUN_NUMBER}\"}" > version.json
+          cat version.json
           gh release delete latest-apk --cleanup-tag -y || true
-          gh release create latest-apk frontal-daily.apk --target "$GITHUB_SHA" --title "전두엽 데일리 최신 버전" --notes "빌드 #${{ github.run_number }} · ${{ github.ref_name }}"
+          gh release create latest-apk frontal-daily.apk version.json --target "$GITHUB_SHA" --title "전두엽 데일리 최신 버전" --notes "빌드 #${{ github.run_number }} · ${{ github.ref_name }}"

@@ -47,6 +47,24 @@ a{color:var(--accent)}
 .modes button[aria-pressed="true"][data-mode="normal"] b{color:var(--accent)}
 .modes button[aria-pressed="true"][data-mode="busy"] b,.modes button[aria-pressed="true"][data-mode="appt"] b{color:var(--amber)}
 .m.skip{opacity:.72}
+.steps-track{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.steps-track i{display:block;height:6px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line)}
+.steps-track i.s2{background:var(--accent);border-color:transparent}
+.steps-track i.s1{background:var(--mini);border-color:transparent}
+.steps-track i.sk{background:var(--line);border-color:transparent}
+.steps-track i.cur{background:var(--amber);border-color:transparent}
+.detail{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:10px;padding:12px 14px}
+.detail-d{background:var(--surface-2);border-radius:10px;padding:8px 12px}
+.detail-d summary{font-size:13px;font-weight:600;color:var(--accent);cursor:pointer}
+.detail-d[open]{display:flex;flex-direction:column;gap:8px;padding-bottom:12px}
+.how{margin:0;padding-left:20px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.tip{font-size:13px;color:var(--amber);font-weight:500}
+.passed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.passed summary{font-weight:600;cursor:pointer}
+.passed-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.pl{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:14px}
+.btn.small{padding:4px 10px;font-size:12px}
+.update-bar{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:12px 14px}
 .skip-note{font-size:12px;font-weight:600;color:var(--amber);background:var(--amber-soft);border-radius:8px;padding:6px 10px}
 
 /* status board */
@@ -180,23 +198,50 @@ nav.tabs a[aria-current="page"]{color:var(--accent);font-weight:700}
 /* ---------- 미션 정의 ---------- */
 const MISSIONS = [
   {id:"sleep", title:"어젯밤 수면 기록", pillar:"수면", kind:"sleep", time:"06:00",
-   cue:"일어나서 물 한 잔 마시면", full:"7시간 이상 잤다", mini:"수면 시간만 기록"},
+   cue:"일어나서 물 한 잔 마시면", full:"7시간 이상 잤다", mini:"수면 시간만 기록",
+   why:"잠이 부족한 날은 감정을 누르는 전두엽의 힘이 약해져요. 매일 숫자로 보면 늦게 자는 습관이 눈에 들어와요.",
+   how:["일어나자마자 물 한 컵을 마셔요.","삼성헬스 수면 기록이 자동으로 들어왔는지 확인해요.","7시간이 안 됐다면 오늘 밤 취침 시각을 30분 당기기로 정해요."],
+   tip:"수면이 6시간 미만인 날은 ‘바쁜 날 모드’로 바꾸고 목표를 낮추세요."},
   {id:"plan", title:"손으로 오늘 계획 쓰기", pillar:"손·계획", kind:"check", time:"06:10",
-   cue:"물 마신 다음, 운동 가기 전에", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에"},
+   cue:"물 마신 다음, 운동 가기 전에", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
+   why:"계획을 세우고 우선순위를 고르는 일이 바로 전두엽의 핵심 기능이에요. 손으로 쓰면 더 천천히, 더 분명하게 생각하게 돼요.",
+   how:["책상 위에 둔 노트와 펜을 펴요.","오늘 꼭 끝내야 할 일 3개를 적어요(학교·부업·나 자신 각 1개).","가장 중요한 1개에 동그라미를 쳐요.","그 일을 언제 할지 시간을 옆에 적어요."],
+   tip:"노트와 펜은 전날 밤 책상 위에 펼쳐 두세요. 찾는 데 드는 10초가 미루는 이유가 돼요."},
   {id:"move", title:"몸 쓰기", pillar:"운동", kind:"check", time:"07:00",
-   cue:"아침 운동 시간에", full:"근력 또는 러닝 세션 완료", mini:"10분 걷기"},
+   cue:"아침 운동 시간에", full:"근력 또는 러닝 세션 완료", mini:"10분 걷기",
+   why:"운동은 실행기능에 꾸준히 좋은 효과를 보이는 몇 안 되는 습관이에요. 이미 하고 있는 운동을 기록으로 인정해요.",
+   how:["운동복과 물병은 전날 밤 문 앞에 둬요.","오늘 분할(하체·상체 등) 세션을 마쳐요.","시간이 없으면 10분 빠르게 걷기로 대신해요."],
+   tip:"‘제대로’가 어려운 날도 신발 신고 10분만 나가면 1점이에요."},
   {id:"breath", title:"호흡으로 멈추기", pillar:"감정 조절", kind:"breath", time:"12:40",
-   cue:"점심 먹고 교실로 돌아오면", full:"3분 호흡", mini:"1분 호흡"},
+   cue:"점심 먹고 교실로 돌아오면", full:"3분 호흡", mini:"1분 호흡",
+   why:"오후 수업 전 짧게 멈추면 감정 반응이 한 박자 늦춰져요. 화가 나는 순간 바로 반응하지 않는 연습이에요.",
+   how:["의자에 등을 붙이고 발바닥을 바닥에 둬요.","4초 들이쉬고, 4초 멈추고, 4초 내쉬고, 4초 멈춰요.","생각이 떠오르면 ‘생각’이라고 이름만 붙이고 숨으로 돌아와요."],
+   tip:"아래 1분·3분 시작 버튼을 누르면 화면이 숨 쉬는 박자를 안내해요."},
+  {id:"novel", title:"오늘의 필사", pillar:"손·사유", kind:"novel", time:"17:30",
+   cue:"퇴근하고 가방을 내려놓으면", full:"손으로 필사하고 내 생각 한 줄 덧붙이기", mini:"글귀를 손으로 한 번 옮겨 쓰기",
+   why:"천천히 손으로 옮겨 쓰는 동안 한 문장에 주의를 오래 붙잡아 두게 돼요. 하루의 소음에서 빠져나오는 전환점이에요.",
+   how:["필사 노트에 오늘 날짜를 써요.","글귀를 또박또박 옮겨 써요.","‘오늘 나에게 이 문장은 ○○다’ 한 줄을 덧붙여요."],
+   tip:"글귀가 와닿지 않으면 하루 한 번 다른 글귀로 바꿀 수 있어요."},
   {id:"focus", title:"부업 집중 블록", pillar:"집중", kind:"check", time:"19:30",
-   cue:"저녁 먹고 부업 시작하기 전에", full:"10분 걷고, 폰 없이 25분 집중", mini:"폰을 다른 방에 두고 10분 집중"},
-  {id:"novel", title:"오늘의 필사", pillar:"손·사유", kind:"novel", time:"",
-   cue:"하루 중 아무 때나 펜을 들면", full:"손으로 필사하고 내 생각 한 줄 덧붙이기", mini:"글귀를 손으로 한 번 옮겨 쓰기"},
+   cue:"저녁 먹고 부업 시작하기 전에", full:"10분 걷고, 폰 없이 25분 집중", mini:"폰을 다른 방에 두고 10분 집중",
+   why:"짧은 걷기 직후에는 집중이 잠깐 좋아져요. 폰이 손에 닿지 않으면 끊기는 횟수가 줄어요.",
+   how:["집 앞을 10분 걸어요.","폰은 다른 방이나 폰 상자에 넣어요.","이번 25분 동안 끝낼 일 하나를 종이에 적어요.","타이머를 맞추고 그 일 하나만 해요."],
+   tip:"25분이 끝나면 5분 쉬고, 여력이 있으면 한 번 더 해요."},
   {id:"steps", title:"오늘 걸음 수", pillar:"운동", kind:"steps", time:"20:50",
-   cue:"폰 상자에 넣기 전 삼성헬스 걸음 수를 보고", full:"8,000보 이상", mini:"4,000보 이상"},
+   cue:"폰 상자에 넣기 전 삼성헬스 걸음 수를 보고", full:"8,000보 이상", mini:"4,000보 이상",
+   why:"앉아 있는 시간이 긴 날일수록 걷기가 부족해져요. 하루 걸음 수는 활동량을 가장 쉽게 확인하는 숫자예요.",
+   how:["앱이 삼성헬스에서 걸음 수를 자동으로 불러와요.","4,000보가 안 되면 10분만 집 근처를 걸어요.","걷고 와서 ‘다시 불러오기’를 눌러요."],
+   tip:"쉬는 시간에 교실 밖 복도를 한 바퀴 걷는 것만으로도 하루 1,000보가 늘어요."},
   {id:"phone", title:"폰 상자", pillar:"디지털", kind:"check", time:"21:00",
-   cue:"9시 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기"},
+   cue:"9시 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
+   why:"자기 전 폰은 잠드는 시간을 늦추고 수면의 질을 떨어뜨려요. 수면이 지켜져야 내일의 전두엽이 지켜져요.",
+   how:["알람은 워치나 탁상시계로 바꿔 둬요.","폰을 충전기에 꽂아 상자 안에 넣어요.","상자는 침실 밖에 둬요."],
+   tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 21시에 맞춰 두면 알림도 함께 조용해져요."},
   {id:"journal", title:"저녁 3줄 기록", pillar:"기록", kind:"journal", time:"21:30",
-   cue:"씻고 나서 책상에 앉으면", full:"세 줄 모두", mini:"한 줄이라도"}
+   cue:"씻고 나서 책상에 앉으면", full:"세 줄 모두", mini:"한 줄이라도",
+   why:"하루를 돌아보고 내일 첫 행동을 정하면, 다음 날 아침의 계획 쓰기가 쉬워져요.",
+   how:["오늘 잘한 것 하나를 적어요.","다르게 하고 싶은 것 하나를 적어요(자책 말고 방법으로).","내일 가장 먼저 할 일 하나를 적어요."],
+   tip:"폰 상자에 넣은 뒤라면 노트에 쓰고, 다음 날 아침 앱에 옮겨도 돼요."}
 ];
 const WEEKLY = [
   {id:"rel", title:"고마운 사람 한 명에게 먼저 연락하기", sub:"관계"},
@@ -302,7 +347,8 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 /* ---------- 상태 ---------- */
 const DEFAULT_SETTINGS = () => ({ startDate: today(), routine: Object.fromEntries(MISSIONS.map(m=>[m.id,{time:m.time,cue:m.cue}])) });
-const S = { settings:null, days:{}, weeks:{}, tab:"today", loaded:false, health:{status:"", msg:""} };
+const S = { settings:null, days:{}, weeks:{}, tab:"today", loaded:false, health:{status:"", msg:""}, focus:true, update:null };
+try{ if(localStorage.getItem("frontal-v1:focus")==="0") S.focus=false; }catch(e){}
 
 /* ---------- 안드로이드 앱 안에서 열렸을 때만 동작 (window.NativeApp) ---------- */
 const NATIVE = (typeof window.NativeApp!=="undefined" && window.NativeApp) ? window.NativeApp : null;
@@ -311,7 +357,8 @@ function nativeSync(){
   try{
     const d=today(), v=day(d), done={};
     Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.lvl) done[k]=x.lvl; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip:MODES[modeOf(v)].skip,
+    const skip=MODES[modeOf(v)].skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH,
       missions:MISSIONS.map(m=>{ const r=routineOf(m.id); return {id:m.id, title:m.title, time:r.time||"", cue:r.cue, mini:m.mini, full:m.full}; })}));
   }catch(e){}
 }
@@ -320,7 +367,7 @@ function applyPending(){
   let arr=[]; try{ arr=JSON.parse(NATIVE.takePendingChecks()||"[]"); }catch(e){}
   if(!arr.length) return;
   const touched=new Set();
-  arr.forEach(p=>{ if(!p||!p.id||!p.date) return; const v=day(p.date); const cur=v.done[p.id]&&v.done[p.id].lvl||0; if(p.lvl>cur) v.done[p.id]={lvl:p.lvl, at:p.at||Date.now()}; touched.add(p.date); });
+  arr.forEach(p=>{ if(!p||!p.id||!p.date) return; const v=day(p.date); const cur=v.done[p.id]&&v.done[p.id].lvl||0; if(p.lvl>0 && p.lvl>cur) v.done[p.id]={lvl:p.lvl, at:p.at||Date.now()}; else if(!p.lvl && !cur) v.done[p.id]={lvl:0, skipped:true, at:p.at||Date.now()}; touched.add(p.date); });
   touched.forEach(d=>saveDay(d));
   render(); toast("알림에서 체크한 "+arr.length+"개를 반영했어요");
 }
@@ -394,7 +441,20 @@ window.onNativeHealthPermission = function(ok){
   if(ok){ S.health.msg=""; toast("삼성헬스와 연결했어요"); readHealth(); }
   else toast("권한이 허용되지 않았어요. 헬스 커넥트 설정에서 걸음·수면 읽기를 켜 주세요.");
 };
-window.onNativeResume = function(){ if(!S.loaded) return; applyPending(); readHealth(); render(); };
+window.onNativeResume = function(){ if(!S.loaded) return; applyPending(); readHealth(); checkUpdate(); render(); };
+function checkUpdate(){ if(NATIVE&&NATIVE.checkUpdate){ try{ NATIVE.checkUpdate(); }catch(e){} } }
+window.onNativeUpdate = function(str){
+  let r={}; try{ r=JSON.parse(str); }catch(e){}
+  S.update=Object.assign({}, S.update||{}, r);
+  if(r.status==="error") toast("업데이트 실패: "+(r.message||"다시 시도해 주세요"));
+  if(r.status==="need_permission") toast("‘이 출처 허용’을 켜고 돌아와서 다시 눌러 주세요");
+  if(S.tab==="today") render();
+};
+function updateBar(){
+  const u=S.update; if(!NATIVE||!u||!u.available) return "";
+  const busy=u.status==="downloading";
+  return `<div class="update-bar"><span><b>새 버전이 있어요</b><br><span class="small muted">v${esc(u.current||"")} → v${esc(u.versionName||"")}</span></span><button class="btn primary" id="doUpdate" ${busy?"disabled":""}>${busy?"받는 중…":"업데이트"}</button></div>`;
+}
 const emptyDay = d => ({date:d, mode:"normal", steps:null, done:{}, novelty:{idx:hashIdx(d), rerolled:false}, journal:{good:"",bad:"",next:""}, sleepH:null});
 function hashIdx(s){ let h=0; for(const ch of s) h=(h*31+ch.charCodeAt(0))>>>0; return h%QUOTES.length; }
 function day(d){ if(!S.days[d]) S.days[d]=emptyDay(d); return S.days[d]; }
@@ -458,6 +518,7 @@ function renderToday(){
     <div><p class="eyebrow">${dd.getMonth()+1}월 ${dd.getDate()}일 ${DOW[dd.getDay()]}요일 · ${Math.min(elapsed,TARGET_DAYS)}/${TARGET_DAYS}일차</p><h1>오늘의 컨트롤 타워</h1></div>
   </div>
   <div class="modes" role="group" aria-label="오늘의 모드">${Object.entries(MODES).map(([k,m])=>`<button data-mode="${k}" aria-pressed="${modeOf(v)===k}"><b>${m.label}</b><span>${m.sub}</span></button>`).join("")}</div>
+  ${updateBar()}
   <section class="board" aria-label="오늘 현황">
     <div class="ring" role="img" aria-label="오늘 ${s}점, 목표 ${g}점">
       <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" stroke="var(--surface-2)" stroke-width="10" fill="none"/><circle cx="48" cy="48" r="40" stroke="var(--accent)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}"/></svg>
@@ -472,11 +533,29 @@ function renderToday(){
     <div class="progress66"><div class="bar" aria-hidden="true"><i style="width:${Math.min(100,elapsed/TARGET_DAYS*100)}%"></i></div><p class="small muted">습관이 자리 잡는 평균 66일 중 ${Math.min(elapsed,TARGET_DAYS)}일째</p></div>
     <p class="msg">${esc(coachLine(d))}</p>
   </section>
-  <div class="section-h"><h2>오늘의 미션</h2><span class="small muted">작게 1점 · 제대로 2점</span></div>
-  <div class="list">`;
-  const ordered=[...MISSIONS].sort((a,b)=>{ const ta=toMin(routineOf(a.id).time), tb=toMin(routineOf(b.id).time); return (ta==null?9999:ta)-(tb==null?9999:tb); });
-  ordered.forEach(m=>{ h+=missionCard(m,v,now===m.id); });
-  h+=`</div>
+`;
+  const passed=MISSIONS.filter(m=>isPassed(v,m.id)), cur=MISSIONS.find(m=>!isPassed(v,m.id));
+  if(S.focus){
+    h+=`<div class="section-h"><h2>지금 할 미션</h2><span class="small muted">${passed.length}/${MISSIONS.length} 지남</span></div>
+    <div class="steps-track" aria-hidden="true">${MISSIONS.map(m=>{ const x=v.done[m.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":isPassed(v,m.id)?"sk":m===cur?"cur":""; return `<i class="${c}"></i>`; }).join("")}</div>
+    <div class="list">`;
+    if(cur){
+      h+=missionCard(cur,v,true,true);
+      h+=`<div class="row" style="justify-content:space-between"><span class="small muted">이 미션을 마치거나 넘기면 다음 미션이 열려요</span><button class="btn ghost" data-pass="${cur.id}">오늘은 넘기기</button></div>`;
+    } else {
+      h+=`<article class="m done-2"><h3>오늘 미션을 모두 지나왔어요</h3><p class="small">${score(d)>=goal(d)?"목표 달성! 푹 자는 것까지가 오늘의 미션이에요.":"목표까지는 조금 모자라요. 아래 지나간 미션에서 다시 열어 작게라도 채울 수 있어요."}</p></article>`;
+    }
+    h+=`</div>`;
+    if(passed.length) h+=`<details class="passed"><summary>지나간 미션 ${passed.length}개</summary><div class="passed-list">${passed.map(m=>{ const x=v.done[m.id]; const lab=x&&x.lvl===2?"제대로 · 2점":x&&x.lvl===1?"작게 · 1점":MODES[modeOf(v)].skip.includes(m.id)?"모드로 쉼":"넘김 · 0점"; return `<div class="pl"><span>${esc(m.title)}</span><span class="small muted">${lab}</span>${MODES[modeOf(v)].skip.includes(m.id)&&!(x&&x.lvl)?"":`<button class="btn ghost small" data-reopen="${m.id}">다시 열기</button>`}</div>`; }).join("")}</div></details>`;
+    h+=`<div class="row"><button class="btn ghost" id="focusToggle">전체 미션 한 번에 보기</button></div>`;
+  } else {
+    h+=`<div class="section-h"><h2>오늘의 미션</h2><span class="small muted">작게 1점 · 제대로 2점</span></div>
+    <div class="row"><button class="btn ghost" id="focusToggle">한 번에 하나씩 보기</button></div>
+    <div class="list">`;
+    MISSIONS.forEach(m=>{ h+=missionCard(m,v,cur===m,false); });
+    h+=`</div>`;
+  }
+  h+=`
   <div class="section-h"><h2>이번 주</h2><span class="small muted">${esc(w)}</span></div>
   <section class="week">${WEEKLY.map(x=>`<button class="chk" data-week="${x.id}" aria-pressed="${!!wk[x.id]}"><span class="box"></span><span><b>${esc(x.title)}</b><br><span class="small muted">${esc(x.sub)}</span></span></button>`).join("")}</section>
   <p class="sync" id="sync">${esc(syncText())}</p>`;
@@ -486,7 +565,13 @@ function lvlButtons(m,v){
   const cur=v.done[m.id]&&v.done[m.id].lvl||0;
   return `<div class="lv"><button class="l1" data-m="${m.id}" data-l="1" aria-pressed="${cur===1}"><b>작게 했어요 · 1점</b><span>${esc(m.mini)}</span></button><button class="l2" data-m="${m.id}" data-l="2" aria-pressed="${cur===2}"><b>제대로 했어요 · 2점</b><span>${esc(m.full)}</span></button></div>`;
 }
-function missionCard(m,v,isNow){
+function isPassed(v,id){ const x=v.done[id]; return !!(x&&(x.lvl>0||x.skipped)) || MODES[modeOf(v)].skip.includes(id); }
+function detailBlock(m,open){
+  if(!m.how) return "";
+  const inner=`<p class="small">${esc(m.why)}</p><ol class="how">${m.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>${m.tip?`<p class="tip">${esc(m.tip)}</p>`:""}`;
+  return open? `<div class="detail">${inner}</div>` : `<details class="detail-d"><summary>왜, 어떻게 하는지 보기</summary>${inner}</details>`;
+}
+function missionCard(m,v,isNow,detailOpen){
   const md=MODES[modeOf(v)], cur=v.done[m.id]&&v.done[m.id].lvl||0;
   const base=routineOf(m.id); const r={time: md.cue[m.id]?"귀가 후":base.time, cue: md.cue[m.id]||base.cue};
   const skipped=md.skip.includes(m.id);
@@ -505,6 +590,7 @@ function missionCard(m,v,isNow){
     <div class="m-head"><div class="m-time">${r.time?esc(r.time):"자유"}</div>
     <div class="m-body"><h3>${esc(m.title)}<span class="tag ${isNow&&!skipped?"now-tag":""}">${isNow&&!skipped?"지금":esc(m.pillar)}</span></h3><p class="m-cue">${esc(r.cue)} → ${esc(m.title)}</p></div></div>
     ${skipped?`<p class="skip-note">${esc(md.label)} 모드: 오늘은 쉬어도 돼요. 하면 보너스 점수예요.</p>`:""}
+    ${detailBlock(m,detailOpen)}
     ${body}</article>`;
 }
 function countSuccess(){ return Object.keys(S.days).filter(d=>d>=S.settings.startDate&&success(d)).length; }
@@ -629,7 +715,7 @@ function render(){
   autoGrow();
 }
 function autoGrow(){ document.querySelectorAll("textarea").forEach(el=>{ el.style.height="auto"; el.style.height=Math.max(44,el.scrollHeight+2)+"px"; }); }
-function setLevel(id,l){ const d=today(), v=day(d); const cur=v.done[id]&&v.done[id].lvl||0; if(cur===l) delete v.done[id]; else v.done[id]={lvl:l, at:Date.now()}; saveDay(d); const before=success(d); render(); if(!before && success(d)) toast("오늘 목표 달성!"); }
+function setLevel(id,l){ const d=today(), v=day(d); const before=success(d); const cur=v.done[id]&&v.done[id].lvl||0; if(cur===l) delete v.done[id]; else v.done[id]={lvl:l, at:Date.now()}; saveDay(d); render(); if(!before && success(d)) toast("오늘 목표 달성!"); else if(S.focus && cur!==l) { const nx=MISSIONS.find(m=>!isPassed(v,m.id)); toast(nx?"좋아요! 다음 미션이 열렸어요":"오늘 미션을 모두 지나왔어요"); } if(S.focus) window.scrollTo(0,0); }
 function journalLevel(v){ const j=v.journal||{}; const n=["good","bad","next"].filter(k=>(j[k]||"").trim()).length; return n===0?0:n===3?2:1; }
 
 document.addEventListener("click",e=>{
@@ -638,6 +724,10 @@ document.addEventListener("click",e=>{
   if(b.dataset.mode){ const v=day(today()); v.mode=b.dataset.mode; delete v.busy; saveDay(today()); render(); toast(MODES[v.mode].label+" 모드 · 오늘 목표 "+MODES[v.mode].goal+"점"); return; }
   if(b.id==="reroll"){ const v=day(today()); v.novelty={idx:((v.novelty?v.novelty.idx:hashIdx(today()))+17)%QUOTES.length, rerolled:true}; saveDay(today()); render(); return; }
   if(b.dataset.health && NATIVE){ const a=b.dataset.health; try{ if(a==="perm") NATIVE.requestHealthPermission(); else if(a==="read") readHealth(); else if(a==="diag"){ S.diag=null; toast("점검 중…"); NATIVE.diagnoseHealth(); } else if(a==="open") NATIVE.openHealthConnect(); else if(a==="test"){ NATIVE.testNotification(); toast("알림을 보냈어요. 안 보이면 알림 권한을 확인해 주세요."); } }catch(e){ toast("앱 기능을 부르지 못했어요"); } return; }
+  if(b.dataset.pass){ const d=today(), v=day(d), m=MISSIONS.find(x=>x.id===b.dataset.pass); v.done[b.dataset.pass]={lvl:0, skipped:true, at:Date.now()}; saveDay(d); render(); toast((m?m.title:"미션")+" 넘김 · 다음 미션이 열렸어요"); return; }
+  if(b.dataset.reopen){ const d=today(), v=day(d); delete v.done[b.dataset.reopen]; saveDay(d); render(); window.scrollTo(0,0); return; }
+  if(b.id==="focusToggle"){ S.focus=!S.focus; try{ localStorage.setItem(LS+"focus", S.focus?"1":"0"); }catch(e){} render(); return; }
+  if(b.id==="doUpdate"){ if(NATIVE&&NATIVE.startUpdate){ S.update={...(S.update||{}), status:"downloading"}; render(); NATIVE.startUpdate(); } return; }
   if(b.dataset.breath){ startBreath(Number(b.dataset.breath)); return; }
   if(b.dataset.week){ const w=isoWeek(today()); S.weeks[w]=S.weeks[w]||{}; S.weeks[w][b.dataset.week]=!S.weeks[w][b.dataset.week]; saveWeek(w); render(); return; }
   if(b.id==="saveRt"){ document.querySelectorAll("[data-rt-time]").forEach(i=>{ S.settings.routine[i.dataset.rtTime]=S.settings.routine[i.dataset.rtTime]||{}; S.settings.routine[i.dataset.rtTime].time=i.value; }); document.querySelectorAll("[data-rt-cue]").forEach(i=>{ S.settings.routine[i.dataset.rtCue].cue=i.value.trim(); }); saveSettings(); render(); return; }
@@ -700,6 +790,7 @@ async function boot(){
     S.settings = await getDoc("meta/settings");
     if(!S.settings){ S.settings=DEFAULT_SETTINGS(); await setDoc("meta/settings",S.settings); }
     S.settings.routine = Object.assign(DEFAULT_SETTINGS().routine, S.settings.routine||{});
+    if(!S.settings.v2){ const n=S.settings.routine.novel||{}; if(!n.time) n.time="17:30"; if(!n.cue||n.cue==="하루 중 아무 때나 펜을 들면") n.cue="퇴근하고 가방을 내려놓으면"; S.settings.routine.novel=n; S.settings.v2=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
@@ -708,7 +799,7 @@ async function boot(){
     toast("기록을 불러오지 못했어요. 새로고침해 보세요.");
   }
   S.loaded=true; render(); setSync();
-  if(NATIVE){ applyPending(); nativeSync(); readHealth(); }
+  if(NATIVE){ applyPending(); nativeSync(); readHealth(); checkUpdate(); }
   if(db){
     try{ db.doc("days/"+today()).onSnapshot(snap=>{ if(!snap.exists||snap.metadata.hasPendingWrites) return; const a=document.activeElement; if(a&&a.matches("textarea,input")) return; S.days[snap.id]=clone(snap.data()); if(S.tab==="today") render(); },()=>{}); }catch(e){}
   }
