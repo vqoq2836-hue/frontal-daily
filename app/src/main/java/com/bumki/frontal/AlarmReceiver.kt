@@ -23,12 +23,14 @@ class AlarmReceiver : BroadcastReceiver() {
                 Reminders.addPending(ctx, id, lvl)
                 Reminders.cancelNag(ctx, id)
                 Reminders.dismiss(ctx, id)
+                Reminders.refreshBlockNotifications(ctx)
                 MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_SKIP -> {
                 Reminders.addPending(ctx, id, 0)
                 Reminders.cancelNag(ctx, id)
                 Reminders.dismiss(ctx, id)
+                Reminders.refreshBlockNotifications(ctx)
                 MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_SNOOZE -> {

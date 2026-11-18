@@ -47,6 +47,39 @@ a{color:var(--accent)}
 .modes button[aria-pressed="true"][data-mode="normal"] b{color:var(--accent)}
 .modes button[aria-pressed="true"][data-mode="busy"] b,.modes button[aria-pressed="true"][data-mode="appt"] b{color:var(--amber)}
 .m.skip{opacity:.72}
+.mode-rows{display:flex;flex-direction:column;gap:6px}
+.modes.two{grid-template-columns:repeat(2,1fr)}
+.board.compact .ring{width:84px;height:84px}.board.compact .ring svg{width:84px;height:84px}
+.pinned{display:grid;grid-template-columns:1fr;gap:10px}
+.pin{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.pin.done{border-color:var(--accent)}
+.pin .quote p{font-size:17px}
+.newday{font-size:16px;font-weight:600;line-height:1.45}
+.pin-act{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mini-btn{border:1px solid var(--line);background:var(--surface-2);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600}
+.mini-btn.on1{background:var(--mini);border-color:var(--mini)}
+.mini-btn.on2{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.link-btn{border:0;background:none;color:var(--accent);font-size:13px;font-weight:600;padding:4px 6px;text-decoration:underline}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 12px;font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.chip span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.chip.now{border-color:var(--amber)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on span{color:inherit;opacity:.8}
+.chip.done span{color:var(--accent)}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px}
+.block.is-now{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.block-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.task-list{display:flex;flex-direction:column;gap:8px}
+.chk.task{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:15px}
+.chk.task[aria-pressed="true"]{background:var(--accent-soft);border-color:transparent}
+.chk.task[aria-pressed="true"] span:nth-child(2){text-decoration:line-through;opacity:.7}
+.block .m{border-color:var(--line)}
+.core-tag{background:var(--accent-soft);color:var(--accent)}
+.block-done{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.ed-list{display:flex;flex-direction:column;gap:6px}
+.ed-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.sel{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px;flex:1;min-width:0}
 .steps-track{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
 .steps-track i{display:block;height:6px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line)}
 .steps-track i.s2{background:var(--accent);border-color:transparent}
@@ -197,20 +230,20 @@ nav.tabs a[aria-current="page"]{color:var(--accent);font-weight:700}
 
 /* ---------- 미션 정의 ---------- */
 const MISSIONS = [
-  {id:"sleep", title:"어젯밤 수면 기록", pillar:"수면", kind:"sleep", time:"06:00",
+  {id:"sleep", title:"어젯밤 수면 기록", pillar:"수면", kind:"sleep", time:"07:00",
    cue:"일어나서 물 한 잔 마시면", full:"7시간 이상 잤다", mini:"수면 시간만 기록",
    why:"잠이 부족한 날은 감정을 누르는 전두엽의 힘이 약해져요. 매일 숫자로 보면 늦게 자는 습관이 눈에 들어와요.",
    how:["일어나자마자 물 한 컵을 마셔요.","삼성헬스 수면 기록이 자동으로 들어왔는지 확인해요.","7시간이 안 됐다면 오늘 밤 취침 시각을 30분 당기기로 정해요."],
    tip:"수면이 6시간 미만인 날은 ‘바쁜 날 모드’로 바꾸고 목표를 낮추세요."},
-  {id:"plan", title:"손으로 오늘 계획 쓰기", pillar:"손·계획", kind:"check", time:"06:10",
-   cue:"물 마신 다음, 운동 가기 전에", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
+  {id:"plan", title:"손으로 오늘 계획 쓰기", pillar:"손·계획", kind:"check", time:"07:20",
+   cue:"아침 먹으면서", full:"할 일 3개와 1순위를 종이에", mini:"할 일 1개만 종이에",
    why:"계획을 세우고 우선순위를 고르는 일이 바로 전두엽의 핵심 기능이에요. 손으로 쓰면 더 천천히, 더 분명하게 생각하게 돼요.",
    how:["책상 위에 둔 노트와 펜을 펴요.","오늘 꼭 끝내야 할 일 3개를 적어요(학교·부업·나 자신 각 1개).","가장 중요한 1개에 동그라미를 쳐요.","그 일을 언제 할지 시간을 옆에 적어요."],
    tip:"노트와 펜은 전날 밤 책상 위에 펼쳐 두세요. 찾는 데 드는 10초가 미루는 이유가 돼요."},
-  {id:"move", title:"몸 쓰기", pillar:"운동", kind:"check", time:"07:00",
-   cue:"아침 운동 시간에", full:"근력 또는 러닝 세션 완료", mini:"10분 걷기",
+  {id:"move", title:"몸 쓰기", pillar:"운동", kind:"check", time:"17:00",
+   cue:"퇴근하고 운동복으로 갈아입으면", full:"근력 또는 러닝 세션 완료", mini:"10분 걷기",
    why:"운동은 실행기능에 꾸준히 좋은 효과를 보이는 몇 안 되는 습관이에요. 이미 하고 있는 운동을 기록으로 인정해요.",
-   how:["운동복과 물병은 전날 밤 문 앞에 둬요.","오늘 분할(하체·상체 등) 세션을 마쳐요.","시간이 없으면 10분 빠르게 걷기로 대신해요."],
+   how:["운동 가방은 아침 출근할 때 미리 챙겨 둬요.","퇴근길에 바로 운동하러 가서 오늘 분할(하체·상체 등) 세션을 마쳐요.","시간이 없으면 10분 빠르게 걷기로 대신해요."],
    tip:"‘제대로’가 어려운 날도 신발 신고 10분만 나가면 1점이에요."},
   {id:"breath", title:"호흡으로 멈추기", pillar:"감정 조절", kind:"breath", time:"12:40",
    cue:"점심 먹고 교실로 돌아오면", full:"3분 호흡", mini:"1분 호흡",
@@ -301,12 +334,62 @@ const QUOTES = [
   ["너 자신 말고는 그 무엇도 너에게 평화를 가져다줄 수 없다.","에머슨, 『자기 신뢰』"]
 ];
 const MODES = {
-  normal:{label:"평시", goal:9, sub:"목표 9점", skip:[], cue:{}, coach:""},
-  busy:{label:"바쁜 날", goal:5, sub:"목표 5점", skip:[], cue:{}, coach:"바쁜 날 모드: 작은 버전 다섯 개면 오늘도 이어집니다."},
-  appt:{label:"약속", goal:6, sub:"목표 6점", skip:["focus"],
-        cue:{phone:"약속에서 돌아와 씻고 나면", journal:"잠들기 전 침대에 눕기 전에", steps:"집에 돌아오면 삼성헬스 걸음 수를 보고"},
-        coach:"약속 모드: 부업 블록은 쉬고, 귀가 후 폰 상자와 3줄 기록만 챙기면 돼요."}
+  normal:{label:"보통", pct:0.7, sub:"70% 목표", skip:[], coach:""},
+  busy:{label:"바쁜 날", pct:0.45, sub:"45% 목표", skip:[], coach:"바쁜 날 모드: 핵심 미션은 작게라도, 생활 루틴은 할 수 있는 만큼만."},
+  appt:{label:"약속", pct:0.55, sub:"55% 목표", skip:["focus"], coach:"약속 모드: 부업 블록은 쉬고, 귀가 후 폰 상자와 3줄 기록만 챙기면 돼요."}
 };
+const DAYTYPES = {weekday:{label:"평일"}, weekend:{label:"주말"}};
+const NOVELTY = [
+  "처음 가 보는 길로 퇴근하기","안 써 본 재료 하나로 도시락 만들기","왼손으로 양치하기",
+  "처음 듣는 장르의 앨범 한 장을 끝까지 듣기","카메라 수동 모드로 사진 5장 찍기",
+  "Codex로 아주 작은 기능 하나 만들어 보기","영어 문장 3개를 손으로 쓰며 외우기",
+  "이사 갈 동네를 지도로 골목 하나 둘러보기","새 운동 동작 하나 배워 보기",
+  "손편지 한 장 쓰기","동료에게 구체적인 칭찬 한 문장 건네기","오늘 찍은 사진 한 장을 골라 왜 좋은지 쓰기",
+  "눈을 감고 5분 동안 들리는 소리 세어 보기","새 단축키 3개 익히기","처음 마셔 보는 차 한 잔",
+  "수업에서 새로운 질문 방식 하나 시도하기","오늘은 계단으로만 이동하기","부업 아이디어를 손으로 마인드맵 한 장",
+  "신제품 디자인 스케치를 손으로 3개","평소와 다른 자리에 앉아 일하기","창밖 풍경을 15분 그려 보기",
+  "모르는 단어 하나를 찾아 예문 만들기","처음 해 보는 스트레칭 루틴 10분","한 끼를 폰 없이 천천히 먹기",
+  "오늘 본 장면 하나를 1분 영상으로 남기기","오래 연락 못 한 친구에게 안부 묻기","고장 난 물건 하나 고치거나 서랍 하나 정리하기",
+  "체스나 바둑 퍼즐 한 문제 풀기","장 볼 때 합계를 암산으로 맞혀 보기","처음 가 보는 도서관이나 카페에서 일하기",
+  "평소 생각과 반대되는 칼럼 하나 읽기","노래 하나의 코드나 리듬을 손으로 따라 하기","레고나 퍼즐 15분",
+  "오늘 하루 계획에 없던 친절 하나 하기","매일 쓰는 앱 하나를 하루 동안 지워 두기",
+  "가 본 적 없는 반찬가게나 시장 들르기","익숙한 레시피에 재료 하나만 바꿔 요리하기","10분 동안 한 가지 물건을 자세히 관찰해 쓰기"
+];
+const T = (id,title) => ({id, title});
+const DEFAULT_BLOCKS = {
+  weekday:[
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기"), T("t_window","창문 열어 환기하기"), T("t_breakfast","아침 챙겨 먹기"), "c:sleep", "c:plan"]},
+    {id:"work", title:"근무 시간", start:"08:10", end:"16:40", tasks:["c:breath", T("t_water1l","물 1L 이상 마시기"), T("t_walk10","점심 후 10분 걷기")]},
+    {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:["c:move", T("t_dinner","저녁 챙겨 먹기"), T("t_prep","내일 도시락 준비")]},
+    {id:"side", title:"부업 시간", start:"19:30", end:"21:00", tasks:["c:focus", "c:steps"]},
+    {id:"night", title:"자기 전", start:"21:00", end:"23:00", tasks:[T("t_dishes","설거지"), T("t_tidy","10분 정리·청소"), T("t_clothes","내일 옷·가방 챙기기"), "c:phone", "c:journal"]}
+  ],
+  weekend:[
+    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기"), T("t_window","창문 열어 환기하기"), T("t_breakfast","아침 챙겨 먹기"), "c:sleep", "c:plan"]},
+    {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:["c:move", T("t_laundry","빨래 돌리기"), T("t_sheets","이불 빨래·햇볕에 털기")]},
+    {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:["c:breath", T("t_clean","대청소 20분"), T("t_market","장보기"), T("t_mealprep","다음 주 도시락 준비")]},
+    {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:["c:steps", T("t_thanks","고마운 사람에게 연락하기"), "c:focus"]},
+    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지"), "c:phone", "c:journal", T("t_week","다음 주 일정 훑어보기")]}
+  ]
+};
+function taskInfo(t){
+  if(typeof t==="string" && t.indexOf("c:")===0){ const m=MISSIONS.find(x=>x.id===t.slice(2)); return m?{id:m.id, title:m.title, core:m}:null; }
+  if(t && t.id) return {id:t.id, title:t.title, core:null};
+  return null;
+}
+function blocksFor(type){ const b=(S.settings&&S.settings.blocks&&S.settings.blocks[type])||DEFAULT_BLOCKS[type]; return b; }
+function dayTypeOf(v){ if(v&&v.dayType&&DAYTYPES[v.dayType]) return v.dayType; const g=parse(v?v.date:today()).getDay(); return (g===0||g===6)?"weekend":"weekday"; }
+/* 오늘 점수에 들어가는 항목: 위쪽 고정 2개 + 오늘 시간대의 할 일 */
+function dayItems(d){
+  const v=day(d), md=MODES[modeOf(v)], out=[{id:"novel",max:2},{id:"newday",max:1}];
+  blocksFor(dayTypeOf(v)).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti) return; if(ti.core&&md.skip.includes(ti.id)) return; if(!out.some(o=>o.id===ti.id)) out.push({id:ti.id, max:ti.core?2:1}); }));
+  return out;
+}
+function currentBlockIndex(blocks){
+  const n=nowMin(); let idx=blocks.findIndex(b=>toMin(b.start)<=n && n<toMin(b.end));
+  if(idx<0){ idx=blocks.findIndex(b=>toMin(b.start)>n); if(idx<0) idx=blocks.length-1; }
+  return Math.max(0,idx);
+}
 const STEP = {full:8000, mini:4000};
 const TARGET_DAYS = 66;
 
@@ -346,8 +429,8 @@ async function loadDays(from){
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 /* ---------- 상태 ---------- */
-const DEFAULT_SETTINGS = () => ({ startDate: today(), routine: Object.fromEntries(MISSIONS.map(m=>[m.id,{time:m.time,cue:m.cue}])) });
-const S = { settings:null, days:{}, weeks:{}, tab:"today", loaded:false, health:{status:"", msg:""}, focus:true, update:null };
+const DEFAULT_SETTINGS = () => ({ startDate: today(), routine: Object.fromEntries(MISSIONS.map(m=>[m.id,{time:m.time,cue:m.cue}])), blocks: clone(DEFAULT_BLOCKS), v3:true });
+const S = { settings:null, days:{}, weeks:{}, tab:"today", loaded:false, health:{status:"", msg:""}, focus:true, update:null, viewBlock:null, editType:null, draft:null };
 try{ if(localStorage.getItem("frontal-v1:focus")==="0") S.focus=false; }catch(e){}
 
 /* ---------- 안드로이드 앱 안에서 열렸을 때만 동작 (window.NativeApp) ---------- */
@@ -355,11 +438,17 @@ const NATIVE = (typeof window.NativeApp!=="undefined" && window.NativeApp) ? win
 function nativeSync(){
   if(!NATIVE||!S.settings) return;
   try{
-    const d=today(), v=day(d), done={};
+    const d=today(), v=day(d), done={}, md=MODES[modeOf(v)];
     Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.lvl) done[k]=x.lvl; });
-    const skip=MODES[modeOf(v)].skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH,
-      missions:MISSIONS.map(m=>{ const r=routineOf(m.id); return {id:m.id, title:m.title, time:r.time||"", cue:r.cue, mini:m.mini, full:m.full}; })}));
+    const skip=md.skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
+    const blocks=blocksFor(dayTypeOf(v)), items=[], missions=[];
+    blocks.forEach(b=>{
+      const titles=[];
+      b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti) return; if(ti.core&&md.skip.includes(ti.id)) return; titles.push(ti.title);
+        items.push({id:ti.id, title:ti.title, block:"b:"+b.id, start:b.start, end:b.end, two:!!ti.core, mini:ti.core?ti.core.mini:"", full:ti.core?ti.core.full:""}); });
+      if(titles.length) missions.push({id:"b:"+b.id, title:b.title, time:b.start, cue:titles.join(" · "), mini:"", full:""});
+    });
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions, items}));
   }catch(e){}
 }
 function applyPending(){
@@ -455,14 +544,15 @@ function updateBar(){
   const busy=u.status==="downloading";
   return `<div class="update-bar"><span><b>새 버전이 있어요</b><br><span class="small muted">v${esc(u.current||"")} → v${esc(u.versionName||"")}</span></span><button class="btn primary" id="doUpdate" ${busy?"disabled":""}>${busy?"받는 중…":"업데이트"}</button></div>`;
 }
-const emptyDay = d => ({date:d, mode:"normal", steps:null, done:{}, novelty:{idx:hashIdx(d), rerolled:false}, journal:{good:"",bad:"",next:""}, sleepH:null});
+const emptyDay = d => ({date:d, mode:"normal", steps:null, done:{}, novelty:{idx:hashIdx(d), rerolled:false}, newday:{idx:hashIdx(d+"n")%NOVELTY.length, rerolled:false}, journal:{good:"",bad:"",next:""}, sleepH:null});
 function hashIdx(s){ let h=0; for(const ch of s) h=(h*31+ch.charCodeAt(0))>>>0; return h%QUOTES.length; }
 function day(d){ if(!S.days[d]) S.days[d]=emptyDay(d); return S.days[d]; }
 function routineOf(id){ const r=(S.settings&&S.settings.routine&&S.settings.routine[id])||{}; const m=MISSIONS.find(x=>x.id===id); return {time:r.time!=null?r.time:m.time, cue:r.cue||m.cue}; }
 
-function score(d){ const v=S.days[d]; if(!v) return 0; return Object.values(v.done||{}).reduce((a,x)=>a+(x&&x.lvl||0),0); }
+function score(d){ const v=S.days[d]; if(!v) return 0; return dayItems(d).reduce((a,it)=>{ const x=v.done[it.id]; return a+Math.min(it.max, x&&x.lvl||0); },0); }
+function maxPts(d){ return dayItems(d).reduce((a,it)=>a+it.max,0); }
 function modeOf(v){ if(!v) return "normal"; if(v.mode&&MODES[v.mode]) return v.mode; return v.busy?"busy":"normal"; }
-function goal(d){ return MODES[modeOf(S.days[d])].goal; }
+function goal(d){ return Math.ceil(maxPts(d)*MODES[modeOf(S.days[d])].pct); }
 function success(d){ return score(d)>=goal(d); }
 /* 두 번 연속 빠지지 않으면 연속 기록 유지 */
 function streak(){
@@ -507,58 +597,95 @@ function coachLine(d){
   return "목표까지 "+(g-s)+"점. 작은 버전도 1점이에요.";
 }
 function renderToday(){
-  const d=today(), v=day(d), s=score(d), g=goal(d), st=streak();
+  const d=today(), v=day(d), s=score(d), g=goal(d), st=streak(), mx=maxPts(d);
   const elapsed=Math.max(0,diffDays(S.settings.startDate,d))+1;
-  const pct=Math.min(1,s/g), C=2*Math.PI*40;
-  const now=nowMissionId(d);
-  const dd=parse(d);
+  const pct=Math.min(1,s/Math.max(1,g)), C=2*Math.PI*40;
+  const dd=parse(d), dt=dayTypeOf(v);
   const w=isoWeek(d); const wk=S.weeks[w]||{};
+  const blocks=blocksFor(dt), nowIdx=currentBlockIndex(blocks);
+  const vi=(S.viewBlock!=null && S.viewBlock<blocks.length)?S.viewBlock:nowIdx, blk=blocks[vi];
+  const items=dayItems(d), doneCnt=items.filter(it=>{ const x=v.done[it.id]; return x&&x.lvl>0; }).length;
   let h=`
   <div class="top">
     <div><p class="eyebrow">${dd.getMonth()+1}월 ${dd.getDate()}일 ${DOW[dd.getDay()]}요일 · ${Math.min(elapsed,TARGET_DAYS)}/${TARGET_DAYS}일차</p><h1>오늘의 컨트롤 타워</h1></div>
   </div>
-  <div class="modes" role="group" aria-label="오늘의 모드">${Object.entries(MODES).map(([k,m])=>`<button data-mode="${k}" aria-pressed="${modeOf(v)===k}"><b>${m.label}</b><span>${m.sub}</span></button>`).join("")}</div>
+  <div class="mode-rows">
+    <div class="modes two" role="group" aria-label="평일 주말">${Object.entries(DAYTYPES).map(([k,m])=>`<button data-daytype="${k}" aria-pressed="${dt===k}"><b>${m.label}</b><span>${k==="weekday"?"출근하는 날":"쉬는 날"}</span></button>`).join("")}</div>
+    <div class="modes" role="group" aria-label="오늘의 컨디션">${Object.entries(MODES).map(([k,m])=>`<button data-mode="${k}" aria-pressed="${modeOf(v)===k}"><b>${m.label}</b><span>${m.sub}</span></button>`).join("")}</div>
+  </div>
   ${updateBar()}
-  <section class="board" aria-label="오늘 현황">
+  <section class="board compact" aria-label="오늘 현황">
     <div class="ring" role="img" aria-label="오늘 ${s}점, 목표 ${g}점">
       <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" stroke="var(--surface-2)" stroke-width="10" fill="none"/><circle cx="48" cy="48" r="40" stroke="var(--accent)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}"/></svg>
       <div class="label"><b>${s}</b><span>목표 ${g}점</span></div>
     </div>
     <div class="stats">
       <div class="stat"><div class="v">${st.n}<span class="small muted">일</span></div><div class="k">연속 기록</div></div>
-      <div class="stat"><div class="v">${Object.values(v.done).filter(x=>x&&x.lvl).length}<span class="small muted">/${MISSIONS.length}</span></div><div class="k">오늘 체크</div></div>
+      <div class="stat"><div class="v">${doneCnt}<span class="small muted">/${items.length}</span></div><div class="k">오늘 체크</div></div>
       <div class="stat"><div class="v">${countSuccess()}<span class="small muted">일</span></div><div class="k">성공한 날</div></div>
-      <div class="stat"><div class="v">${st.rests}<span class="small muted">회</span></div><div class="k">쉼표 사용</div></div>
+      <div class="stat"><div class="v">${mx}<span class="small muted">점</span></div><div class="k">오늘 만점</div></div>
     </div>
-    <div class="progress66"><div class="bar" aria-hidden="true"><i style="width:${Math.min(100,elapsed/TARGET_DAYS*100)}%"></i></div><p class="small muted">습관이 자리 잡는 평균 66일 중 ${Math.min(elapsed,TARGET_DAYS)}일째</p></div>
     <p class="msg">${esc(coachLine(d))}</p>
   </section>
-`;
-  const passed=MISSIONS.filter(m=>isPassed(v,m.id)), cur=MISSIONS.find(m=>!isPassed(v,m.id));
-  if(S.focus){
-    h+=`<div class="section-h"><h2>지금 할 미션</h2><span class="small muted">${passed.length}/${MISSIONS.length} 지남</span></div>
-    <div class="steps-track" aria-hidden="true">${MISSIONS.map(m=>{ const x=v.done[m.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":isPassed(v,m.id)?"sk":m===cur?"cur":""; return `<i class="${c}"></i>`; }).join("")}</div>
-    <div class="list">`;
-    if(cur){
-      h+=missionCard(cur,v,true,true);
-      h+=`<div class="row" style="justify-content:space-between"><span class="small muted">이 미션을 마치거나 넘기면 다음 미션이 열려요</span><button class="btn ghost" data-pass="${cur.id}">오늘은 넘기기</button></div>`;
-    } else {
-      h+=`<article class="m done-2"><h3>오늘 미션을 모두 지나왔어요</h3><p class="small">${score(d)>=goal(d)?"목표 달성! 푹 자는 것까지가 오늘의 미션이에요.":"목표까지는 조금 모자라요. 아래 지나간 미션에서 다시 열어 작게라도 채울 수 있어요."}</p></article>`;
-    }
-    h+=`</div>`;
-    if(passed.length) h+=`<details class="passed"><summary>지나간 미션 ${passed.length}개</summary><div class="passed-list">${passed.map(m=>{ const x=v.done[m.id]; const lab=x&&x.lvl===2?"제대로 · 2점":x&&x.lvl===1?"작게 · 1점":MODES[modeOf(v)].skip.includes(m.id)?"모드로 쉼":"넘김 · 0점"; return `<div class="pl"><span>${esc(m.title)}</span><span class="small muted">${lab}</span>${MODES[modeOf(v)].skip.includes(m.id)&&!(x&&x.lvl)?"":`<button class="btn ghost small" data-reopen="${m.id}">다시 열기</button>`}</div>`; }).join("")}</div></details>`;
-    h+=`<div class="row"><button class="btn ghost" id="focusToggle">전체 미션 한 번에 보기</button></div>`;
-  } else {
-    h+=`<div class="section-h"><h2>오늘의 미션</h2><span class="small muted">작게 1점 · 제대로 2점</span></div>
-    <div class="row"><button class="btn ghost" id="focusToggle">한 번에 하나씩 보기</button></div>
-    <div class="list">`;
-    MISSIONS.forEach(m=>{ h+=missionCard(m,v,cur===m,false); });
-    h+=`</div>`;
-  }
-  h+=`
+  ${pinnedCards(v)}
+  <div class="section-h"><h2>지금 할 일</h2><span class="small muted">${esc(DAYTYPES[dt].label)} 루틴</span></div>
+  <div class="chips" role="tablist" aria-label="시간대">${blocks.map((b,i)=>{ const st2=blockStat(v,b); const cls=(i===vi?"on ":"")+(i===nowIdx?"now ":"")+(st2.left===0&&st2.total?"done":""); return `<button class="chip ${cls}" data-view="${i}" role="tab" aria-selected="${i===vi}">${esc(b.title)}<span>${st2.total-st2.left}/${st2.total}</span></button>`; }).join("")}</div>
+  ${blockView(v,blk,vi,nowIdx,blocks)}
   <div class="section-h"><h2>이번 주</h2><span class="small muted">${esc(w)}</span></div>
   <section class="week">${WEEKLY.map(x=>`<button class="chk" data-week="${x.id}" aria-pressed="${!!wk[x.id]}"><span class="box"></span><span><b>${esc(x.title)}</b><br><span class="small muted">${esc(x.sub)}</span></span></button>`).join("")}</section>
   <p class="sync" id="sync">${esc(syncText())}</p>`;
+  return h;
+}
+function blockStat(v,b){
+  const md=MODES[modeOf(v)]; let total=0,left=0;
+  b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti) return; if(ti.core&&md.skip.includes(ti.id)) return; total++; const x=v.done[ti.id]; if(!(x&&(x.lvl>0||x.skipped))) left++; });
+  return {total,left};
+}
+function pinnedCards(v){
+  const idx=v.novelty?v.novelty.idx:hashIdx(v.date), q=QUOTES[idx%QUOTES.length];
+  const ql=v.done.novel&&v.done.novel.lvl||0;
+  const nd=v.newday||{idx:hashIdx(v.date+"n")%NOVELTY.length}, nl=v.done.newday&&v.done.newday.lvl||0;
+  return `<section class="pinned">
+    <article class="pin ${ql?"done":""}">
+      <p class="eyebrow">오늘의 필사</p>
+      <blockquote class="quote"><p>${esc(q[0])}</p><cite>${esc(q[1])}</cite></blockquote>
+      <div class="pin-act">
+        <button class="mini-btn ${ql===1?"on1":""}" data-m="novel" data-l="1" aria-pressed="${ql===1}">옮겨 썼어요 · 1점</button>
+        <button class="mini-btn ${ql===2?"on2":""}" data-m="novel" data-l="2" aria-pressed="${ql===2}">생각 한 줄까지 · 2점</button>
+        ${v.novelty&&v.novelty.rerolled?"":`<button class="link-btn" id="reroll">다른 글귀</button>`}
+      </div>
+    </article>
+    <article class="pin ${nl?"done":""}">
+      <p class="eyebrow">오늘의 새로운 루틴</p>
+      <p class="newday">${esc(NOVELTY[nd.idx%NOVELTY.length])}</p>
+      <div class="pin-act">
+        <button class="mini-btn ${nl?"on2":""}" data-m="newday" data-l="1" aria-pressed="${!!nl}">${nl?"해 봤어요 ✓":"해 봤어요 · 1점"}</button>
+        ${nd.rerolled?"":`<button class="link-btn" id="rerollNew">다른 루틴</button>`}
+      </div>
+    </article>
+  </section>`;
+}
+function blockView(v,b,vi,nowIdx,blocks){
+  const md=MODES[modeOf(v)], stt=blockStat(v,b);
+  let h=`<section class="block ${vi===nowIdx?"is-now":""}">
+    <div class="block-h"><div><h3>${esc(b.title)}</h3><p class="small muted num">${esc(b.start)} – ${esc(b.end)} ${vi===nowIdx?"· 지금":vi<nowIdx?"· 지난 시간대":"· 다가올 시간대"}</p></div><span class="small muted">${stt.total-stt.left}/${stt.total} 완료</span></div>
+    <div class="task-list">`;
+  b.tasks.forEach(t=>{
+    const ti=taskInfo(t); if(!ti) return;
+    if(ti.core){
+      if(md.skip.includes(ti.id)){ h+=`<p class="skip-note">${esc(ti.title)}: ${esc(md.label)} 모드라 오늘은 쉬어요</p>`; return; }
+      h+=missionCard(ti.core,v,vi===nowIdx,false,true);
+    } else {
+      const on=!!(v.done[ti.id]&&v.done[ti.id].lvl);
+      h+=`<button class="chk task" data-task="${esc(ti.id)}" aria-pressed="${on}"><span class="box"></span><span>${esc(ti.title)}</span><span class="small muted">1점</span></button>`;
+    }
+  });
+  h+=`</div>`;
+  if(stt.total && stt.left===0){ const nx=blocks[vi+1]; h+=`<p class="block-done">이 시간대 할 일 끝! ${nx?`다음은 <b>${esc(nx.title)}</b> (${esc(nx.start)}부터)`:"오늘 하루 수고했어요."}</p>`; }
+  const missed=blocks.slice(0,nowIdx).map((bb,i)=>({i,left:blockStat(v,bb).left,t:bb.title})).filter(x=>x.left>0);
+  if(vi===nowIdx && missed.length) h+=`<p class="small muted">앞 시간대에 남은 일: ${missed.map(x=>`<button class="link-btn" data-view="${x.i}">${esc(x.t)} ${x.left}개</button>`).join(" ")}</p>`;
+  if(vi!==nowIdx) h+=`<div class="row"><button class="btn ghost" data-view="now">지금 시간대로 돌아가기</button></div>`;
+  h+=`</section>`;
   return h;
 }
 function lvlButtons(m,v){
@@ -571,9 +698,9 @@ function detailBlock(m,open){
   const inner=`<p class="small">${esc(m.why)}</p><ol class="how">${m.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>${m.tip?`<p class="tip">${esc(m.tip)}</p>`:""}`;
   return open? `<div class="detail">${inner}</div>` : `<details class="detail-d"><summary>왜, 어떻게 하는지 보기</summary>${inner}</details>`;
 }
-function missionCard(m,v,isNow,detailOpen){
+function missionCard(m,v,isNow,detailOpen,inBlock){
   const md=MODES[modeOf(v)], cur=v.done[m.id]&&v.done[m.id].lvl||0;
-  const base=routineOf(m.id); const r={time: md.cue[m.id]?"귀가 후":base.time, cue: md.cue[m.id]||base.cue};
+  const base=routineOf(m.id); const mc=(md.cue||{})[m.id]; const r={time: mc?"귀가 후":base.time, cue: mc||base.cue};
   const skipped=md.skip.includes(m.id);
   let body="";
   if(m.kind==="steps") body=`<div class="row"><label for="stepsN" class="small">오늘 걸음 수</label><input type="number" id="stepsN" min="0" max="100000" step="100" inputmode="numeric" value="${v.steps==null?"":v.steps}" placeholder="예: 8500" style="width:120px"><span class="small muted">보</span></div><p class="small muted">삼성헬스나 워치의 오늘 걸음 수를 입력하면 자동 체크 · ${STEP.full.toLocaleString()}보 2점, ${STEP.mini.toLocaleString()}보 1점</p>${healthRow()}`;
@@ -586,9 +713,9 @@ function missionCard(m,v,isNow,detailOpen){
     <div class="field"><label for="j-bad">다르게 하고 싶은 것 하나</label><textarea id="j-bad" data-j="bad" rows="1">${esc(j.bad)}</textarea></div>
     <div class="field"><label for="j-next">내일 가장 먼저 할 일 하나</label><textarea id="j-next" data-j="next" rows="1">${esc(j.next)}</textarea></div>
     <p class="small muted">한 줄이면 1점, 세 줄 모두 쓰면 2점</p>`; }
-  return `<article class="m ${isNow&&!skipped?"now":""} ${cur===2?"done-2":""} ${skipped&&!cur?"skip":""}" id="m-${m.id}">
-    <div class="m-head"><div class="m-time">${r.time?esc(r.time):"자유"}</div>
-    <div class="m-body"><h3>${esc(m.title)}<span class="tag ${isNow&&!skipped?"now-tag":""}">${isNow&&!skipped?"지금":esc(m.pillar)}</span></h3><p class="m-cue">${esc(r.cue)} → ${esc(m.title)}</p></div></div>
+  return `<article class="m ${cur===2?"done-2":""} ${skipped&&!cur?"skip":""}" id="m-${m.id}">
+    <div class="m-head">${inBlock?"":`<div class="m-time">${r.time?esc(r.time):"자유"}</div>`}
+    <div class="m-body"><h3>${esc(m.title)}<span class="tag core-tag">핵심 · ${esc(m.pillar)}</span></h3>${inBlock?"":`<p class="m-cue">${esc(r.cue)} → ${esc(m.title)}</p>`}</div></div>
     ${skipped?`<p class="skip-note">${esc(md.label)} 모드: 오늘은 쉬어도 돼요. 하면 보너스 점수예요.</p>`:""}
     ${detailBlock(m,detailOpen)}
     ${body}</article>`;
@@ -645,18 +772,25 @@ function gcalLink(m){
   const text="[전두엽] "+m.title; const details=r.cue+" → "+m.title+"\n작게: "+m.mini+"\n제대로: "+m.full+"\n하고 나서 전두엽 데일리에서 체크하세요.";
   return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(text)+"&details="+encodeURIComponent(details)+"&dates="+s+"/"+e+"&ctz=Asia%2FSeoul&recur="+encodeURIComponent("RRULE:FREQ=DAILY");
 }
+function ensureDraft(){ if(!S.draft) S.draft=clone(S.settings.blocks||DEFAULT_BLOCKS); if(!S.editType) S.editType=dayTypeOf(day(today())); }
 function renderRoutine(){
-  let h=`<div class="top"><div><p class="eyebrow">만약-그러면 계획</p><h1>루틴과 알림</h1></div></div>
-  <section class="card"><p>각 미션을 이미 하고 있는 행동 뒤에 붙여 두세요. “<b>[신호]</b>하면 → <b>[미션]</b>한다”처럼 구체적으로 정할수록 실천률이 올라갑니다.</p>
-  <p class="small muted">${NATIVE?"이 앱이 정한 시간에 직접 알림을 보내요. 체크하지 않으면 30분 간격으로 최대 3번 다시 물어보고, 알림에서 바로 ‘작게 했어요’·‘제대로 했어요’를 누를 수 있어요.":"알림은 ‘구글 캘린더에 매일 알림 추가’를 누르면 매일 반복 일정으로 등록돼요. 갤럭시 캘린더에 구글 계정이 연결돼 있으면 폰에서 알림이 울립니다."}</p></section>
-  <section class="card">`;
-  MISSIONS.forEach(m=>{ const r=routineOf(m.id), link=gcalLink(m); h+=`<div class="rt">
-    <h3>${esc(m.title)} <span class="tag">${esc(m.pillar)}</span></h3>
-    <div class="row"><label class="small" for="t-${m.id}">시간</label><input type="time" id="t-${m.id}" data-rt-time="${m.id}" value="${esc(r.time)}">${m.kind==="novel"?`<span class="small muted">비워 두면 자유 시간</span>`:""}</div>
-    <div class="field"><label for="c-${m.id}">신호 (이걸 하면)</label><input type="text" id="c-${m.id}" data-rt-cue="${m.id}" value="${esc(r.cue)}"></div>
-    ${link&&!NATIVE?`<a class="small" href="${esc(link)}" target="_blank" rel="noopener">구글 캘린더에 매일 알림 추가 ↗</a>`:""}
-  </div>`; });
-  h+=`<div class="row"><button class="btn primary" id="saveRt">루틴 저장</button><button class="btn ghost" id="resetRt">기본값으로</button></div></section>
+  ensureDraft();
+  const type=S.editType, bl=S.draft[type];
+  let h=`<div class="top"><div><p class="eyebrow">시간대별 루틴</p><h1>루틴과 알림</h1></div></div>
+  <section class="card"><p>시간대가 시작될 때 알림이 오고, 남은 일이 있으면 30분 간격으로 최대 3번 다시 물어봐요. 각 시간대에 할 일을 직접 넣고 빼 보세요.</p>
+  <div class="modes two" role="group" aria-label="편집할 루틴">${Object.entries(DAYTYPES).map(([k,m])=>`<button data-edittype="${k}" aria-pressed="${type===k}"><b>${m.label} 루틴</b><span>${k==="weekday"?"월~금":"토·일"}</span></button>`).join("")}</div></section>`;
+  bl.forEach((b,i)=>{
+    const have=new Set(b.tasks.filter(t=>typeof t==="string").map(t=>t.slice(2)));
+    const coreOpts=MISSIONS.filter(m=>m.id!=="novel" && !have.has(m.id));
+    h+=`<section class="card">
+      <div class="row"><input type="text" data-bk="${i}:title" value="${esc(b.title)}" aria-label="시간대 이름" style="flex:1;min-width:120px;font-weight:600"></div>
+      <div class="row"><input type="time" data-bk="${i}:start" value="${esc(b.start)}" aria-label="시작"><span class="muted">–</span><input type="time" data-bk="${i}:end" value="${esc(b.end)}" aria-label="끝"></div>
+      <div class="ed-list">${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><span>${esc(ti.title)}${ti.core?` <span class="tag core-tag">핵심</span>`:""}</span><button class="btn ghost small" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn ghost small" data-del-task="${i}:${j}" aria-label="삭제">삭제</button></div>`; }).join("")}</div>
+      <div class="row"><input type="text" id="add-${i}" placeholder="할 일 추가 (예: 분리수거)" style="flex:1;min-width:140px"><button class="btn" data-add-task="${i}">추가</button></div>
+      ${coreOpts.length?`<div class="row"><select id="core-${i}" class="sel">${coreOpts.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join("")}</select><button class="btn ghost" data-add-core="${i}">핵심 미션 넣기</button></div>`:""}
+    </section>`;
+  });
+  h+=`<section class="card"><div class="row"><button class="btn primary" id="saveBlocks">루틴 저장</button><button class="btn ghost" id="resetBlocks">${esc(DAYTYPES[type].label)} 기본값으로</button></div><p class="small muted">저장을 눌러야 오늘 화면과 알림에 적용돼요.</p></section>
   ${NATIVE?`<section class="card"><h2>알림이 확실히 울리게 하려면</h2>
   <ol class="small" style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
     <li>아래 ‘알림 테스트’를 눌러 알림이 뜨는지 확인하세요.</li>
@@ -689,7 +823,7 @@ function renderWhy(){
   <section class="card">
     <div class="ev"><h3>수면<span class="grade g-a">강</span></h3><p class="small">하룻밤만 못 자도 감정 반응을 담당하는 편도체가 크게 과민해지고, 이를 누르는 전전두엽과의 연결이 약해진다는 연구가 반복해서 나왔어요(Yoo 등, 2007). 그래서 수면을 아침 첫 미션으로 기록합니다.</p><a class="small" href="https://www.sfn.org/publications/latest-news/2015/09/23/lack-of-sleep-may-impair-ability-to-regulate-emotions" target="_blank" rel="noopener">수면 부족과 감정 조절 ↗</a></div>
     <div class="ev"><h3>만약-그러면 계획<span class="grade g-a">강</span></h3><p class="small">‘언제, 어디서, 무엇을’ 미리 정해 두면 목표 달성률이 뚜렷이 오른다는 메타분석이 있어요(94개 연구, Gollwitzer·Sheeran 2006). 루틴 탭의 ‘신호 → 미션’이 이 원리입니다.</p><a class="small" href="https://cancercontrol.cancer.gov/brp/research/constructs/implementation-intentions" target="_blank" rel="noopener">실행 의도 개요 (미국 국립암연구소) ↗</a></div>
-    <div class="ev"><h3>유산소 운동<span class="grade g-b">중</span></h3><p class="small">꾸준한 유산소 운동과 한 번의 중강도 운동 모두 실행기능에 도움이 된다는 결과가 있지만 효과 크기는 작은 편이에요. 이미 하는 아침 운동을 인정하고, 바쁜 날엔 10분 걷기로 대신합니다. 부업 직전 걷기는 짧은 운동 직후 집중이 좋아진다는 연구를 적용한 것이에요.</p><a class="small" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11856442/" target="_blank" rel="noopener">중강도 유산소와 실행기능 체계적 고찰 ↗</a></div>
+    <div class="ev"><h3>유산소 운동<span class="grade g-b">중</span></h3><p class="small">꾸준한 유산소 운동과 한 번의 중강도 운동 모두 실행기능에 도움이 된다는 결과가 있지만 효과 크기는 작은 편이에요. 이미 하는 운동을 인정하고, 바쁜 날엔 10분 걷기로 대신합니다. 부업 직전 걷기는 짧은 운동 직후 집중이 좋아진다는 연구를 적용한 것이에요.</p><a class="small" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11856442/" target="_blank" rel="noopener">중강도 유산소와 실행기능 체계적 고찰 ↗</a></div>
     <div class="ev"><h3>호흡·명상<span class="grade g-b">중</span></h3><p class="small">명상이 실행기능 자체를 키운다는 근거는 작고 연구마다 엇갈려요. 대신 순간적으로 감정을 가라앉히는 도구로 쓰기 좋아서, 오후 수업 전 1~3분으로 짧게 넣었어요.</p><a class="small" href="https://scalda.mijn.bsl.nl/does-mindfulness-meditation-training-enhance-executive-control-a/17493418" target="_blank" rel="noopener">명상과 실행 통제 메타분석 ↗</a></div>
     <div class="ev"><h3>손글씨<span class="grade g-c">약</span></h3><p class="small">2024년 노르웨이 연구에서 손글씨를 쓸 때 타이핑보다 뇌 연결이 넓게 활성화됐어요. 다만 대학생 36명 규모라 결론은 조심스러워요. ‘운동피질의 30%가 손’이라는 수치도 정확한 근거를 찾기 어려워요. 그래도 계획을 종이에 쓰는 건 계획 기능 연습 자체라 아침 미션으로 넣었어요.</p><a class="small" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10853352/" target="_blank" rel="noopener">손글씨와 뇌 연결성 연구 (2024) ↗</a></div>
     <div class="ev"><h3>스마트폰<span class="grade g-c">약</span></h3><p class="small">‘폰이 곁에 있기만 해도 인지 능력이 떨어진다’는 유명한 연구(Ward, 2017)는 이후 재현 연구에서 확인되지 않았어요. 그래서 이 앱은 폰을 수면과 집중 시간을 빼앗는 존재로 보고, 저녁 9시 폰 상자와 부업 시간의 폰 분리를 미션으로 둡니다.</p><a class="small" href="https://pubmed.ncbi.nlm.nih.gov/36007374/" target="_blank" rel="noopener">‘브레인 드레인’ 재현 연구 ↗</a></div>
@@ -699,7 +833,8 @@ function renderWhy(){
   <ul class="small" style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
     <li><b>작은 버전도 점수</b> · 의지가 없는 날에도 1분이면 체크할 수 있게.</li>
     <li><b>두 번 연속만 빠지지 말기</b> · 습관 연구에서 하루를 빠뜨려도 습관 형성에 큰 영향이 없었어요(Lally, 2010). 하루는 ‘쉼표’로 연속 기록이 이어집니다.</li>
-    <li><b>모드 3가지</b> · 평시 ${MODES.normal.goal}점, 바쁜 날 ${MODES.busy.goal}점, 약속 있는 날 ${MODES.appt.goal}점(부업 블록 쉼). 날에 맞춰 기준을 바꾸면 ‘오늘은 망했다’로 포기하는 날이 줄어요.</li>
+    <li><b>평일·주말 루틴</b> · 요일에 맞춰 시간대와 할 일이 자동으로 바뀌어요. 지금 시간대의 할 일만 보여서 한 번에 한 묶음에만 집중할 수 있어요.</li>
+    <li><b>컨디션 3가지</b> · 보통은 만점의 70%, 바쁜 날 45%, 약속 있는 날 55%(부업 블록 쉼)가 목표예요. 날에 맞춰 기준을 바꾸면 ‘오늘은 망했다’로 포기하는 날이 줄어요.</li>
     <li><b>매일 바뀌는 필사 글귀</b> · 고정 루틴에 하루 하나씩 새 문장이 들어옵니다.</li>
     <li><b>66일 진행 바</b> · 습관이 자리 잡는 데 평균 66일(사람에 따라 18~254일)이 걸렸다는 연구 기준이에요.</li>
     <li><b>주간 회고</b> · 의지가 아니라 환경을 하나씩 고치는 질문으로 마무리합니다.</li>
@@ -713,15 +848,27 @@ function render(){
   app.innerHTML = t==="history"?renderHistory(): t==="routine"?renderRoutine(): t==="why"?renderWhy(): renderToday();
   document.querySelectorAll("nav.tabs a").forEach(a=>{ if(a.dataset.tab===t) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
   autoGrow();
+  const c=document.querySelector(".chip.on"); if(c&&c.parentElement){ const pe=c.parentElement; pe.scrollLeft=Math.max(0,c.offsetLeft-pe.clientWidth/2+c.clientWidth/2); }
 }
 function autoGrow(){ document.querySelectorAll("textarea").forEach(el=>{ el.style.height="auto"; el.style.height=Math.max(44,el.scrollHeight+2)+"px"; }); }
-function setLevel(id,l){ const d=today(), v=day(d); const before=success(d); const cur=v.done[id]&&v.done[id].lvl||0; if(cur===l) delete v.done[id]; else v.done[id]={lvl:l, at:Date.now()}; saveDay(d); render(); if(!before && success(d)) toast("오늘 목표 달성!"); else if(S.focus && cur!==l) { const nx=MISSIONS.find(m=>!isPassed(v,m.id)); toast(nx?"좋아요! 다음 미션이 열렸어요":"오늘 미션을 모두 지나왔어요"); } if(S.focus) window.scrollTo(0,0); }
+function setLevel(id,l){ const d=today(), v=day(d); const before=success(d); const cur=v.done[id]&&v.done[id].lvl||0; if(cur===l) delete v.done[id]; else v.done[id]={lvl:l, at:Date.now()}; saveDay(d); render(); if(!before && success(d)) toast("오늘 목표 달성!"); }
 function journalLevel(v){ const j=v.journal||{}; const n=["good","bad","next"].filter(k=>(j[k]||"").trim()).length; return n===0?0:n===3?2:1; }
 
 document.addEventListener("click",e=>{
   const b=e.target.closest("button,a"); if(!b) return;
   if(b.dataset.m){ setLevel(b.dataset.m, Number(b.dataset.l)); return; }
-  if(b.dataset.mode){ const v=day(today()); v.mode=b.dataset.mode; delete v.busy; saveDay(today()); render(); toast(MODES[v.mode].label+" 모드 · 오늘 목표 "+MODES[v.mode].goal+"점"); return; }
+  if(b.dataset.mode){ const v=day(today()); v.mode=b.dataset.mode; delete v.busy; saveDay(today()); render(); toast(MODES[v.mode].label+" · 오늘 목표 "+goal(today())+"점"); return; }
+  if(b.dataset.daytype){ const v=day(today()); v.dayType=b.dataset.daytype; S.viewBlock=null; saveDay(today()); render(); toast(DAYTYPES[v.dayType].label+" 루틴으로 바꿨어요"); return; }
+  if(b.dataset.view!=null){ S.viewBlock = b.dataset.view==="now"?null:Number(b.dataset.view); render(); return; }
+  if(b.dataset.task){ const d=today(), v=day(d), id=b.dataset.task; const before=success(d); if(v.done[id]&&v.done[id].lvl) delete v.done[id]; else v.done[id]={lvl:1, at:Date.now()}; saveDay(d); render(); if(!before&&success(d)) toast("오늘 목표 달성!"); return; }
+  if(b.id==="rerollNew"){ const v=day(today()); const cur=v.newday?v.newday.idx:hashIdx(today()+"n"); v.newday={idx:(cur+11)%NOVELTY.length, rerolled:true}; saveDay(today()); render(); return; }
+  if(b.dataset.edittype){ S.editType=b.dataset.edittype; render(); return; }
+  if(b.dataset.delTask){ const [i,j]=b.dataset.delTask.split(":").map(Number); ensureDraft(); S.draft[S.editType][i].tasks.splice(j,1); render(); return; }
+  if(b.dataset.upTask){ const [i,j]=b.dataset.upTask.split(":").map(Number); ensureDraft(); const arr=S.draft[S.editType][i].tasks; if(j>0){ const x=arr[j]; arr[j]=arr[j-1]; arr[j-1]=x; } render(); return; }
+  if(b.dataset.addTask!=null){ const i=Number(b.dataset.addTask); const inp=document.getElementById("add-"+i); const t=(inp&&inp.value||"").trim(); if(!t){ toast("할 일 이름을 적어 주세요"); return; } ensureDraft(); S.draft[S.editType][i].tasks.push({id:"t_"+Date.now().toString(36), title:t}); render(); return; }
+  if(b.dataset.addCore!=null){ const i=Number(b.dataset.addCore); const sel=document.getElementById("core-"+i); if(!sel||!sel.value) return; ensureDraft(); S.draft[S.editType][i].tasks.push("c:"+sel.value); render(); return; }
+  if(b.id==="saveBlocks"){ ensureDraft(); S.settings.blocks=clone(S.draft); saveSettings(); S.draft=null; render(); return; }
+  if(b.id==="resetBlocks"){ ensureDraft(); S.draft[S.editType]=clone(DEFAULT_BLOCKS[S.editType]); render(); toast("기본 루틴으로 되돌렸어요. 저장을 눌러야 적용돼요."); return; }
   if(b.id==="reroll"){ const v=day(today()); v.novelty={idx:((v.novelty?v.novelty.idx:hashIdx(today()))+17)%QUOTES.length, rerolled:true}; saveDay(today()); render(); return; }
   if(b.dataset.health && NATIVE){ const a=b.dataset.health; try{ if(a==="perm") NATIVE.requestHealthPermission(); else if(a==="read") readHealth(); else if(a==="diag"){ S.diag=null; toast("점검 중…"); NATIVE.diagnoseHealth(); } else if(a==="open") NATIVE.openHealthConnect(); else if(a==="shealth"){ if(!NATIVE.openSamsungHealth()) toast("삼성헬스 앱을 찾지 못했어요"); } else if(a==="test"){ NATIVE.testNotification(); toast("알림을 보냈어요. 안 보이면 알림 권한을 확인해 주세요."); } }catch(e){ toast("앱 기능을 부르지 못했어요"); } return; }
   if(b.dataset.pass){ const d=today(), v=day(d), m=MISSIONS.find(x=>x.id===b.dataset.pass); v.done[b.dataset.pass]={lvl:0, skipped:true, at:Date.now()}; saveDay(d); render(); toast((m?m.title:"미션")+" 넘김 · 다음 미션이 열렸어요"); return; }
@@ -739,6 +886,7 @@ document.addEventListener("input",e=>{
   if(el.dataset.j){ const d=today(), v=day(d); v.journal=v.journal||{}; v.journal[el.dataset.j]=el.value; const l=journalLevel(v); if(l) v.done.journal={lvl:l,at:Date.now()}; else delete v.done.journal; saveDay(d,700); refreshBoard(); el.style.height="auto"; el.style.height=Math.max(44,el.scrollHeight+2)+"px"; return; }
   if(el.id==="stepsN"){ const d=today(), v=day(d); const n=parseInt(el.value,10); if(isNaN(n)){ v.steps=null; delete v.done.steps; } else { v.steps=n; const l=n>=STEP.full?2:n>=STEP.mini?1:0; if(l) v.done.steps={lvl:l,at:Date.now()}; else delete v.done.steps; } saveDay(d,600); refreshBoard(); return; }
   if(el.id==="sleepH"){ const d=today(), v=day(d); const n=parseFloat(el.value); if(isNaN(n)){ v.sleepH=null; delete v.done.sleep; } else { v.sleepH=n; v.done.sleep={lvl:n>=7?2:1, at:Date.now()}; } saveDay(d,600); refreshBoard(); return; }
+  if(el.dataset.bk){ const [i,f]=el.dataset.bk.split(":"); ensureDraft(); S.draft[S.editType][Number(i)][f]=el.value; return; }
   if(el.dataset.rv){ const w=isoWeek(today()); S.weeks[w]=S.weeks[w]||{}; S.weeks[w].reviewText=S.weeks[w].reviewText||{}; S.weeks[w].reviewText[el.dataset.rv]=el.value; const r=S.weeks[w].reviewText; S.weeks[w].review=!!((r.a||"").trim()&&(r.b||"").trim()&&(r.c||"").trim()); clearTimeout(timers.rv); timers.rv=setTimeout(()=>saveWeek(w),800); el.style.height="auto"; el.style.height=Math.max(44,el.scrollHeight+2)+"px"; return; }
 });
 /* 입력 중에는 전체를 다시 그리지 않고 현황판만 갱신 */
@@ -782,7 +930,8 @@ window.addEventListener("hashchange",route);
 let renderedDay=today();
 /* 앱이 켜져 있는 동안 5분마다 삼성헬스 숫자를 새로 불러옴 */
 setInterval(()=>{ if(NATIVE && S.loaded && document.visibilityState==="visible") readHealth(); }, 5*60000);
-setInterval(()=>{ if(today()!==renderedDay){ renderedDay=today(); render(); } else if(S.tab==="today" && !document.activeElement.matches("textarea,input")) { const n=nowMissionId(today()); const cur=document.querySelector(".m.now"); if((cur&&cur.id!=="m-"+n)||(!cur&&n)) render(); } },60000);
+let renderedBlock=null;
+setInterval(()=>{ if(today()!==renderedDay){ renderedDay=today(); S.viewBlock=null; render(); return; } if(S.tab==="today" && !document.activeElement.matches("textarea,input")){ const bi=currentBlockIndex(blocksFor(dayTypeOf(day(today())))); if(renderedBlock!==null && bi!==renderedBlock){ S.viewBlock=null; render(); } renderedBlock=bi; } },60000);
 
 /* ---------- 시작 ---------- */
 async function boot(){
@@ -793,6 +942,7 @@ async function boot(){
     if(!S.settings){ S.settings=DEFAULT_SETTINGS(); await setDoc("meta/settings",S.settings); }
     S.settings.routine = Object.assign(DEFAULT_SETTINGS().routine, S.settings.routine||{});
     if(!S.settings.v2){ const n=S.settings.routine.novel||{}; if(!n.time) n.time="17:30"; if(!n.cue||n.cue==="하루 중 아무 때나 펜을 들면") n.cue="퇴근하고 가방을 내려놓으면"; S.settings.routine.novel=n; S.settings.v2=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.blocks){ S.settings.blocks=clone(DEFAULT_BLOCKS); S.settings.v3=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }

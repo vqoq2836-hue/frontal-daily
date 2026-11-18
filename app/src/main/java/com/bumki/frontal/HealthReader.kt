@@ -10,6 +10,7 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import org.json.JSONObject
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -51,18 +52,21 @@ class HealthReader(private val context: Context) {
                     timeRangeFilter = TimeRangeFilter.between(start, end)
                 )
             )
-            val total = result[StepsRecord.COUNT_TOTAL]
-            if (total != null) out.put("steps", total) else out.put("stepsMissing", true)
+            val agg = result[StepsRecord.COUNT_TOTAL]
+            val recs = readAllSteps(client, start, end)
+            if (recs.isEmpty() && agg == null) {
+                out.put("stepsMissing", true)
+            } else {
+                // 폰과 워치가 같은 시간에 함께 기록한 걸음은 한 번만 셉니다(분 단위로 큰 쪽만).
+                val dedup = dedupSteps(recs, start, end)
+                out.put("steps", if (recs.isNotEmpty()) dedup else (agg ?: 0L))
+                if (agg != null) out.put("stepsSum", agg)
+                out.put("stepsDevices", deviceTotals(recs))
+            }
             // 오늘 걸음이 헬스 커넥트에 마지막으로 들어온 시각 (동기화 지연 확인용)
-            runCatching {
-                val recs = client.readRecords(
-                    ReadRecordsRequest(StepsRecord::class, TimeRangeFilter.between(start, end))
-                ).records
-                val latest = recs.maxOfOrNull { it.endTime }
-                if (latest != null) {
-                    val t = latest.atZone(zone).toLocalTime()
-                    out.put("stepsLatest", "%02d:%02d".format(t.hour, t.minute))
-                }
+            recs.maxOfOrNull { it.endTime }?.let {
+                val t = it.atZone(zone).toLocalTime()
+                out.put("stepsLatest", "%02d:%02d".format(t.hour, t.minute))
             }
         }
 
@@ -142,6 +146,70 @@ class HealthReader(private val context: Context) {
             }
         }
         return out.toString()
+    }
+
+    private suspend fun readAllSteps(client: HealthConnectClient, start: Instant, end: Instant): List<StepsRecord> {
+        val all = mutableListOf<StepsRecord>()
+        var token: String? = null
+        do {
+            val resp = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = StepsRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                    pageSize = 1000,
+                    pageToken = token
+                )
+            )
+            all += resp.records
+            token = resp.pageToken
+        } while (token != null && all.size < 20000)
+        return all
+    }
+
+    private fun deviceKey(r: StepsRecord): String {
+        val d = r.metadata.device
+        val name = listOfNotNull(d?.manufacturer, d?.model).joinToString(" ").ifBlank {
+            when (d?.type) {
+                androidx.health.connect.client.records.metadata.Device.TYPE_WATCH -> "워치"
+                androidx.health.connect.client.records.metadata.Device.TYPE_PHONE -> "폰"
+                else -> "기기 미상"
+            }
+        }
+        return name + " (" + r.metadata.dataOrigin.packageName.substringAfterLast('.') + ")"
+    }
+
+    private fun deviceTotals(recs: List<StepsRecord>): JSONObject {
+        val o = JSONObject()
+        recs.groupBy { deviceKey(it) }.forEach { (k, v) -> o.put(k, v.sumOf { it.count }) }
+        return o
+    }
+
+    /** 1분 칸마다 기기별 걸음을 나눠 담고, 칸마다 가장 큰 기기 값만 더합니다. */
+    private fun dedupSteps(recs: List<StepsRecord>, start: Instant, end: Instant): Long {
+        val perMinute = HashMap<Long, HashMap<String, Double>>()
+        val s0 = start.epochSecond
+        val e0 = end.epochSecond
+        for (r in recs) {
+            val key = deviceKey(r)
+            val rs = r.startTime.epochSecond
+            val re = r.endTime.epochSecond
+            if (re <= rs) {
+                if (rs in s0 until e0) perMinute.getOrPut(rs / 60) { HashMap() }.merge(key, r.count.toDouble()) { a, b -> a + b }
+                continue
+            }
+            val s = maxOf(rs, s0)
+            val e = minOf(re, e0)
+            if (e <= s) continue
+            val perSec = r.count.toDouble() / (re - rs)
+            var m = s / 60
+            while (m * 60 < e) {
+                val ms = maxOf(s, m * 60)
+                val me = minOf(e, (m + 1) * 60)
+                if (me > ms) perMinute.getOrPut(m) { HashMap() }.merge(key, perSec * (me - ms)) { a, b -> a + b }
+                m++
+            }
+        }
+        return Math.round(perMinute.values.sumOf { it.values.maxOrNull() ?: 0.0 })
     }
 
     private fun originCounts(names: List<String>): JSONObject {

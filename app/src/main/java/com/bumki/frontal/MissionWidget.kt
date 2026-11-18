@@ -10,8 +10,8 @@ import android.view.View
 import android.widget.RemoteViews
 
 /**
- * 홈 화면 위젯: 지금 할 미션 하나만 보여 주고, 그 자리에서 체크·넘기기를 합니다.
- * 체크하면 다음 미션이 위젯에 나타납니다.
+ * 홈 화면 위젯: 지금 시간대에서 아직 안 한 할 일을 하나씩 보여 주고, 그 자리에서 체크·넘기기를 합니다.
+ * 체크하면 같은 시간대의 다음 할 일이 나타납니다.
  */
 class MissionWidget : AppWidgetProvider() {
 
@@ -39,30 +39,57 @@ class MissionWidget : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             rv.setOnClickPendingIntent(R.id.w_root, open)
-            rv.setTextViewText(R.id.w_head, "오늘 ${info.score}/${info.goal}점 · ${info.passed}/${info.total} 지남")
+
+            if (info.empty) {
+                rv.setTextViewText(R.id.w_head, "전두엽 데일리")
+                rv.setTextViewText(R.id.w_title, "앱을 한 번 열어 주세요")
+                rv.setTextViewText(R.id.w_sub, "앱을 열면 오늘 루틴이 위젯에 나타나요.")
+                rv.setViewVisibility(R.id.w_buttons, View.GONE)
+                return rv
+            }
+
+            rv.setTextViewText(
+                R.id.w_head,
+                "${info.blockTitle} ${info.blockRange} · ${info.blockDone}/${info.blockTotal} · 오늘 ${info.score}/${info.goal}점"
+            )
 
             val m = info.current
             if (m == null) {
-                rv.setTextViewText(R.id.w_title, if (info.total == 0) "앱을 한 번 열어 주세요" else "오늘 미션을 모두 지나왔어요")
-                rv.setTextViewText(R.id.w_sub, if (info.score >= info.goal) "목표 달성! 푹 자는 것까지가 오늘의 미션이에요." else "앱에서 지나간 미션을 다시 열 수 있어요.")
+                rv.setTextViewText(R.id.w_title, "이 시간대 할 일 끝!")
+                rv.setTextViewText(
+                    R.id.w_sub,
+                    if (info.nextTitle.isNotEmpty()) "다음은 ${info.nextTitle} (${info.nextStart}부터)" else "오늘 하루 수고했어요."
+                )
                 rv.setViewVisibility(R.id.w_buttons, View.GONE)
                 return rv
             }
 
             val id = m.optString("id")
-            val time = m.optString("time")
-            rv.setTextViewText(R.id.w_title, (if (time.isNotEmpty()) "$time  " else "") + m.optString("title"))
+            val two = m.optBoolean("two")
+            rv.setTextViewText(R.id.w_title, m.optString("title"))
             val extra = when (id) {
                 "steps" -> if (info.steps != null) "지금 ${"%,d".format(info.steps)}보 · " else ""
                 "sleep" -> if (info.sleepH != null) "어젯밤 ${info.sleepH}시간 · " else ""
                 else -> ""
             }
-            rv.setTextViewText(R.id.w_sub, extra + "작게: " + m.optString("mini") + "\n제대로: " + m.optString("full"))
+            rv.setTextViewText(
+                R.id.w_sub,
+                if (two) extra + "작게: " + m.optString("mini") + "\n제대로: " + m.optString("full")
+                else extra + "하면 1점"
+            )
             rv.setViewVisibility(R.id.w_buttons, View.VISIBLE)
 
             val base = Reminders.notificationId(id) * 4
-            rv.setOnClickPendingIntent(R.id.w_mini, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 1, base + 101))
-            rv.setOnClickPendingIntent(R.id.w_full, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 2, base + 102))
+            if (two) {
+                rv.setViewVisibility(R.id.w_mini, View.VISIBLE)
+                rv.setTextViewText(R.id.w_full, "제대로 2점")
+                rv.setOnClickPendingIntent(R.id.w_mini, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 1, base + 101))
+                rv.setOnClickPendingIntent(R.id.w_full, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 2, base + 102))
+            } else {
+                rv.setViewVisibility(R.id.w_mini, View.GONE)
+                rv.setTextViewText(R.id.w_full, "했어요")
+                rv.setOnClickPendingIntent(R.id.w_full, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 1, base + 102))
+            }
             rv.setOnClickPendingIntent(R.id.w_skip, Reminders.actionIntent(ctx, Reminders.ACTION_SKIP, id, 0, base + 103))
             return rv
         }

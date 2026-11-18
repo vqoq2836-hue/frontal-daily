@@ -67,7 +67,24 @@ object Reminders {
     fun mission(ctx: Context, id: String): JSONObject? = missions(ctx).firstOrNull { it.optString("id") == id }
 
     /** 오늘 이미 체크했거나(웹 기록), 알림에서 체크했거나, 오늘 모드에서 쉬는 미션이면 true */
+    fun items(ctx: Context): List<JSONObject> {
+        val arr = state(ctx).optJSONArray("items") ?: return emptyList()
+        return (0 until arr.length()).map { arr.getJSONObject(it) }
+    }
+
+    /** 시간대(b:로 시작) 알림은 그 시간대 할 일이 모두 끝났을 때 '끝난 것'으로 봅니다. */
     fun isSettled(ctx: Context, id: String): Boolean {
+        if (id.startsWith("b:")) {
+            val its = items(ctx).filter { it.optString("block") == id }
+            if (its.isNotEmpty()) return its.all { isItemSettled(ctx, it.optString("id")) }
+        }
+        return isItemSettled(ctx, id)
+    }
+
+    fun remainingInBlock(ctx: Context, blockId: String): List<JSONObject> =
+        items(ctx).filter { it.optString("block") == blockId && !isItemSettled(ctx, it.optString("id")) }
+
+    fun isItemSettled(ctx: Context, id: String): Boolean {
         val s = state(ctx)
         if (s.optString("date") == today()) {
             if ((s.optJSONObject("done")?.optInt(id, 0) ?: 0) > 0) return true
@@ -85,17 +102,18 @@ object Reminders {
     // ---------- 위젯에 보여 줄 정보 ----------
     data class WidgetInfo(
         val current: JSONObject?, val score: Int, val goal: Int,
-        val passed: Int, val total: Int, val steps: Long?, val sleepH: Double?
+        val blockTitle: String, val blockRange: String, val blockDone: Int, val blockTotal: Int,
+        val nextTitle: String, val nextStart: String,
+        val steps: Long?, val sleepH: Double?, val empty: Boolean
     )
 
     fun widgetInfo(ctx: Context): WidgetInfo {
         val s = state(ctx)
-        val ms = missions(ctx)
+        val its = items(ctx)
         val sameDay = s.optString("date") == today()
         val done = if (sameDay) s.optJSONObject("done") else null
         var score = if (sameDay) s.optInt("score", 0) else 0
-        val goal = if (sameDay) s.optInt("goal", 9) else 9
-        // 앱을 열기 전 알림·위젯에서 누른 체크도 점수에 미리 반영
+        val goal = if (sameDay) s.optInt("goal", 20) else 20
         val counted = HashSet<String>()
         val pending = pendingArray(ctx)
         for (i in 0 until pending.length()) {
@@ -105,12 +123,31 @@ object Reminders {
             if ((done?.optInt(id, 0) ?: 0) == 0) score += p.optInt("lvl", 0)
             counted.add(id)
         }
-        val ids = ms.map { it.optString("id") }
-        val passed = ids.count { isSettled(ctx, it) }
-        val current = ms.firstOrNull { !isSettled(ctx, it.optString("id")) }
         val steps = if (sameDay && s.has("steps") && !s.isNull("steps")) s.optLong("steps") else null
         val sleepH = if (sameDay && s.has("sleepH") && !s.isNull("sleepH")) s.optDouble("sleepH") else null
-        return WidgetInfo(current, score, goal, passed, ms.size, steps, sleepH)
+        if (its.isEmpty()) return WidgetInfo(null, score, goal, "", "", 0, 0, "", "", steps, sleepH, true)
+
+        // 시간대 목록 (순서 유지)
+        data class B(val id: String, val start: String, val end: String, val title: String)
+        val blocks = LinkedHashMap<String, B>()
+        val titles = missions(ctx).associate { it.optString("id") to it.optString("title") }
+        for (it in its) {
+            val b = it.optString("block")
+            if (b !in blocks) blocks[b] = B(b, it.optString("start"), it.optString("end"), titles[b] ?: "")
+        }
+        val list = blocks.values.toList()
+        val now = LocalTime.now().let { "%02d:%02d".format(it.hour, it.minute) }
+        var idx = list.indexOfFirst { it.start <= now && now < it.end }
+        if (idx < 0) { idx = list.indexOfFirst { it.start > now }; if (idx < 0) idx = list.size - 1 }
+        val cb = list[idx]
+        val inBlock = its.filter { it.optString("block") == cb.id }
+        val left = inBlock.filter { !isItemSettled(ctx, it.optString("id")) }
+        val next = list.getOrNull(idx + 1)
+        return WidgetInfo(
+            left.firstOrNull(), score, goal, cb.title, cb.start + "–" + cb.end,
+            inBlock.size - left.size, inBlock.size, next?.title ?: "", next?.start ?: "",
+            steps, sleepH, false
+        )
     }
 
     // ---------- 알림에서 누른 체크 (웹이 다음에 열릴 때 가져감) ----------
@@ -189,6 +226,7 @@ object Reminders {
     fun showMission(ctx: Context, id: String, nag: Int) {
         if (!canNotify(ctx)) return
         val m = mission(ctx, id) ?: return
+        if (id.startsWith("b:")) { showBlock(ctx, id, m, nag); return }
         val title = m.optString("title", "미션")
         val head = if (nag == 0) "지금: $title" else "아직이에요 ($nag/$MAX_NAGS) · $title 했어요?"
         val body = if (nag == 0) m.optString("cue", "") + " → " + title
@@ -216,6 +254,54 @@ object Reminders {
         try {
             NotificationManagerCompat.from(ctx).notify(notificationId(id), n)
         } catch (_: SecurityException) { }
+    }
+
+    private fun showBlock(ctx: Context, id: String, m: JSONObject, nag: Int) {
+        val left = remainingInBlock(ctx, id)
+        if (left.isEmpty()) return
+        val title = m.optString("title", "할 일")
+        val head = if (nag == 0) "지금: $title 시간이에요" else "아직 ${left.size}개 남았어요 ($nag/$MAX_NAGS) · $title"
+        val body = left.joinToString("\n") { "• " + it.optString("title") }
+        val open = PendingIntent.getActivity(
+            ctx, notificationId(id),
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val first = left.first()
+        val fid = first.optString("id")
+        val base = notificationId(fid) * 4
+        val b = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle(head)
+            .setContentText(left.joinToString(" · ") { it.optString("title") })
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+        val short = first.optString("title").let { if (it.length > 8) it.take(8) + "…" else it }
+        if (first.optBoolean("two")) {
+            b.addAction(0, "$short 작게", actionIntent(ctx, ACTION_DONE, fid, 1, base + 1))
+            b.addAction(0, "$short 제대로", actionIntent(ctx, ACTION_DONE, fid, 2, base + 2))
+        } else {
+            b.addAction(0, "$short 했어요", actionIntent(ctx, ACTION_DONE, fid, 1, base + 1))
+        }
+        b.addAction(0, "30분 뒤", actionIntent(ctx, ACTION_SNOOZE, id, nag, notificationId(id) * 4 + 3))
+        try {
+            NotificationManagerCompat.from(ctx).notify(notificationId(id), b.build())
+        } catch (_: SecurityException) { }
+    }
+
+    /** 할 일을 체크한 뒤: 끝난 시간대의 알림·재알림은 정리하고, 남은 시간대 알림은 목록을 새로 고칩니다. */
+    fun refreshBlockNotifications(ctx: Context) {
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        val active = nm.activeNotifications.map { it.id }.toSet()
+        for (m in missions(ctx)) {
+            val bid = m.optString("id")
+            if (!bid.startsWith("b:")) continue
+            if (isSettled(ctx, bid)) { cancelNag(ctx, bid); dismiss(ctx, bid) }
+            else if (notificationId(bid) in active) showBlock(ctx, bid, m, 0)
+        }
     }
 
     fun dismiss(ctx: Context, id: String) {
