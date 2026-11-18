@@ -12,8 +12,8 @@ android {
         minSdk = 26
         // 34로 두면 안드로이드 15에서도 화면이 상태바·내비게이션바 아래로 들어가지 않습니다.
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
     }
 
     // 빌드할 때마다 같은 키로 서명해야 앱을 지우지 않고 업데이트할 수 있습니다(기록 보존).

@@ -51,7 +51,8 @@ class HealthReader(private val context: Context) {
                     timeRangeFilter = TimeRangeFilter.between(start, end)
                 )
             )
-            out.put("steps", result[StepsRecord.COUNT_TOTAL] ?: 0L)
+            val total = result[StepsRecord.COUNT_TOTAL]
+            if (total != null) out.put("steps", total) else out.put("stepsMissing", true)
         }
 
         if (SLEEP in granted) {
@@ -78,5 +79,63 @@ class HealthReader(private val context: Context) {
             if (response.records.isNotEmpty()) out.put("sleepMinutes", minutes)
         }
         return out.toString()
+    }
+
+    /**
+     * 연결 점검: 헬스 커넥트 상태, 허용된 권한, 최근 7일 동안 어떤 앱이 걸음·수면을 넣었는지 셉니다.
+     * '삼성헬스가 헬스 커넥트에 쓰고 있는지'를 확인하는 용도입니다.
+     */
+    suspend fun diagnose(): String {
+        val out = JSONObject()
+        val st = status()
+        out.put("status", st)
+        out.put("sdk", android.os.Build.VERSION.SDK_INT)
+        if (st != "available") return out.toString()
+        val client = HealthConnectClient.getOrCreate(context)
+        val granted = client.permissionController.getGrantedPermissions()
+        out.put("stepsPermission", STEPS in granted)
+        out.put("sleepPermission", SLEEP in granted)
+
+        val zone = ZoneId.systemDefault()
+        val now = java.time.Instant.now()
+        val weekAgo = LocalDate.now().minusDays(6).atStartOfDay(zone).toInstant()
+        val todayStart = LocalDate.now().atStartOfDay(zone).toInstant()
+
+        if (STEPS in granted) {
+            try {
+                val todayRecords = client.readRecords(
+                    ReadRecordsRequest(StepsRecord::class, TimeRangeFilter.between(todayStart, now))
+                ).records
+                val weekRecords = client.readRecords(
+                    ReadRecordsRequest(StepsRecord::class, TimeRangeFilter.between(weekAgo, now), pageSize = 1000)
+                ).records
+                out.put("stepsTodayRecords", todayRecords.size)
+                out.put("stepsTodaySum", todayRecords.sumOf { it.count })
+                out.put("stepsWeekRecords", weekRecords.size)
+                out.put("stepsWeekLatest", weekRecords.maxOfOrNull { it.endTime }?.atZone(zone)?.toLocalDateTime()?.toString() ?: "")
+                out.put("stepsOrigins", originCounts(weekRecords.map { it.metadata.dataOrigin.packageName }))
+            } catch (e: Exception) {
+                out.put("stepsError", e.javaClass.simpleName + ": " + (e.message ?: ""))
+            }
+        }
+        if (SLEEP in granted) {
+            try {
+                val sleep = client.readRecords(
+                    ReadRecordsRequest(SleepSessionRecord::class, TimeRangeFilter.between(weekAgo, now))
+                ).records
+                out.put("sleepWeekSessions", sleep.size)
+                out.put("sleepWeekLatest", sleep.maxOfOrNull { it.endTime }?.atZone(zone)?.toLocalDateTime()?.toString() ?: "")
+                out.put("sleepOrigins", originCounts(sleep.map { it.metadata.dataOrigin.packageName }))
+            } catch (e: Exception) {
+                out.put("sleepError", e.javaClass.simpleName + ": " + (e.message ?: ""))
+            }
+        }
+        return out.toString()
+    }
+
+    private fun originCounts(names: List<String>): JSONObject {
+        val o = JSONObject()
+        names.groupingBy { it }.eachCount().forEach { (k, v) -> o.put(k, v) }
+        return o
     }
 }

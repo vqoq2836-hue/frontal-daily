@@ -12,6 +12,7 @@ import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewAssetLoader
@@ -110,6 +111,34 @@ class MainActivity : ComponentActivity() {
                     JSONObject().put("date", date).put("error", e.message ?: "error").toString()
                 }
                 js("window.onNativeHealth && window.onNativeHealth(" + JSONObject.quote(json) + ")")
+            }
+        }
+
+        @JavascriptInterface
+        fun diagnoseHealth() {
+            lifecycleScope.launch {
+                val json = try {
+                    health.diagnose()
+                } catch (e: Exception) {
+                    JSONObject().put("error", e.javaClass.simpleName + ": " + (e.message ?: "")).toString()
+                }
+                js("window.onNativeDiag && window.onNativeDiag(" + JSONObject.quote(json) + ")")
+            }
+        }
+
+        /** 헬스 커넥트 설정 화면 열기 (안드로이드 14 이상은 시스템 설정 안에 있음) */
+        @JavascriptInterface
+        fun openHealthConnect() {
+            runOnUiThread {
+                val actions = listOf(
+                    "android.health.connect.action.HEALTH_HOME_SETTINGS",
+                    HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS
+                )
+                for (a in actions) {
+                    val ok = runCatching { startActivity(Intent(a)) }.isSuccess
+                    if (ok) return@runOnUiThread
+                }
+                js("window.onNativeDiag && window.onNativeDiag(" + JSONObject.quote("{\"error\":\"open_failed\"}") + ")")
             }
         }
 
