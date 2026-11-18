@@ -397,8 +397,8 @@ const MISSIONS = [
    why:"운동은 실행기능에 꾸준히 좋은 효과를 보이는 몇 안 되는 습관이에요. 이미 하고 있는 운동을 기록으로 인정해요.",
    how:["운동 가방은 아침 출근할 때 미리 챙겨 둬요.","퇴근길에 바로 운동하러 가서 오늘 분할(하체·상체 등) 세션을 마쳐요.","시간이 없으면 10분 빠르게 걷기로 대신해요."],
    tip:"‘제대로’가 어려운 날도 신발 신고 10분만 나가면 1점이에요."},
-  {id:"breath", title:"호흡으로 멈추기", pillar:"감정 조절", kind:"breath", time:"12:40",
-   cue:"점심 먹고 교실로 돌아오면", full:"3분 호흡", mini:"1분 호흡",
+  {id:"breath", title:"호흡으로 멈추기", pillar:"감정 조절", kind:"breath", time:"16:45",
+   cue:"퇴근하고 학교를 나서기 전에", full:"3분 호흡", mini:"1분 호흡",
    why:"오후 수업 전 짧게 멈추면 감정 반응이 한 박자 늦춰져요. 화가 나는 순간 바로 반응하지 않는 연습이에요.",
    how:["의자에 등을 붙이고 발바닥을 바닥에 둬요.","4초 들이쉬고, 4초 멈추고, 4초 내쉬고, 4초 멈춰요.","생각이 떠오르면 ‘생각’이라고 이름만 붙이고 숨으로 돌아와요."],
    tip:"아래 1분·3분 시작 버튼을 누르면 화면이 숨 쉬는 박자를 안내해요."},
@@ -418,7 +418,7 @@ const MISSIONS = [
    how:["앱이 삼성헬스에서 걸음 수를 자동으로 불러와요.","4,000보가 안 되면 10분만 집 근처를 걸어요.","걷고 와서 ‘다시 불러오기’를 눌러요."],
    tip:"쉬는 시간에 교실 밖 복도를 한 바퀴 걷는 것만으로도 하루 1,000보가 늘어요."},
   {id:"phone", title:"폰 상자", pillar:"디지털", kind:"check", time:"21:00",
-   cue:"9시 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
+   cue:"밤 10시 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
    why:"자기 전 폰은 잠드는 시간을 늦추고 수면의 질을 떨어뜨려요. 수면이 지켜져야 내일의 전두엽이 지켜져요.",
    how:["알람은 워치나 탁상시계로 바꿔 둬요.","폰을 충전기에 꽂아 상자 안에 넣어요.","상자는 침실 밖에 둬요."],
    tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 21시에 맞춰 두면 알림도 함께 조용해져요."},
@@ -426,8 +426,14 @@ const MISSIONS = [
    cue:"씻고 나서 책상에 앉으면", full:"세 줄 모두", mini:"한 줄이라도",
    why:"하루를 돌아보고 내일 첫 행동을 정하면, 다음 날 아침의 계획 쓰기가 쉬워져요.",
    how:["오늘 잘한 것 하나를 적어요.","다르게 하고 싶은 것 하나를 적어요(자책 말고 방법으로).","내일 가장 먼저 할 일 하나를 적어요."],
-   tip:"폰 상자에 넣은 뒤라면 노트에 쓰고, 다음 날 아침 앱에 옮겨도 돼요."}
+   tip:"폰 상자에 넣은 뒤라면 노트에 쓰고, 다음 날 아침 앱에 옮겨도 돼요."},
+  {id:"detox", title:"오전 디톡스 마무리", pillar:"디지털", kind:"check", time:"12:50",
+   cue:"점심시간에 휴대폰 감옥을 열면", full:"12:50까지 한 번도 안 꺼냈어요", mini:"필요할 때만 잠깐 꺼냈어요",
+   why:"폰이 손에 닿지 않으면 확인하고 싶은 충동과 싸우는 데 쓰던 에너지가 줄어요. 오전 내내 수업과 업무에 주의를 붙잡아 두는 연습이에요.",
+   how:["8시 45분, 폰을 무음으로 바꾸고 감옥에 넣어요.","급한 연락은 교무실 전화나 메신저로 받는다고 정해 두세요.","12시 50분에 꺼내면서 오늘 오전을 체크해요."],
+   tip:"꼭 폰을 써야 하는 날은 8시 45분 알림에서 ‘넘기기’를 눌러도 괜찮아요."}
 ];
+
 const WEEKLY = [
   {id:"rel", title:"고마운 사람 한 명에게 먼저 연락하기", sub:"관계"},
   {id:"hand", title:"손 쓰는 취미 30분", sub:"요리, 악기, 그림, 조립 중 하나"},
@@ -550,8 +556,8 @@ const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), T("t_breakfast","아침 챙겨 먹기","07:15"), C("plan","07:35")]},
-    {id:"work", title:"근무 시간", start:"08:10", end:"16:40", tasks:[C("breath","12:40"), C("newday","12:50"), T("t_walk10","점심 후 10분 걷기","13:00"), T("t_water1l","물 1L 마셨는지 확인","15:30")]},
-    {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:[C("move","17:00"), T("t_dinner","저녁 챙겨 먹기","18:30"), T("t_prep","내일 도시락 준비","19:10")]},
+    {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50")]},
+    {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:[C("breath","16:45"), C("move","17:00"), C("newday","18:00"), T("t_dinner","저녁 챙겨 먹기","18:30"), T("t_prep","내일 도시락 준비","19:10")]},
     {id:"side", title:"부업 시간", start:"19:30", end:"21:00", tasks:[C("focus","19:30"), C("steps","20:50")]},
     {id:"night", title:"자기 전", start:"21:00", end:"23:00", tasks:[T("t_dishes","설거지","21:00"), T("t_tidy","10분 정리·청소","21:15"), T("t_clothes","내일 옷·가방 챙기기","21:30"), C("novel","21:40"), C("journal","21:50"), C("phone","22:00")]}
   ],
@@ -564,7 +570,7 @@ const DEFAULT_BLOCKS = {
   ]
 };
 const NEWDAY_MISSION = {id:"newday", title:"오늘의 새로운 루틴", pillar:"새로움", kind:"newday", time:"12:50",
-  cue:"점심 먹고 교실로 돌아가는 길에", full:"해 봤어요", mini:"해 봤어요",
+  cue:"운동 끝나고 저녁 먹기 전에", full:"해 봤어요", mini:"해 봤어요",
   why:"익숙한 하루에 작은 새로움을 하나 넣으면 자동으로 흘러가던 주의가 깨어나요. 하루가 덜 지루해지는 것 자체가 스트레스를 줄여 줘요.",
   how:["오늘의 제안을 읽어요.","지금 할 수 없으면 오늘 언제 할지 정해요.","아주 작게라도 해 봤으면 체크해요."],
   tip:"마음에 안 들면 하루 한 번 다른 제안으로 바꿀 수 있어요."};
@@ -572,7 +578,7 @@ if(!MISSIONS.some(m=>m.id==="newday")) MISSIONS.push(NEWDAY_MISSION);
 
 /* ---------- 상태 ---------- */
 const NATIVE = (typeof window.NativeApp!=="undefined" && window.NativeApp) ? window.NativeApp : null;
-const DEFAULT_SETTINGS = () => ({ startDate: today(), blocks: clone(DEFAULT_BLOCKS), v4:true });
+const DEFAULT_SETTINGS = () => ({ startDate: today(), blocks: clone(DEFAULT_BLOCKS), v4:true, v5:true });
 const S = { settings:null, days:{}, weeks:{}, tab:"now", loaded:false, health:{status:"", msg:""}, update:null, sheet:false, pick:null, editType:null, draft:null };
 
 function taskInfo(t){
@@ -705,9 +711,10 @@ function renderNow(){
   const doneN=tasks.filter(t=>settled(v,t.id)).length, missed=missedTasks(d);
   let h=topbar(v)+updateBar();
   if(f.t){
-    const t=f.t, label=f.state==="now"?"지금 할 일":f.state==="next"?"다음 할 일":f.state==="snoozed"?"잠시 미룬 일":"선택한 할 일";
+    const t=f.t, label=(t.id==="detox"&&f.state==="next"&&v.done.t_jail&&v.done.t_jail.lvl>0)?"디톡스 중":f.state==="now"?"지금 할 일":f.state==="next"?"다음 할 일":f.state==="snoozed"?"잠시 미룬 일":"선택한 할 일";
     const idx=tasks.findIndex(x=>x.id===t.id)+1, left=tasks.filter(x=>!settled(v,x.id)).length;
-    const cue=f.state==="next"?`${t.time}에 알림으로 알려 드릴게요 · 미리 해도 돼요`:t.core?`${t.core.cue} → ${t.title}`:`오늘 ${idx}번째 할 일 · 남은 일 ${left}개`;
+    const jailOn=t.id==="detox"&&f.state==="next"&&v.done.t_jail&&v.done.t_jail.lvl>0;
+    const cue=jailOn?`휴대폰은 감옥에 있어요. ${t.time}에 꺼내면서 체크해요`:f.state==="next"?`${t.time}에 알림으로 알려 드릴게요 · 미리 해도 돼요`:t.core?`${t.core.cue} → ${t.title}`:`오늘 ${idx}번째 할 일 · 남은 일 ${left}개`;
     h+=`<section class="hero glass">
       <div class="hero-top"><span class="state ${f.state==="now"?"":"is-next"}"><i></i>${label}</span><span class="small muted">${esc(t.blockTitle)}</span></div>
       <div class="hero-time">${esc(t.time||"")}</div>
@@ -1100,6 +1107,7 @@ async function boot(){
     S.settings = await getDoc("meta/settings");
     if(!S.settings){ S.settings=DEFAULT_SETTINGS(); await setDoc("meta/settings",S.settings); }
     if(!S.settings.v4){ S.settings.blocks=clone(DEFAULT_BLOCKS); S.settings.v4=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v5){ S.settings.blocks.weekday=clone(DEFAULT_BLOCKS.weekday); S.settings.v5=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
