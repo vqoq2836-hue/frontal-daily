@@ -18,7 +18,7 @@
   /* 보조 카드(불투명) */
   --s-bg:#121A35; --s-ink:#EEF2FF; --s-muted:#A9B4D6; --s-faint:#7C88AE; --s-tile:#1B2547; --s-line:#2A3663;
   /* 지금 할 일 카드(밝은 면) */
-  --h-bg:#F3F6FB; --h-ink:#0E1730; --h-muted:#4D5878; --h-faint:#7A84A0; --h-tile:#E2E8F3; --h-line:#CBD4E6; --h-accent:#0F8F6E; --h-accent-2:#0F8F6E;
+  --h-bg:#F5EEDF; --h-ink:#1C1A2E; --h-muted:#5E5A6E; --h-faint:#8C8696; --h-tile:#EAE1CD; --h-line:#DBCFB5; --h-accent:#0F8F6E; --h-accent-2:#0F8F6E;
   color-scheme:dark;
 }
 :root[data-sky="dawn"]{ --sky1:#24183A; --sky2:#9C4372; --sky3:#F39A5C; --orb:#FFD58C; --haze:#E0618A;
@@ -27,7 +27,7 @@
   --accent:#FFD37A; --accent-2:#FF9E6B; --accent-ink:#3A1A08; --warn:#FFE3A3;
   --card:rgba(40,18,48,.5); --card-2:rgba(255,255,255,.07); --card-line:rgba(255,211,122,.45); --tile:rgba(255,255,255,.08); --tile-line:rgba(255,255,255,.14);
   --s-bg:#341C3C; --s-ink:#FFF3EA; --s-muted:#D9B9C4; --s-faint:#B08E9C; --s-tile:#45284D; --s-line:#5A3763;
-  --h-bg:#FFF6EE; --h-ink:#2E1424; --h-muted:#7A5160; --h-faint:#A07F8C; --h-tile:#F7E4D8; --h-line:#EBCDBC; --h-accent:#D9622E; --h-accent-2:#D9622E; color-scheme:dark }
+  --h-bg:#F8ECDC; --h-ink:#2E1424; --h-muted:#7A5160; --h-faint:#A07F8C; --h-tile:#EFDCC6; --h-line:#E2C9AE; --h-accent:#D9622E; --h-accent-2:#D9622E; color-scheme:dark }
 :root[data-sky="day"]{ --sky1:#0B5D8E; --sky2:#3AA6D8; --sky3:#C9ECF5; --orb:#FFF6C9; --haze:#7CD3EE;
   --ink:#06263A; --muted:rgba(6,38,58,.72); --faint:rgba(6,38,58,.5);
   --glass:rgba(255,255,255,.52); --glass-2:rgba(255,255,255,.68); --line:rgba(255,255,255,.8);
@@ -35,14 +35,14 @@
   --shadow:0 24px 60px rgba(6,38,58,.22);
   --card:rgba(255,255,255,.74); --card-2:rgba(255,255,255,.5); --card-line:rgba(10,111,168,.35); --tile:rgba(10,111,168,.06); --tile-line:rgba(10,111,168,.14);
   --s-bg:#E6F2F9; --s-ink:#0B2A3D; --s-muted:#4A6577; --s-faint:#7890A0; --s-tile:#D3E7F2; --s-line:#B9D6E7;
-  --h-bg:#FFFFFF; --h-ink:#0B2A3D; --h-muted:#4A6577; --h-faint:#7890A0; --h-tile:#EEF5FA; --h-line:#D6E6F0; --h-accent:#0A6FA8; --h-accent-2:#0A6FA8; color-scheme:light }
+  --h-bg:#F7F0E2; --h-ink:#132B3B; --h-muted:#55656F; --h-faint:#86919A; --h-tile:#ECE3D1; --h-line:#DDD1BA; --h-accent:#0A6FA8; --h-accent-2:#0A6FA8; color-scheme:light }
 :root[data-sky="dusk"]{ --sky1:#170F36; --sky2:#5E2A68; --sky3:#EE7246; --orb:#FFA25E; --haze:#B23E73;
   --ink:#FFF4EE; --muted:rgba(255,244,238,.74); --faint:rgba(255,244,238,.48);
   --glass:rgba(255,255,255,.11); --glass-2:rgba(255,255,255,.17); --line:rgba(255,255,255,.24);
   --accent:#FFB176; --accent-2:#FF7A8A; --accent-ink:#3A1406; --warn:#FFD9A0;
   --card:rgba(30,14,46,.55); --card-2:rgba(255,255,255,.06); --card-line:rgba(255,177,118,.42); --tile:rgba(255,255,255,.07); --tile-line:rgba(255,255,255,.12);
   --s-bg:#24142F; --s-ink:#FFF1E8; --s-muted:#D2B3C2; --s-faint:#A88A9C; --s-tile:#33203F; --s-line:#4A2F58;
-  --h-bg:#FFF3EC; --h-ink:#2A1226; --h-muted:#76505F; --h-faint:#9E7F8B; --h-tile:#F8E2D9; --h-line:#EDCABD; --h-accent:#D5503A; --h-accent-2:#D5503A; color-scheme:dark }
+  --h-bg:#F7EADB; --h-ink:#2A1226; --h-muted:#76505F; --h-faint:#9E7F8B; --h-tile:#EDD9C4; --h-line:#E0C6AC; --h-accent:#D5503A; --h-accent-2:#D5503A; color-scheme:dark }
 
 *{box-sizing:border-box}
 html,body{background:var(--sky1)}
@@ -84,7 +84,7 @@ p{margin:0} h1,h2,h3{margin:0;line-height:1.25;text-wrap:balance}
 @keyframes rise{0%{transform:translateY(4px);opacity:0}40%{opacity:.5}100%{transform:translateY(-10px);opacity:0}}
 @keyframes drift{0%{transform:translateX(-30px)}100%{transform:translateX(30px)}}
 @media (prefers-reduced-motion: reduce){.scene .lampglow,.scene .steam,.scene .cloud{animation:none}}
-.scene.top{top:0;bottom:auto;-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 60%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 60%,transparent 100%)}
+.scene.top{top:96px;bottom:auto;-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 60%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 60%,transparent 100%)}
 .scene .cl{fill:#fff}
 .scene .fairy{fill:var(--glow);animation:twinkle 3.2s ease-in-out infinite}
 @keyframes twinkle{0%,100%{opacity:.9}50%{opacity:.35}}
@@ -253,7 +253,7 @@ nav.tabs a[aria-current="page"]{color:var(--accent-ink);background:var(--accent)
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--sky1);padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:30;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 </style>
 
-<div class="sky" aria-hidden="true"><div class="ring-deco two"></div><div class="ring-deco"></div><div class="orb"></div><div class="haze"></div><div class="stars"></div><div class="scene dawn top"><svg viewBox="0 0 520 300" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+<div class="sky" aria-hidden="true"><div class="orb"></div><div class="haze"></div><div class="stars"></div><div class="scene dawn top"><svg viewBox="0 0 520 300" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
 <g class="cl" opacity=".18"><ellipse cx="120" cy="70" rx="140" ry="16"/><ellipse cx="200" cy="58" rx="80" ry="12"/><ellipse cx="400" cy="120" rx="150" ry="14"/><ellipse cx="460" cy="108" rx="70" ry="10"/><ellipse cx="90" cy="170" rx="120" ry="10"/></g>
 <g class="cl" opacity=".1"><ellipse cx="300" cy="30" rx="200" ry="10"/><ellipse cx="260" cy="210" rx="180" ry="9"/></g>
 <path d="M80 40 a20 20 0 1 0 14 34 a16 16 0 1 1 -14 -34z" fill="#FFF1D6" opacity=".55"/>
@@ -277,10 +277,10 @@ nav.tabs a[aria-current="page"]{color:var(--accent-ink);background:var(--accent)
 </svg></div><div class="scene night top"><svg viewBox="0 0 520 300" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
 <defs><radialGradient id="pend" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFD58C" stop-opacity=".55"/><stop offset="1" stop-color="#FFD58C" stop-opacity="0"/></radialGradient></defs>
 <!-- 천장 -->
-<rect class="sil" x="0" y="0" width="520" height="8"/>
+
 <!-- 줄 전구 -->
-<path d="M20 24 Q260 76 500 24" fill="none" stroke="var(--scene-ink)" stroke-width="1.4" opacity=".8"/>
-<g><circle class="fairy" style="animation-delay:0.0s" cx="20" cy="24.0" r="2.6"/><circle class="fairy" style="animation-delay:0.6s" cx="50" cy="29.1" r="2.6"/><circle class="fairy" style="animation-delay:1.2s" cx="80" cy="33.9" r="2.6"/><circle class="fairy" style="animation-delay:1.8s" cx="110" cy="38.4" r="2.6"/><circle class="fairy" style="animation-delay:2.4s" cx="140" cy="42.4" r="2.6"/><circle class="fairy" style="animation-delay:0.0s" cx="170" cy="45.6" r="2.6"/><circle class="fairy" style="animation-delay:0.6s" cx="200" cy="48.0" r="2.6"/><circle class="fairy" style="animation-delay:1.2s" cx="230" cy="49.5" r="2.6"/><circle class="fairy" style="animation-delay:1.8s" cx="260" cy="50.0" r="2.6"/><circle class="fairy" style="animation-delay:2.4s" cx="290" cy="49.5" r="2.6"/><circle class="fairy" style="animation-delay:0.0s" cx="320" cy="48.0" r="2.6"/><circle class="fairy" style="animation-delay:0.6s" cx="350" cy="45.6" r="2.6"/><circle class="fairy" style="animation-delay:1.2s" cx="380" cy="42.4" r="2.6"/><circle class="fairy" style="animation-delay:1.8s" cx="410" cy="38.4" r="2.6"/><circle class="fairy" style="animation-delay:2.4s" cx="440" cy="33.9" r="2.6"/><circle class="fairy" style="animation-delay:0.0s" cx="470" cy="29.1" r="2.6"/><circle class="fairy" style="animation-delay:0.6s" cx="500" cy="24.0" r="2.6"/></g>
+
+
 <!-- 펜던트 조명 -->
 <rect class="sil" x="148" y="8" width="2" height="80"/>
 <circle class="lampglow" cx="149" cy="110" r="70" fill="url(#pend)"/>
