@@ -537,7 +537,8 @@ window.onNativeUpdate = function(str){
   S.update=Object.assign({}, S.update||{}, r);
   if(r.status==="error") toast("업데이트 실패: "+(r.message||"다시 시도해 주세요"));
   if(r.status==="need_permission") toast("‘이 출처 허용’을 켜고 돌아와서 다시 눌러 주세요");
-  if(S.tab==="today") render();
+  if(S.manualCheck && r.status==null){ S.manualCheck=false; toast(r.checkError?"확인 실패: "+r.checkError+" (인터넷 연결 확인)":r.available?"새 버전 v"+r.versionName+"이 있어요":"최신 버전이에요 (v"+(r.current||"")+")"); }
+  if(S.tab==="today"||S.tab==="routine") render();
 };
 function updateBar(){
   const u=S.update; if(!NATIVE||!u||!u.available) return "";
@@ -809,6 +810,7 @@ function renderRoutine(){
     <li>이 페이지를 홈 화면에 추가하면 알림을 누르고 바로 체크할 수 있어요.</li>
     <li>21:00 ‘폰 상자’는 갤럭시 ‘모드 및 루틴’의 취침 모드와 함께 쓰면 효과가 커요.</li>
   </ol></section>`}
+  ${NATIVE?`<section class="card"><h2>앱 정보</h2><p class="small">지금 버전: <b class="num">v${esc((S.update&&S.update.current)||"확인 중")}</b>${S.update&&S.update.available?` · 새 버전 v${esc(S.update.versionName)} 있음`:""}</p><div class="row"><button class="btn" id="checkUpd">업데이트 확인</button>${S.update&&S.update.available?`<button class="btn primary" id="doUpdate">업데이트</button>`:""}</div></section>`:""}
   <section class="card"><h2>시작일</h2><div class="row"><input type="text" id="startDate" value="${esc(S.settings.startDate)}" aria-label="시작일 (YYYY-MM-DD)" style="width:150px"><button class="btn" id="saveStart">시작일 저장</button></div><p class="small muted">66일 진행률과 연속 기록은 이 날짜부터 계산돼요.</p></section>
   <p class="sync">${esc(syncText())}</p>`;
   return h;
@@ -874,6 +876,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.pass){ const d=today(), v=day(d), m=MISSIONS.find(x=>x.id===b.dataset.pass); v.done[b.dataset.pass]={lvl:0, skipped:true, at:Date.now()}; saveDay(d); render(); toast((m?m.title:"미션")+" 넘김 · 다음 미션이 열렸어요"); return; }
   if(b.dataset.reopen){ const d=today(), v=day(d); delete v.done[b.dataset.reopen]; saveDay(d); render(); window.scrollTo(0,0); return; }
   if(b.id==="focusToggle"){ S.focus=!S.focus; try{ localStorage.setItem(LS+"focus", S.focus?"1":"0"); }catch(e){} render(); return; }
+  if(b.id==="checkUpd"){ S.manualCheck=true; toast("확인 중…"); checkUpdate(); return; }
   if(b.id==="doUpdate"){ if(NATIVE&&NATIVE.startUpdate){ S.update={...(S.update||{}), status:"downloading"}; render(); NATIVE.startUpdate(); } return; }
   if(b.dataset.breath){ startBreath(Number(b.dataset.breath)); return; }
   if(b.dataset.week){ const w=isoWeek(today()); S.weeks[w]=S.weeks[w]||{}; S.weeks[w][b.dataset.week]=!S.weeks[w][b.dataset.week]; saveWeek(w); render(); return; }
