@@ -429,10 +429,10 @@ const MISSIONS = [
    how:["앱이 삼성헬스에서 걸음 수를 자동으로 불러와요.","4,000보가 안 되면 10분만 집 근처를 걸어요.","걷고 와서 ‘다시 불러오기’를 눌러요."],
    tip:"쉬는 시간에 교실 밖 복도를 한 바퀴 걷는 것만으로도 하루 1,000보가 늘어요."},
   {id:"phone", title:"폰 상자", pillar:"디지털", kind:"check", time:"21:00",
-   cue:"밤 10시 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
+   cue:"자기 전 폰 상자 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
    why:"자기 전 폰은 잠드는 시간을 늦추고 수면의 질을 떨어뜨려요. 수면이 지켜져야 내일의 전두엽이 지켜져요.",
    how:["알람은 워치나 탁상시계로 바꿔 둬요.","폰을 충전기에 꽂아 상자 안에 넣어요.","상자는 침실 밖에 둬요."],
-   tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 21시에 맞춰 두면 알림도 함께 조용해져요."},
+   tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 잠들기 30분 전(평일 23시)에 맞춰 두면 알림도 함께 조용해져요."},
   {id:"journal", title:"저녁 3줄 기록", pillar:"기록", kind:"journal", time:"21:30",
    cue:"씻고 나서 책상에 앉으면", full:"세 줄 모두", mini:"한 줄이라도",
    why:"하루를 돌아보고 내일 첫 행동을 정하면, 다음 날 아침의 계획 쓰기가 쉬워져요.",
@@ -635,9 +635,10 @@ const DEFAULT_BLOCKS = {
   weekday:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키 챙기기","07:50")]},
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
-    {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:[C("breath","16:45"), C("move","17:00"), C("newday","18:00"), T("t_dinner","저녁 챙겨 먹기","18:30"), T("t_prep","내일 도시락 준비","19:10")]},
-    {id:"side", title:"부업 시간", start:"19:30", end:"21:00", tasks:[C("focus","19:30"), C("steps","20:50")]},
-    {id:"night", title:"자기 전", start:"21:00", end:"23:00", tasks:[T("t_dishes","설거지","21:00"), T("t_tidy","10분 정리·청소","21:15"), T("t_clothes","내일 옷·가방 챙기기","21:30"), C("novel","21:40"), C("journal","21:50"), C("phone","22:00")]}
+    {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("breath","16:45"), C("move","17:00")]},
+    {id:"home", title:"집 · 저녁과 정리", start:"18:30", end:"20:00", tasks:[C("newday","18:30"), T("t_dinner","집에 와서 저녁 먹기","18:40"), T("t_dishes","설거지","19:10"), T("t_tidy","10분 정리·청소","19:25"), T("t_prep","내일 도시락 준비","19:40")]},
+    {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:30", tasks:[C("focus","20:00"), C("steps","22:15")]},
+    {id:"night", title:"자기 전", start:"22:30", end:"23:45", tasks:[T("t_clothes","내일 옷·가방 챙기기","22:30"), C("novel","22:40"), C("journal","22:50"), C("phone","23:00"), T("t_sleep","불 끄고 눕기","23:30")]}
   ],
   weekend:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), C("plan","08:00")]},
@@ -1273,6 +1274,15 @@ async function boot(){
       const work=(S.settings.blocks.weekday||[]).find(b=>b.id==="work");
       if(work && !work.tasks.some(t=>t&&t.id==="t_work")) work.tasks.push({id:"t_work", title:"오후 업무 시작 · 할 일 처리", time:"14:00"});
       S.settings.v8=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v9){ /* 평일 저녁: 17시 운동 → 집에서 저녁·설거지·청소 → 쉼+편집 알바 → 23:30 취침 */
+      const ids=["after","home","side","night"], wk=S.settings.blocks.weekday||[];
+      const defs=DEFAULT_BLOCKS.weekday.filter(b=>ids.includes(b.id));
+      const known=new Set(); defs.forEach(b=>b.tasks.forEach(t=>known.add((taskInfo(t)||{}).id)));
+      const extra=[]; wk.filter(b=>ids.includes(b.id)).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(ti&&!known.has(ti.id)) extra.push(t); }));
+      const fresh=clone(defs); if(extra.length) fresh.find(b=>b.id==="side").tasks.push(...extra);
+      const at=wk.findIndex(b=>ids.includes(b.id));
+      S.settings.blocks.weekday=wk.filter(b=>!ids.includes(b.id)); S.settings.blocks.weekday.splice(at<0?S.settings.blocks.weekday.length:at,0,...fresh);
+      S.settings.v9=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
