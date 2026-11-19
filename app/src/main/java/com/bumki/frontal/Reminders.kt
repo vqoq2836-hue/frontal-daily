@@ -96,7 +96,12 @@ object Reminders {
             s.optJSONObject("itemsByType")?.optJSONArray(if (weekend) "weekend" else "weekday") ?: s.optJSONArray("items")
         }
         if (arr == null) return emptyList()
-        return (0 until arr.length()).map { arr.getJSONObject(it) }
+        // days: 그 요일에만 하는 일 (0=일 … 5=금 6=토)
+        val dow = date.dayOfWeek.value % 7
+        return (0 until arr.length()).map { arr.getJSONObject(it) }.filter { o ->
+            val d = o.optJSONArray("days") ?: return@filter true
+            (0 until d.length()).any { d.optInt(it) == dow }
+        }
     }
 
     fun item(ctx: Context, id: String): JSONObject? = items(ctx).firstOrNull { it.optString("id") == id }

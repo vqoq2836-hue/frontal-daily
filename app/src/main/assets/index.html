@@ -637,7 +637,7 @@ const DEFAULT_BLOCKS = {
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("breath","16:45"), C("move","17:00")]},
     {id:"home", title:"집 · 저녁과 정리", start:"18:30", end:"20:00", tasks:[C("newday","18:30"), T("t_dinner","집에 와서 저녁 먹기","18:40"), T("t_dishes","설거지","19:10"), T("t_tidy","10분 정리·청소","19:25"), T("t_prep","내일 도시락 준비","19:40")]},
-    {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:30", tasks:[C("focus","20:00"), C("steps","22:15")]},
+    {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:30", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), C("steps","22:15")]},
     {id:"night", title:"자기 전", start:"22:30", end:"23:45", tasks:[T("t_clothes","내일 옷·가방 챙기기","22:30"), C("novel","22:40"), C("journal","22:50"), C("phone","23:00"), T("t_sleep","불 끄고 눕기","23:30")]}
   ],
   weekend:[
@@ -663,7 +663,7 @@ const S = { settings:null, days:{}, weeks:{}, tab:"now", loaded:false, health:{s
 function taskInfo(t){
   if(!t) return null;
   if(t.core){ const m=MISSIONS.find(x=>x.id===t.core); return m?{id:m.id, title:m.title, time:t.time||m.time, core:m}:null; }
-  if(t.id) return {id:t.id, title:t.title, time:t.time||"", core:null};
+  if(t.id) return {id:t.id, title:t.title, time:t.time||"", core:null, days:Array.isArray(t.days)?t.days:null};
   return null;
 }
 function blocksFor(type){ return (S.settings&&S.settings.blocks&&S.settings.blocks[type])||DEFAULT_BLOCKS[type]; }
@@ -679,6 +679,7 @@ function dayTasks(d){
   blocksFor(dayTypeOf(v)).forEach(b=>b.tasks.forEach(t=>{
     const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return;
     if(ti.core&&md.skip.includes(ti.id)) return;
+    if(ti.days&&!ti.days.includes(parse(d).getDay())) return; /* 특정 요일에만 하는 일 */
     seen.add(ti.id); out.push(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}));
   }));
   return out.sort((a,b)=>(toMin(a.time)||0)-(toMin(b.time)||0));
@@ -723,7 +724,7 @@ function nativeSync(){
     Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.lvl) done[k]=x.lvl; });
     const skip=md.skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
     const snz={}; Object.entries(v.snooze||{}).forEach(([k,t])=>{ if(t>Date.now()) snz[k]=t; });
-    const toItem=t=>({id:t.id, title:t.title, time:t.time, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
+    const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
     NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, todoTimes:["12:50","16:45","21:00"]}));
@@ -894,7 +895,7 @@ function renderRoutine(){
     h+=`<section class="glass card">
       <input type="text" data-bk="${i}:title" value="${esc(b.title)}" aria-label="시간대 이름" style="font-weight:700;font-size:16px">
       <div class="row"><input type="time" data-bk="${i}:start" value="${esc(b.start)}" aria-label="시작" style="width:auto;flex:1"><span class="muted">–</span><input type="time" data-bk="${i}:end" value="${esc(b.end)}" aria-label="끝" style="width:auto;flex:1"></div>
-      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small">${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}</span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
+      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small">${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}${ti.days?`<span class="tag">${ti.days.map(n=>"일월화수목금토"[n]).join("·")}요일만</span>`:""}</span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
       <div class="ed-row" style="grid-template-columns:92px 1fr auto"><input type="time" id="addt-${i}" value="${esc(b.start)}" aria-label="새 할 일 시각"><input type="text" id="add-${i}" placeholder="할 일 추가 (예: 분리수거)"><button class="btn" data-add-task="${i}">추가</button></div>
       ${coreOpts.length?`<div class="row"><select id="core-${i}" style="flex:1;width:auto">${coreOpts.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join("")}</select><button class="btn" data-add-core="${i}">핵심 미션 넣기</button></div>`:""}
     </section>`;
@@ -1283,6 +1284,10 @@ async function boot(){
       const at=wk.findIndex(b=>ids.includes(b.id));
       S.settings.blocks.weekday=wk.filter(b=>!ids.includes(b.id)); S.settings.blocks.weekday.splice(at<0?S.settings.blocks.weekday.length:at,0,...fresh);
       S.settings.v9=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v10){ /* 금요일 저녁: 가계부 정리와 한 주 반성 */
+      const side=(S.settings.blocks.weekday||[]).find(b=>b.id==="side");
+      if(side && !side.tasks.some(t=>t&&t.id==="t_money")) side.tasks.unshift({id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]});
+      S.settings.v10=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
