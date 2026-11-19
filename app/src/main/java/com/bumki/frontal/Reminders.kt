@@ -520,7 +520,13 @@ object Reminders {
         val title = it.optString("title")
         val time = it.optString("time")
         val head = if (nag == 0) "$time · $title" else "아직이에요 · $title"
-        val body = if (nag == 0) {
+        val todoLines = remainingTodos(ctx).sortedBy { t -> if (t.optBoolean("top")) 0 else 1 }
+            .joinToString("\n") { t -> (if (t.optBoolean("top")) "★ " else "• ") + t.optString("text") }
+        val body = if (id == "t_work") {
+            // 오후 2시: 아침에 적은 할 일 중 남은 걸 바로 보여 주고 업무로 들어가게
+            if (todoLines.isNotEmpty()) "오늘 남은 업무예요. ★부터 하나만 시작해요.\n$todoLines"
+            else "오늘 처리할 업무 하나를 골라 25분만 집중해요."
+        } else if (nag == 0) {
             val cue = it.optString("cue")
             if (cue.isNotEmpty() && cue != it.optString("blockTitle")) "$cue → $title" else "${it.optString("blockTitle")} 루틴 · 지금 할 시간이에요"
         } else "괜찮아요, 지금 해도 돼요. 작게라도 하면 하루가 이어져요."
