@@ -242,6 +242,7 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .todo-add{display:grid;grid-template-columns:1fr auto;gap:8px}
 .todo-card .chk{padding:6px 0;font-size:15px;flex:1;min-width:0}
 .todo-line{display:flex;align-items:center;gap:6px}
+.lwp-ask{margin:4px 0 8px;padding:12px;border-radius:14px;background:var(--tile);border:1px solid var(--tile-line)}
 .xbtn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--tile-line);background:var(--tile);color:var(--muted);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 .top-star{color:var(--accent)}
 .warn-t{color:var(--warn);font-weight:700}
@@ -696,7 +697,8 @@ function todoCard(v){
   const left=td.filter(x=>!x.done).length;
   const sorted=[...td].sort((a,b)=>(a.done-b.done)||((b.top?1:0)-(a.top?1:0)));
   return `<section class="glass card todo-card"><div class="row" style="justify-content:space-between"><span class="eyebrow">아침에 적은 오늘 할 일</span><span class="small ${left?"warn-t":"muted"}">${left?left+"개 남았어요":"모두 끝!"}</span></div>
-    ${NATIVE&&S.board&&left&&!S.board.active&&(S.settings||{}).todoBoard!==false?`<a class="small warn-t" href="#routine" data-board-go="1" style="display:block;margin:2px 0 4px">잠금화면에 아직 안 떠 있어요 · 눌러서 점검 ›</a>`:""}
+    ${NATIVE&&NATIVE.lockWallpaperApply&&left&&!(S.settings||{}).lockWallpaper?(S.lwpAsk?`<div class="lwp-ask"><p class="small">폰을 켜면 시계 바로 아래에 이 할 일이 보이도록 <b>잠금화면 배경</b>을 바꿔요. 지금 배경처럼 ‘폰의 주인은 나다’도 아래에 함께 넣고, 할 일을 다 끝내면 7가지 약속 전체가 다시 보여요.</p><div class="row"><button class="btn primary" data-lwp="on">잠금화면에 띄우기</button><button class="btn" data-lwp="preview">미리 보기</button><button class="btn" data-lwp-ask="0">나중에</button></div>${S.lwpPreview?`<img src="${S.lwpPreview}" alt="잠금화면 미리 보기" style="width:52%;border-radius:16px;display:block;margin:10px auto 0">`:""}</div>`:`<button class="btn sm" data-lwp-ask="1" style="margin:2px 0 6px">폰 켜면 바로 보이게 · 잠금화면에 띄우기 ›</button>`):""}
+    ${NATIVE&&S.board&&left&&!S.board.active&&(S.settings||{}).todoBoard!==false&&!(S.settings||{}).lockWallpaper?`<a class="small warn-t" href="#routine" data-board-go="1" style="display:block;margin:2px 0 4px">잠금화면에 아직 안 떠 있어요 · 눌러서 점검 ›</a>`:""}
     ${sorted.map(x=>`<div class="todo-line"><button class="chk" data-todo-toggle="${x.id}" aria-pressed="${!!x.done}"><span class="box"></span><span class="${x.done?"muted":""}" style="${x.done?"text-decoration:line-through":""}">${x.top?"<b class=\"top-star\">★</b> ":""}${esc(x.text)}</span></button><button class="xbtn" data-todo-del="${x.id}" aria-label="${esc(x.text)} 지우기">×</button></div>`).join("")}
   </section>`;
 }
@@ -842,7 +844,7 @@ function renderRoutine(){
     ${[["weekday","평일에 알림마다 꼭 진동"],["weekend","주말에도 꼭 진동"]].map(([k,l])=>`<button class="chk" data-vib="${k}" aria-pressed="${vibrateSetting()[k]}"><span class="box"></span><span>${l}</span></button>`).join("")}
     </section>
     ${NATIVE&&NATIVE.lockWallpaperApply?`<section class="glass card"><h2>폰 켜면 바로 보이게</h2><p class="small muted">잠금화면 <b>배경 그림</b>에 오늘 할 일을 써 넣어요. 알림처럼 접히거나 아이콘으로 줄지 않고, 폰을 켜면 시계 아래에 늘 보여요. 체크·추가·삭제할 때마다 배경이 다시 그려지고, 자정이 지나면 새 날로 바뀌어요.</p>
-    ${S.settings.lockWallpaper?`<p class="small"><b>켜져 있어요.</b> 알림 카드와 겹쳐 보이면 아래 ‘잠금화면에 오늘 할 일 띄우기’(알림)는 꺼도 돼요.</p>`:`<p class="small warn-t">켜면 지금 잠금화면 배경이 이 그림으로 바뀌어요. 나중에 끄면 원래 사진은 갤러리에서 직접 다시 배경으로 지정해야 해요. 홈 화면 배경은 그대로예요.</p>`}
+    ${S.settings.lockWallpaper?`<p class="small"><b>켜져 있어요.</b> 알림 카드와 겹쳐 보이면 아래 ‘잠금화면에 오늘 할 일 띄우기’(알림)는 꺼도 돼요.</p>`:`<p class="small warn-t">켜면 잠금화면 배경이 이 그림으로 바뀌어요(‘폰의 주인은 나다’는 그림 안에 함께 들어가요). 나중에 끄면 원래 사진은 갤러리에서 다시 지정해야 해요. 홈 화면 배경은 그대로예요.</p>`}
     <div class="row"><button class="btn" data-lwp="preview">미리 보기</button>${S.settings.lockWallpaper?`<button class="btn" data-lwp="redraw">지금 다시 그리기</button><button class="btn" data-lwp="off">끄기</button>`:`<button class="btn primary" data-lwp="on">잠금화면 배경으로 켜기</button>`}</div>
     ${S.lwpPreview?`<img src="${S.lwpPreview}" alt="잠금화면 미리 보기" style="width:52%;border-radius:16px;display:block;margin:10px auto 0;box-shadow:0 6px 20px rgba(0,0,0,.25)">`:""}
     </section>`:""}
@@ -897,6 +899,7 @@ document.addEventListener("click",e=>{
     if(k==="plan"){ const n=(v.todos||[]).length; if(!n){ toast("할 일을 하나라도 적어 주세요"); return; } mark("plan", n>=3&&(v.todos||[]).some(x=>x.top)?2:1); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.lwpAsk){ S.lwpAsk=b.dataset.lwpAsk==="1"; render(); return; }
   if(b.dataset.lwp && NATIVE){ const a=b.dataset.lwp; try{
       if(a==="preview"){ S.lwpPreview=NATIVE.lockWallpaperPreview()||null; if(!S.lwpPreview) toast("미리 보기를 만들지 못했어요"); render(); }
       else if(a==="on"||a==="redraw"){ S.settings.lockWallpaper=true; if(a==="on") saveSettings(); else nativeSync(); const r=NATIVE.lockWallpaperApply(); toast(r==="ok"?"잠금화면 배경에 오늘 할 일을 넣었어요. 화면을 껐다 켜 보세요":"배경을 바꾸지 못했어요: "+r.replace(/^error:/,"")); render(); }
