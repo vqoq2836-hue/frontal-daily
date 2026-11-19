@@ -154,6 +154,12 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun lockWallpaperApply(): String = LockWallpaper.apply(this@MainActivity, true)
+
+        @JavascriptInterface
+        fun lockWallpaperPreview(): String = runCatching { LockWallpaper.preview(this@MainActivity) }.getOrDefault("")
+
+        @JavascriptInterface
         fun boardStatus(): String = Reminders.boardStatus(this@MainActivity)
 
         @JavascriptInterface

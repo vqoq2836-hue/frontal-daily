@@ -15,6 +15,7 @@ class AlarmReceiver : BroadcastReceiver() {
             }
             Reminders.ACTION_ALARM -> {
                 Reminders.updateBoard(ctx)
+                if (id.startsWith("board@")) { Reminders.scheduleAll(ctx); MissionWidget.updateAll(ctx); return }
                 if (id.startsWith("todo@")) { Reminders.showTodos(ctx); return }
                 val nag = intent.getIntExtra(Reminders.EXTRA_NAG, 0)
                 if (!Reminders.isSettled(ctx, id)) {

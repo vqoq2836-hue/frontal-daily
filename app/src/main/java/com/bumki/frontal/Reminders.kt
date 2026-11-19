@@ -73,6 +73,8 @@ object Reminders {
         prefs(ctx).edit().putString(KEY_STATE, json).apply()
     }
 
+    fun stateObj(ctx: Context): JSONObject = state(ctx)
+
     private fun state(ctx: Context): JSONObject =
         runCatching { JSONObject(prefs(ctx).getString(KEY_STATE, "{}") ?: "{}") }.getOrDefault(JSONObject())
 
@@ -251,6 +253,8 @@ object Reminders {
                 if (t > System.currentTimeMillis() && !isItemSettled(ctx, id)) setAlarm(ctx, t, alarmIntent(ctx, id, 1, true))
             }
         }
+        // 자정이 지나면 잠금화면 할 일(알림·배경)을 새 날로 바꿈
+        setAlarm(ctx, tomorrow.atStartOfDay(zone).plusSeconds(30).toInstant().toEpochMilli(), alarmIntent(ctx, "board@midnight", 0, false))
         updateBoard(ctx)
     }
 
@@ -399,6 +403,7 @@ object Reminders {
 
     /** 잠금화면에 고정되는 '오늘 할 일' 판. 할 일이 바뀔 때마다 같은 자리에서 조용히 고쳐 씀 */
     fun updateBoard(ctx: Context) {
+        runCatching { LockWallpaper.update(ctx) }
         val nm = NotificationManagerCompat.from(ctx)
         val all = todayTodos(ctx)
         if (!state(ctx).optBoolean("todoBoard", true) || all.isEmpty() || !canNotify(ctx)) {

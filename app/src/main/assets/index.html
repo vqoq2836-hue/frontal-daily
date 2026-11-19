@@ -657,7 +657,7 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, todoTimes:["12:50","16:45","21:00"]}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper===true, todoTimes:["12:50","16:45","21:00"]}));
   }catch(e){}
   checkBoard(false);
 }
@@ -841,6 +841,11 @@ function renderRoutine(){
     <section class="glass card"><h2>진동</h2><p class="small muted">켜 두면 휴대폰이 무음이어도 알림마다 진동이 와요(알람과 같은 방식). 방해금지 모드에서 알람을 막아 두면 울리지 않아요.</p>
     ${[["weekday","평일에 알림마다 꼭 진동"],["weekend","주말에도 꼭 진동"]].map(([k,l])=>`<button class="chk" data-vib="${k}" aria-pressed="${vibrateSetting()[k]}"><span class="box"></span><span>${l}</span></button>`).join("")}
     </section>
+    ${NATIVE&&NATIVE.lockWallpaperApply?`<section class="glass card"><h2>폰 켜면 바로 보이게</h2><p class="small muted">잠금화면 <b>배경 그림</b>에 오늘 할 일을 써 넣어요. 알림처럼 접히거나 아이콘으로 줄지 않고, 폰을 켜면 시계 아래에 늘 보여요. 체크·추가·삭제할 때마다 배경이 다시 그려지고, 자정이 지나면 새 날로 바뀌어요.</p>
+    ${S.settings.lockWallpaper?`<p class="small"><b>켜져 있어요.</b> 알림 카드와 겹쳐 보이면 아래 ‘잠금화면에 오늘 할 일 띄우기’(알림)는 꺼도 돼요.</p>`:`<p class="small warn-t">켜면 지금 잠금화면 배경이 이 그림으로 바뀌어요. 나중에 끄면 원래 사진은 갤러리에서 직접 다시 배경으로 지정해야 해요. 홈 화면 배경은 그대로예요.</p>`}
+    <div class="row"><button class="btn" data-lwp="preview">미리 보기</button>${S.settings.lockWallpaper?`<button class="btn" data-lwp="redraw">지금 다시 그리기</button><button class="btn" data-lwp="off">끄기</button>`:`<button class="btn primary" data-lwp="on">잠금화면 배경으로 켜기</button>`}</div>
+    ${S.lwpPreview?`<img src="${S.lwpPreview}" alt="잠금화면 미리 보기" style="width:52%;border-radius:16px;display:block;margin:10px auto 0;box-shadow:0 6px 20px rgba(0,0,0,.25)">`:""}
+    </section>`:""}
     <section class="glass card"><h2>잠금화면 할 일</h2><p class="small muted">아침에 적은 할 일 중 남은 것을 잠금화면에 조용히 띄워 두고, 체크할 때마다 바로 바뀌어요. 맨 위 할 일은 잠금화면에서 바로 ‘끝’을 누를 수 있어요.</p>
     <button class="chk" data-board="1" aria-pressed="${(S.settings||{}).todoBoard!==false}"><span class="box"></span><span>잠금화면에 오늘 할 일 띄우기</span></button>
     ${NATIVE?`<div class="row"><button class="btn primary" data-board-test="1">지금 띄우고 점검</button></div>${boardPanel()}`:""}
@@ -892,6 +897,11 @@ document.addEventListener("click",e=>{
     if(k==="plan"){ const n=(v.todos||[]).length; if(!n){ toast("할 일을 하나라도 적어 주세요"); return; } mark("plan", n>=3&&(v.todos||[]).some(x=>x.top)?2:1); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.lwp && NATIVE){ const a=b.dataset.lwp; try{
+      if(a==="preview"){ S.lwpPreview=NATIVE.lockWallpaperPreview()||null; if(!S.lwpPreview) toast("미리 보기를 만들지 못했어요"); render(); }
+      else if(a==="on"||a==="redraw"){ S.settings.lockWallpaper=true; if(a==="on") saveSettings(); else nativeSync(); const r=NATIVE.lockWallpaperApply(); toast(r==="ok"?"잠금화면 배경에 오늘 할 일을 넣었어요. 화면을 껐다 켜 보세요":"배경을 바꾸지 못했어요: "+r.replace(/^error:/,"")); render(); }
+      else if(a==="off"){ S.settings.lockWallpaper=false; saveSettings(); toast("이제 배경을 바꾸지 않아요. 원래 사진은 갤러리에서 다시 배경으로 지정해 주세요"); render(); }
+    }catch(e){ toast("앱 기능을 부르지 못했어요"); } return; }
   if(b.dataset.boardGo){ checkBoard(true); }
   if(b.dataset.boardTest){ const r=checkBoard(true); render(); const L=boardIssues(r); toast(!r?"앱을 업데이트한 뒤 다시 눌러 주세요":r.active?"잠금화면 알림에 올렸어요. 화면을 꺼서 확인해 보세요":L.length?L[0].t:"알림을 올리지 못했어요"); return; }
   if(b.dataset.boardFix){ try{ NATIVE.openNotifySettings(b.dataset.boardFix); }catch(e){ toast("설정을 열지 못했어요"); } return; }
