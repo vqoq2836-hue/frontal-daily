@@ -50,7 +50,7 @@ object LockWallpaper {
         val list = todos(ctx)
         val advice = adviceFor(ctx, LocalDate.now())
         val sig = LocalDate.now().toString() + "|" + advice + "|" +
-            list.joinToString("|") { it.optString("text") + it.optBoolean("done") + it.optBoolean("top") } + "|v3"
+            list.joinToString("|") { it.optString("text") + it.optBoolean("done") + it.optBoolean("top") } + "|v4"
         val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (!force && prefs.getString(KEY_SIG, null) == sig) return "same"
         return try {
@@ -121,6 +121,7 @@ object LockWallpaper {
 
         // ---- 오늘 할 일 (시계 바로 아래)
         val labelY = H * 0.292f
+        var listEnd = labelY + 18f * u   // 할 일 영역이 끝나는 높이 (그 아래에 '오늘의 한 줄')
         when {
             list.isEmpty() -> {
                 c.drawText("오늘 할 일", cx, labelY, tp(3.9f * u, ACCENT))
@@ -129,7 +130,7 @@ object LockWallpaper {
             }
             else -> {
                 c.drawText(if (left.isEmpty()) "오늘 할 일 모두 끝 ✓" else "오늘 할 일 · ${left.size}개 남음", cx, labelY, tp(3.9f * u, ACCENT))
-                val rows = (left + done).take(7)
+                val rows = (left + done).take(5)
                 val more = list.size - rows.size
                 val item = tp(5.4f * u, WHITE, align = Paint.Align.LEFT)
                 val starP = tp(5.4f * u, ACCENT, align = Paint.Align.LEFT)
@@ -148,7 +149,7 @@ object LockWallpaper {
                     strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
                 }
                 var y = labelY + 13.5f * u
-                val step = minOf(11.6f * u, (H * 0.68f - y) / rows.size)
+                val step = minOf(11.6f * u, (H * 0.55f - y) / rows.size)
                 rows.forEachIndexed { i, t ->
                     val isDone = t.optBoolean("done")
                     val mid = y - 1.9f * u
@@ -168,20 +169,22 @@ object LockWallpaper {
                     c.drawText(texts[i], tx, y, item)
                     y += step
                 }
-                if (more > 0) c.drawText("외 ${more}개", cx, y, tp(3.4f * u, DIMW, bold = false))
+                listEnd = y - step + 2f * u
+                if (more > 0) { c.drawText("외 ${more}개", cx, y - step * 0.25f, tp(3.4f * u, DIMW, bold = false)); listEnd = y }
             }
         }
 
         // ---- 오늘의 한 줄 (아래쪽, 매일 바뀜)
         val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ACCENT }
-        val top = H * 0.735f
+        // 화면 지문 센서(아래쪽 ~75% 이하)를 피해서, 할 일 바로 아래에 둠
+        val top = minOf(listEnd + 9f * u, H * 0.585f)
         c.drawRoundRect(RectF(cx - 4f * u, top, cx + 4f * u, top + 0.5f * u), 0.25f * u, 0.25f * u, bar)
         c.drawText("오늘의 한 줄", cx, top + 6f * u, tp(3.3f * u, ACCENT))
         val qp = tp(4.8f * u, WHITE, align = Paint.Align.LEFT)
         val layout = StaticLayout.Builder.obtain(advice, 0, advice.length, qp, (78f * u).toInt())
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
             .setLineSpacing(1.2f * u, 1f)
-            .setMaxLines(3)
+            .setMaxLines(2)
             .setEllipsize(TextUtils.TruncateAt.END)
             .build()
         c.save()
