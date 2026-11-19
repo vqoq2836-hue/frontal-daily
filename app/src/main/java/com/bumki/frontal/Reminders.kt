@@ -447,9 +447,12 @@ object Reminders {
                 .setContentText(left.joinToString("  ") { mark(it) })
                 .setStyle(style)
                 .setOngoing(true)
-            val first = left.first()
-            val label = first.optString("text").let { if (it.length > 12) it.take(11) + "…" else it }
-            b.addAction(0, "✓ $label 끝", actionIntent(ctx, ACTION_TODO_DONE, first.optString("id"), 0, BOARD_ID + 1))
+            // 알림 버튼은 최대 3개: 남은 할 일마다 하나씩, 잠금을 풀지 않고 바로 체크
+            val maxLen = if (left.size == 1) 14 else 7
+            left.take(3).forEachIndexed { i, t ->
+                val label = t.optString("text").let { if (it.length > maxLen) it.take(maxLen - 1) + "…" else it }
+                b.addAction(0, "✓ $label", actionIntent(ctx, ACTION_TODO_DONE, t.optString("id"), 0, BOARD_ID + 1 + i))
+            }
         }
         try { nm.notify(BOARD_ID, b.build()) } catch (_: SecurityException) { }
     }

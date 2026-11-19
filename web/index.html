@@ -914,7 +914,7 @@ function renderRoutine(){
     <div class="row"><button class="btn" data-lwp="preview">미리 보기</button>${S.settings.lockWallpaper!==false?`<button class="btn" data-lwp="redraw">지금 다시 그리기</button><button class="btn" data-lwp="off">끄기</button>`:`<button class="btn primary" data-lwp="on">다시 켜기</button>`}</div>
     ${S.lwpPreview?`<img src="${S.lwpPreview}" alt="잠금화면 미리 보기" style="width:52%;border-radius:16px;display:block;margin:10px auto 0;box-shadow:0 6px 20px rgba(0,0,0,.25)">`:""}
     </section>`:""}
-    <section class="glass card"><h2>잠금화면 할 일</h2><p class="small muted">아침에 적은 할 일 중 남은 것을 잠금화면에 조용히 띄워 두고, 체크할 때마다 바로 바뀌어요. 맨 위 할 일은 잠금화면에서 바로 ‘끝’을 누를 수 있어요.</p>
+    <section class="glass card"><h2>잠금화면 할 일</h2><p class="small muted">아침에 적은 할 일 중 남은 것을 잠금화면에 조용히 띄워 두고, 체크할 때마다 바로 바뀌어요. 남은 할 일 3개까지 알림의 ‘✓’ 버튼으로 잠금을 풀지 않고 바로 체크할 수 있어요(배경 그림 자체는 눌러도 반응하지 않아요).</p>
     <button class="chk" data-board="1" aria-pressed="${(S.settings||{}).todoBoard!==false}"><span class="box"></span><span>잠금화면에 오늘 할 일 띄우기</span></button>
     ${NATIVE?`<div class="row"><button class="btn primary" data-board-test="1">지금 띄우고 점검</button></div>${boardPanel()}`:""}
     <p class="small muted">잠금화면에 내용이 안 보이면: 설정 → 잠금화면 → 알림 → ‘세부 정보’와 ‘내용 표시’를 켜 주세요.</p>
