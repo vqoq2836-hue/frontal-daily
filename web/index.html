@@ -633,7 +633,7 @@ const C = (core,time) => ({core, time});
 const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키 챙기기","07:50")]},
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50")]},
     {id:"after", title:"퇴근 후", start:"16:40", end:"19:30", tasks:[C("breath","16:45"), C("move","17:00"), C("newday","18:00"), T("t_dinner","저녁 챙겨 먹기","18:30"), T("t_prep","내일 도시락 준비","19:10")]},
     {id:"side", title:"부업 시간", start:"19:30", end:"21:00", tasks:[C("focus","19:30"), C("steps","20:50")]},
@@ -1265,6 +1265,10 @@ async function boot(){
     if(!S.settings.v6){ /* 아침 먹기 → 평일은 점심 도시락 챙기기, 주말은 빼기 */
       ["weekday","weekend"].forEach(type=>{ (S.settings.blocks[type]||[]).forEach(b=>{ b.tasks=b.tasks.flatMap(t=>{ if(t&&t.id==="t_breakfast") return type==="weekday"?[{id:"t_lunch", title:"점심 도시락 챙기기", time:t.time}]:[]; return [t]; }); }); });
       S.settings.v6=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v7){ /* 평일 아침: 이부자리 → 창문 → 물 한 잔 → 점심 → 폰·시계·가방·차키, 8시 전에 끝 */
+      const wake=(S.settings.blocks.weekday||[]).find(b=>b.id==="wake");
+      if(wake){ const def=DEFAULT_BLOCKS.weekday.find(b=>b.id==="wake"); const known=new Set(def.tasks.map(t=>(taskInfo(t)||{}).id)); const extra=wake.tasks.filter(t=>{ const ti=taskInfo(t); return ti && !known.has(ti.id); }); wake.tasks=clone(def.tasks).concat(extra); }
+      S.settings.v7=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
