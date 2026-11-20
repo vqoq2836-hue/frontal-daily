@@ -95,7 +95,9 @@ object LockWallpaper {
 
     /** 앱이 넘겨준 조언 목록에서 날짜마다 하나 (자정이 지나면 앱을 안 열어도 바뀜) */
     fun adviceFor(ctx: Context, date: LocalDate): String {
-        val a = Reminders.stateObj(ctx).optJSONArray("advice")
+        val st = Reminders.stateObj(ctx)
+        st.optJSONObject("adviceByDate")?.optString(date.toString())?.takeIf { it.isNotBlank() }?.let { return it }
+        val a = st.optJSONArray("advice")
         if (a == null || a.length() == 0) return "오늘도 충분히 잘하고 있다"
         val n = a.length()
         return a.optString((((date.toEpochDay() % n) + n) % n).toInt())

@@ -753,7 +753,7 @@ const ADVICE = [
   "오늘도 충분히 잘하고 있다"
 ];
 function adviceFor(dateStr){ return adviceRaw(dateStr).replace(/\n/g," "); }
-function adviceRaw(dateStr){ const d=new Date(dateStr+"T00:00:00Z"); const n=Math.floor(d.getTime()/86400000); return ADVICE[((n%ADVICE.length)+ADVICE.length)%ADVICE.length]; }
+function adviceRaw(dateStr){ try{ const f=feedDay(dateStr); if(f&&f.advice) return f.advice; }catch(e){} const d=new Date(dateStr+"T00:00:00Z"); const n=Math.floor(d.getTime()/86400000); return ADVICE[((n%ADVICE.length)+ADVICE.length)%ADVICE.length]; }
 
 /* ---------- 밤 영어 10분: 교실 영어 1 + 일상 회화 1, 듣기 → 따라 말하기 → 복습 ---------- */
 /* 문장은 앱 안에 저장. [영어, 뜻, 바꿔 말하기] */
@@ -843,11 +843,17 @@ const ENG_L = [
 ];
 const ENG_REV = [1,3,7];
 function engPick(v){
-  if(v.eng) return v.eng;
+  /* 아직 손대지 않은 앱 기본 문장이면, 새로 받아 온 문장으로 바꿔 줌 */
+  if(v.eng && v.eng.src==="app" && !v.eng.fin && !Object.keys(v.eng.heard||{}).length && !Object.keys(v.eng.said||{}).length){ const f=feedDay(today()); if(f&&f.eng) delete v.eng; }
+  if(v.eng){ if(!v.eng.items) v.eng.items={c:engItem("c",v.eng.c||0), l:engItem("l",v.eng.l||0)}; return v.eng; }
+  const f=feedDay(today());
+  if(f&&f.eng){ v.eng={items:{c:f.eng.c, l:f.eng.l}, src:"feed", heard:{}, said:{}, rev:{}}; return v.eng; }
   const p=(S.settings&&S.settings.eng)||{c:0,l:0};
-  v.eng={c:p.c%ENG_C.length, l:p.l%ENG_L.length, heard:{}, said:{}, rev:{}};
+  const c=p.c%ENG_C.length, l=p.l%ENG_L.length;
+  v.eng={c, l, items:{c:engItem("c",c), l:engItem("l",l)}, src:"app", heard:{}, said:{}, rev:{}};
   return v.eng;
 }
+function engIt(e,k){ return (e.items&&e.items[k]) || engItem(k,e[k]||0); }
 function engItem(k,i){ const a=(k==="c"?ENG_C:ENG_L)[i]; return {en:a[0],ko:a[1],alt:a[2]}; }
 function engWords(s){ return String(s||"").toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9' ]+/g," ").split(/\s+/).filter(Boolean); }
 function engScore(target,heard){
@@ -855,11 +861,11 @@ function engScore(target,heard){
   const n=marks.reduce((a,b)=>a+b,0); return {pct:T.length?Math.round(n/T.length*100):0, marks};
 }
 function engReviews(d){
-  const out=[]; ENG_REV.forEach(k=>{ const dd=addDays(d,-k), vv=S.days[dd]; if(vv&&vv.eng&&vv.eng.fin){ out.push({key:dd+":c",k:"c",i:vv.eng.c,ago:k}); out.push({key:dd+":l",k:"l",i:vv.eng.l,ago:k}); } });
+  const out=[]; ENG_REV.forEach(k=>{ const dd=addDays(d,-k), vv=S.days[dd]; if(vv&&vv.eng&&vv.eng.fin){ out.push({key:dd+":c",k:"c",it:engIt(vv.eng,"c"),ago:k}); out.push({key:dd+":l",k:"l",it:engIt(vv.eng,"l"),ago:k}); } });
   return out;
 }
 function engSentence(k,e){
-  const it=engItem(k,e[k]), sc=e.said[k];
+  const it=engIt(e,k), sc=e.said[k];
   const words=it.en.split(" ");
   const shown = sc ? words.map((w,i)=>`<span class="${sc.marks&&sc.marks[i]?"ok":"miss"}">${esc(w)}</span>`).join(" ") : esc(it.en);
   return `<div class="eng-s">
@@ -878,7 +884,7 @@ function engSentence(k,e){
 function engCard(){
   const d=today(), v=day(d), e=engPick(v), rv=engReviews(d), x=v.done.t_eng;
   const rvh = rv.length ? `<div class="eng-rv"><div class="row" style="justify-content:space-between"><b class="small">복습 · ${rv.length}문장</b><span class="small muted">뜻을 보고 영어로 먼저 말해 본 뒤 눌러 보세요</span></div>
-    ${rv.map(r=>{ const it=engItem(r.k,r.i), st=e.rev[r.key]; return `<div class="eng-rc ${st?"on":""}"><span class="small muted">${r.ago}일 전</span><p class="eng-ko" style="margin:0">${esc(it.ko)}</p>
+    ${rv.map(r=>{ const it=r.it, st=e.rev[r.key]; return `<div class="eng-rc ${st?"on":""}"><span class="small muted">${r.ago}일 전</span><p class="eng-ko" style="margin:0">${esc(it.ko)}</p>
       ${st?`<p class="eng-en sm">${esc(it.en)}</p><div class="row"><button class="btn sm" data-eng="say" data-txt="${esc(it.en)}" data-r="0.85">🔊</button><button class="btn sm ${st==="ok"?"primary":""}" data-eng="rev" data-key="${r.key}" data-v="ok">알았어요</button><button class="btn sm ${st==="hard"?"primary":""}" data-eng="rev" data-key="${r.key}" data-v="hard">헷갈려요</button></div>`
           :`<button class="linkish small" data-eng="rev" data-key="${r.key}" data-v="open">영어 보기</button>`}</div>`; }).join("")}</div>` : "";
   return `<section class="glass eng-card" id="eng">
@@ -897,7 +903,7 @@ function engSpeak(text,rate){
 window.onNativeEngVoice = function(text){
   const k=S.engMic; S.engMic=null; if(!k) return;
   if(!text){ toast("못 들었어요. 다시 해 볼까요?"); return; }
-  const d=today(), v=day(d), e=engPick(v), it=engItem(k,e[k]), sc=engScore(it.en,text);
+  const d=today(), v=day(d), e=engPick(v), it=engIt(e,k), sc=engScore(it.en,text);
   e.said[k]={pct:sc.pct, marks:sc.marks, heard:text}; saveDay(d);
   toast(sc.pct>=90?"완벽해요! "+sc.pct+"%":sc.pct>=70?"좋아요 "+sc.pct+"% · 빨간 단어만 한 번 더":"들린 말: “"+text+"” · 빨간 단어를 또박또박");
   render();
@@ -905,13 +911,13 @@ window.onNativeEngVoice = function(text){
 document.addEventListener("click", ev=>{
   const b=ev.target.closest("[data-eng]"); if(!b) return;
   const a=b.dataset.eng, d=today(), v=day(d), e=engPick(v);
-  if(a==="say"){ const k=b.dataset.k; const txt=b.dataset.txt||engItem(k,e[k]).en; engSpeak(txt,b.dataset.r); if(k){ e.heard[k]=(e.heard[k]||0)+1; saveDay(d); const s=b.parentNode.querySelector(".small.muted"); if(s) s.textContent="들음 "+e.heard[k]+"번"; } return; }
-  if(a==="mic"){ const k=b.dataset.k; S.engMic=k; let ok=false; try{ ok=NATIVE&&NATIVE.startVoiceLang&&NATIVE.startVoiceLang("Say: "+engItem(k,e[k]).en,"en-US","onNativeEngVoice"); }catch(x){} if(!ok){ S.engMic=null; toast("이 폰에서 영어 음성 인식을 열 수 없어요"); } return; }
+  if(a==="say"){ const k=b.dataset.k; const txt=b.dataset.txt||engIt(e,k).en; engSpeak(txt,b.dataset.r); if(k){ e.heard[k]=(e.heard[k]||0)+1; saveDay(d); const s=b.parentNode.querySelector(".small.muted"); if(s) s.textContent="들음 "+e.heard[k]+"번"; } return; }
+  if(a==="mic"){ const k=b.dataset.k; S.engMic=k; let ok=false; try{ ok=NATIVE&&NATIVE.startVoiceLang&&NATIVE.startVoiceLang("Say: "+engIt(e,k).en,"en-US","onNativeEngVoice"); }catch(x){} if(!ok){ S.engMic=null; toast("이 폰에서 영어 음성 인식을 열 수 없어요"); } return; }
   if(a==="rev"){ const key=b.dataset.key, val=b.dataset.v; e.rev[key]= val==="open" ? (e.rev[key]||"seen") : val; saveDay(d); render(); return; }
   if(a==="fin"){
     const full=e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70;
     v.done.t_eng={lvl:full?2:1, at:Date.now()}; e.fin=true;
-    if(!e.adv){ const p=S.settings.eng||{c:0,l:0}; S.settings.eng={c:p.c+1,l:p.l+1}; e.adv=true; try{ setDoc("meta/settings",S.settings); }catch(x){} }
+    if(!e.adv && e.src!=="feed"){ const p=S.settings.eng||{c:0,l:0}; S.settings.eng={c:p.c+1,l:p.l+1}; e.adv=true; try{ setDoc("meta/settings",S.settings); }catch(x){} }
     saveDay(d); try{ nativeSync(); }catch(x){} toast(full?"오늘 영어 제대로 했어요 · 2점":"오늘 영어 했어요 · 1점"); render(); return; }
   if(a==="undo"){ delete v.done.t_eng; saveDay(d); try{ nativeSync(); }catch(x){} render(); return; }
 });
@@ -926,8 +932,34 @@ function engHistCard(){
   const s=engStats();
   return `<div class="section-h"><h2>밤 영어</h2><span class="small muted">교실 ${ENG_C.length} · 일상 ${ENG_L.length}문장</span></div>
   <section class="glass card"><div class="m-rep-k"><div><small>익힌 문장</small><b>${s.sentences}</b></div><div><small>연속</small><b>${s.streak}일</b></div><div><small>말하기 평균</small><b>${s.avg==null?"—":s.avg+"%"}</b></div></div>
-  <p class="small muted">하루 2문장씩 새로 익히고, 1·3·7일 뒤에 다시 복습해요. 문장을 다 돌면 처음부터 한 번 더 돌아요.</p></section>`;
+  <p class="small muted">${feedDay(today())&&feedDay(today()).eng?"오늘 문장은 새로 받아 온 문장이에요. ":""}하루 2문장씩 새로 익히고, 1·3·7일 뒤에 다시 복습해요. 문장을 다 돌면 처음부터 한 번 더 돌아요.</p></section>`;
 }
+
+/* ---------- 새 문장 받아오기: GitHub에 올려 둔 feed.json (조언 + 영어 2문장, 날짜별) ---------- */
+const FEED_KEY="frontal-v1:feed";
+let FEED=null; try{ FEED=JSON.parse(localStorage.getItem(FEED_KEY)||"null"); }catch(e){ FEED=null; }
+function feedDay(d){ return (FEED&&FEED.days&&FEED.days[d])||null; }
+function feedAdviceMap(){ const o={}, t=today(); if(FEED&&FEED.days) Object.keys(FEED.days).forEach(k=>{ if(k>=t&&FEED.days[k].advice) o[k]=FEED.days[k].advice; }); return o; }
+function feedFetch(force){
+  if(!NATIVE||!NATIVE.fetchFeed) return;
+  let last=0; try{ last=+(localStorage.getItem(FEED_KEY+":at")||0); }catch(e){}
+  if(!force && Date.now()-last<3*3600e3) return;
+  try{ localStorage.setItem(FEED_KEY+":at",String(Date.now())); NATIVE.fetchFeed(); }catch(e){}
+}
+window.onNativeFeed = function(text){
+  let j=null; try{ j=JSON.parse(text); }catch(e){ return; }
+  if(!j||typeof j.days!=="object") return;
+  const it=o=>o&&typeof o.en==="string"&&typeof o.ko==="string"?{en:o.en.slice(0,160),ko:o.ko.slice(0,160),alt:String(o.alt||"").slice(0,160)}:null;
+  const days={};
+  Object.keys(j.days).forEach(k=>{ const x=j.days[k]; if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!x) return; const e={};
+    if(typeof x.advice==="string"&&x.advice.length<=80) e.advice=x.advice;
+    if(x.eng&&it(x.eng.c)&&it(x.eng.l)) e.eng={c:it(x.eng.c), l:it(x.eng.l)};
+    days[k]=e; });
+  FEED={updated:String(j.updated||""), days};
+  try{ localStorage.setItem(FEED_KEY,JSON.stringify(FEED)); }catch(e){}
+  try{ nativeSync(); }catch(e){}
+  if(S.loaded) render();
+};
 
 /* ---------- 루틴 아이콘: 원·직선 위주, 한 팔레트·한 방향 (토스페이스식 규칙) ---------- */
 const IC_FAM = { /* [옅은 바탕, 별색] — 리소 인쇄 잉크 */
@@ -1204,7 +1236,7 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, todoTimes:["12:15","16:45","21:00"]}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), todoTimes:["12:15","16:45","21:00"]}));
   }catch(e){}
   checkBoard(false);
 }
@@ -2321,7 +2353,7 @@ window.onNativeHealthPermission = function(ok){
   if(ok){ S.health.msg=""; toast("삼성헬스와 연결했어요"); readHealth(); }
   else toast("권한이 허용되지 않았어요. 헬스 커넥트 설정에서 걸음·수면 읽기를 켜 주세요.");
 };
-window.onNativeResume = function(){ if(!S.loaded) return; applyPending(); checkBoard(false); if(Date.now()-(S.money.meta.lastSync||0)>120000) moneySync(); readHealth(); checkUpdate(); render(); };
+window.onNativeResume = function(){ if(!S.loaded) return; applyPending(); checkBoard(false); if(Date.now()-(S.money.meta.lastSync||0)>120000) moneySync(); readHealth(); checkUpdate(); feedFetch(false); render(); };
 function checkUpdate(){ if(NATIVE&&NATIVE.checkUpdate){ try{ NATIVE.checkUpdate(); }catch(e){} } }
 window.onNativeUpdate = function(str){
   let r={}; try{ r=JSON.parse(str); }catch(e){}
@@ -2530,7 +2562,7 @@ async function boot(){
   }
   try{ await moneyLoad(); }catch(e){}
   S.loaded=true; render(); setSync();
-  if(NATIVE){ applyPending(); nativeSync(); readHealth(); checkUpdate(); moneySync(); }
+  if(NATIVE){ applyPending(); nativeSync(); readHealth(); checkUpdate(); moneySync(); feedFetch(true); }
 }
 boot();
 })();

@@ -150,6 +150,22 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
+        /** 새 문장(조언·영어) 묶음을 GitHub 릴리스에서 받아 window.onNativeFeed 로 넘김 */
+        @JavascriptInterface
+        fun fetchFeed() {
+            lifecycleScope.launch {
+                val text = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val c = java.net.URL(FEED_URL).openConnection() as java.net.HttpURLConnection
+                        c.connectTimeout = 10_000; c.readTimeout = 20_000; c.instanceFollowRedirects = true
+                        c.setRequestProperty("User-Agent", "FrontalDaily")
+                        c.inputStream.bufferedReader().use { it.readText() }
+                    }.getOrDefault("")
+                }
+                if (text.isNotEmpty()) js("window.onNativeFeed && window.onNativeFeed(" + JSONObject.quote(text) + ")")
+            }
+        }
+
         @JavascriptInterface
         fun startVoiceLang(prompt: String, lang: String, cb: String): Boolean {
             val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -393,6 +409,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val FEED_URL = "https://raw.githubusercontent.com/vqoq2836-hue/frontal-daily/content/feed.json"
         const val ASSET_HOST = "appassets.androidplatform.net"
     }
 }
