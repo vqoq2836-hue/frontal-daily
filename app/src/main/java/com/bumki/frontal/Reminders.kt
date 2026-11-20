@@ -520,8 +520,52 @@ object Reminders {
     }
 
     /** 할 일 하나 알림: 체크·미루기·넘기기 전까지 알림창 맨 위에 남아 있어요. */
+    /** 같은 시각에 잡힌, 아직 안 끝난 할 일들 (목록 순서). 2개 이상이면 알림 하나로 묶어 보여 줌 */
+    fun siblings(ctx: Context, id: String): List<JSONObject> {
+        val me = item(ctx, id) ?: return emptyList()
+        val t = me.optString("time")
+        if (t.isEmpty()) return emptyList()
+        return items(ctx).filter { x -> x.optString("time") == t && !isItemSettled(ctx, x.optString("id")) }
+    }
+
+    private fun showGroup(ctx: Context, group: List<JSONObject>, nag: Int) {
+        val first = group.first()
+        val id = first.optString("id")
+        val time = first.optString("time")
+        val names = group.map { it.optString("title") }
+        val head = if (nag == 0) "$time · " + names.joinToString(" · ") else "아직이에요 · " + names.joinToString(" · ")
+        val body = names.joinToString("\n") { "□ $it" } + "\n한 번에 이어서 하고 '모두 했어요'를 눌러요."
+        val grp = "grp:" + group.joinToString("|") { it.optString("id") }
+        val open = PendingIntent.getActivity(
+            ctx, notificationId(id),
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val base = notificationId(id) * 4
+        val n = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle(head)
+            .setContentText(names.joinToString(" · "))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(open)
+            .setOngoing(true)
+            .addAction(0, "모두 했어요", actionIntent(ctx, ACTION_DONE, grp, 1, base + 1))
+            .addAction(0, "${NAG_MINUTES}분 뒤", actionIntent(ctx, ACTION_SNOOZE, id, nag, base + 3))
+            .addAction(0, "넘기기", actionIntent(ctx, ACTION_SKIP, grp, 0, base + 2))
+            .build()
+        try {
+            NotificationManagerCompat.from(ctx).notify(notificationId(id), n)
+        } catch (_: SecurityException) { }
+        buzz(ctx)
+    }
+
     private fun showItem(ctx: Context, it: JSONObject, nag: Int) {
         val id = it.optString("id")
+        val sib = siblings(ctx, id)
+        if (sib.size > 1) { showGroup(ctx, sib, nag); return }
         val title = it.optString("title")
         val time = it.optString("time")
         val head = if (nag == 0) "$time · $title" else "아직이에요 · $title"

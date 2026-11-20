@@ -386,14 +386,14 @@ const MISSIONS = [
    cue:"자기 전 폰 상자 알림이 울리면", full:"폰을 상자에 넣고 아침까지", mini:"침대에는 폰을 가져가지 않기",
    why:"자기 전 폰은 잠드는 시간을 늦추고 수면의 질을 떨어뜨려요. 수면이 지켜져야 내일의 전두엽이 지켜져요.",
    how:["알람은 워치나 탁상시계로 바꿔 둬요.","폰을 충전기에 꽂아 상자 안에 넣어요.","상자는 침실 밖에 둬요."],
-   tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 잠들기 25분 전(평일 22:35)에 맞춰 두면 알림도 함께 조용해져요."},
+   tip:"갤럭시 ‘모드 및 루틴’의 취침 모드를 잠들기 10분 전(22:50)에 맞춰 두면 알림도 함께 조용해져요."},
   {id:"journal", title:"저녁 3줄 기록", pillar:"기록", kind:"journal", time:"21:30",
    cue:"씻고 나서 책상에 앉으면", full:"세 줄 모두", mini:"한 줄이라도",
    why:"하루를 돌아보고 내일 첫 행동을 정하면, 다음 날 아침의 계획 쓰기가 쉬워져요.",
    how:["오늘 잘한 것 하나를 적어요.","다르게 하고 싶은 것 하나를 적어요(자책 말고 방법으로).","내일 가장 먼저 할 일 하나를 적어요."],
    tip:"폰 상자에 넣은 뒤라면 노트에 쓰고, 다음 날 아침 앱에 옮겨도 돼요."},
   {id:"detox", title:"오전 디톡스 마무리", pillar:"디지털", kind:"check", time:"12:50",
-   cue:"점심시간에 휴대폰 감옥을 열면", full:"12:50까지 한 번도 안 꺼냈어요", mini:"필요할 때만 잠깐 꺼냈어요",
+   cue:"점심시간에 휴대폰 감옥을 열면", full:"12:10까지 한 번도 안 꺼냈어요", mini:"필요할 때만 잠깐 꺼냈어요",
    why:"폰이 손에 닿지 않으면 확인하고 싶은 충동과 싸우는 데 쓰던 에너지가 줄어요. 오전 내내 수업과 업무에 주의를 붙잡아 두는 연습이에요.",
    how:["8시 45분, 폰을 무음으로 바꾸고 감옥에 넣어요.","급한 연락은 교무실 전화나 메신저로 받는다고 정해 두세요.","12시 50분에 꺼내면서 오늘 오전을 체크해요."],
    tip:"꼭 폰을 써야 하는 날은 8시 45분 알림에서 ‘넘기기’를 눌러도 괜찮아요."}
@@ -587,19 +587,19 @@ const C = (core,time) => ({core, time});
 const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", days:[2,4]}]},
-    {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:50"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), T("t_creatine","크레아틴 먹기","07:16"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키·영양제 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", days:[2,4]}]},
+    {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:10"), T("t_walk","점심 먹고 10분 걷기","12:30"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
-    {id:"home", title:"집 · 저녁과 정리", start:"18:30", end:"20:00", tasks:[C("newday","18:30"), {id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", days:[1,3,5]}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", days:[2,4]}, T("t_dishes","설거지","19:10"), T("t_tidy","10분 정리·청소","19:25"), T("t_prep","내일 도시락 준비","19:40")]},
+    {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", days:[1,3,5]}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", days:[2,4]}, T("t_dishes","설거지","19:10")]},
     {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:00", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), C("steps","21:50")]},
-    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_clothes","내일 옷·가방 챙기기","22:00"), C("novel","22:10"), C("journal","22:20"), T("t_warm","여자친구에게 따뜻한 한마디","22:30"), C("phone","22:35"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
   ],
   weekend:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), C("plan","08:00")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00"), T("t_creatine","크레아틴 먹기","08:05")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
-    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10")]}
+    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
   ]
 };
 const NEWDAY_MISSION = {id:"newday", title:"오늘의 새로운 루틴", pillar:"새로움", kind:"newday", time:"12:50",
@@ -681,7 +681,7 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, todoTimes:["12:50","16:45","21:00"]}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, todoTimes:["12:15","16:45","21:00"]}));
   }catch(e){}
   checkBoard(false);
 }
@@ -1860,6 +1860,20 @@ async function boot(){
       (S.settings.blocks.weekend||[]).forEach(b=>{ b.tasks=b.tasks.filter(t=>!(t&&t.core==="breath")); });
       const wn=(S.settings.blocks.weekend||[]).find(b=>b.id==="night"); if(wn && !wn.tasks.some(t=>t&&t.id==="t_warm")){ const k=wn.tasks.findIndex(t=>t&&t.core==="phone"); wn.tasks.splice(k<0?wn.tasks.length:k,0,{id:"t_warm", title:"여자친구에게 따뜻한 한마디", time:"22:05"}); }
       S.settings.v11=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v12){ /* 2026-11-20 정리: 영양제·크레아틴·점심 걷기·샤워·쇼츠 그만, 22:40 묶음, 22:50 폰, 매일 23시 취침, 토요일 눈바디 */
+      const wk=S.settings.blocks.weekday||[]; const defs=DEFAULT_BLOCKS.weekday;
+      const known=new Set(["newday","t_prep","breath"]); defs.forEach(b=>b.tasks.forEach(t=>known.add((taskInfo(t)||{}).id)));
+      const extra=[]; wk.forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(ti&&!known.has(ti.id)) extra.push(t); }));
+      /* 사용자가 바꾼 요일(무지출 등)은 유지 */
+      const daysOf={}; wk.forEach(b=>b.tasks.forEach(t=>{ if(t&&t.id&&Array.isArray(t.days)) daysOf[t.id]=t.days; }));
+      const nb=clone(defs); nb.forEach(b=>b.tasks.forEach(t=>{ if(t&&t.id&&daysOf[t.id]) t.days=daysOf[t.id]; }));
+      if(extra.length) nb[nb.length-1].tasks.push(...extra);
+      S.settings.blocks.weekday=nb;
+      const we=S.settings.blocks.weekend||[]; const ww=we.find(b=>b.id==="wake");
+      if(ww){ if(!ww.tasks.some(t=>t&&t.id==="t_body")){ const k=ww.tasks.findIndex(t=>t&&t.core==="plan"); ww.tasks.splice(k<0?ww.tasks.length:k,0,{id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}); }
+        if(!ww.tasks.some(t=>t&&t.id==="t_creatine")) ww.tasks.push({id:"t_creatine", title:"크레아틴 먹기", time:"08:05"}); }
+      const wn=we.find(b=>b.id==="night"); if(wn && !wn.tasks.some(t=>t&&t.id==="t_sleep")) wn.tasks.push({id:"t_sleep", title:"불 끄고 눕기", time:"23:00"});
+      S.settings.v12=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }

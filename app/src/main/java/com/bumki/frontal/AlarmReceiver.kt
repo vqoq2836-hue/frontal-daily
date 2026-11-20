@@ -4,6 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
+/** "grp:a|b|c" 처럼 묶음 알림에서 온 id 를 하나씩 풀어 줌 */
+private fun groupIds(id: String): List<String> =
+    if (id.startsWith("grp:")) id.removePrefix("grp:").split("|").filter { it.isNotEmpty() } else listOf(id)
+
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getStringExtra(Reminders.EXTRA_ID) ?: return
@@ -18,6 +22,13 @@ class AlarmReceiver : BroadcastReceiver() {
                 if (id.startsWith("board@")) { Reminders.scheduleAll(ctx); MissionWidget.updateAll(ctx); return }
                 if (id.startsWith("todo@")) { Reminders.showTodos(ctx); return }
                 val nag = intent.getIntExtra(Reminders.EXTRA_NAG, 0)
+                // 같은 시각에 묶인 할 일은 맨 앞 하나가 묶음 알림을 대표해서 띄움
+                val sib = Reminders.siblings(ctx, id)
+                if (sib.size > 1 && sib.first().optString("id") != id) {
+                    if (nag == 0) Reminders.scheduleAll(ctx)
+                    MissionWidget.updateAll(ctx)
+                    return
+                }
                 if (!Reminders.isSettled(ctx, id)) {
                     Reminders.showMission(ctx, id, nag)
                     if (nag < Reminders.MAX_NAGS) Reminders.scheduleNag(ctx, id, nag + 1)
@@ -28,16 +39,20 @@ class AlarmReceiver : BroadcastReceiver() {
             }
             Reminders.ACTION_DONE -> {
                 val lvl = intent.getIntExtra(Reminders.EXTRA_LVL, 1)
-                Reminders.addPending(ctx, id, lvl)
-                Reminders.cancelNag(ctx, id)
-                Reminders.dismiss(ctx, id)
+                for (one in groupIds(id)) {
+                    Reminders.addPending(ctx, one, lvl)
+                    Reminders.cancelNag(ctx, one)
+                    Reminders.dismiss(ctx, one)
+                }
                 Reminders.refreshBlockNotifications(ctx)
                 MissionWidget.updateAll(ctx)
             }
             Reminders.ACTION_SKIP -> {
-                Reminders.addPending(ctx, id, 0)
-                Reminders.cancelNag(ctx, id)
-                Reminders.dismiss(ctx, id)
+                for (one in groupIds(id)) {
+                    Reminders.addPending(ctx, one, 0)
+                    Reminders.cancelNag(ctx, one)
+                    Reminders.dismiss(ctx, one)
+                }
                 Reminders.refreshBlockNotifications(ctx)
                 MissionWidget.updateAll(ctx)
             }
