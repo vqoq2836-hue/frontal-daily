@@ -64,7 +64,7 @@ object CalendarWriter {
             v.put(CalendarContract.Events.TITLE, o.optString("title", "새 일정"))
             val loc = o.optString("location")
             if (loc.isNotEmpty()) v.put(CalendarContract.Events.EVENT_LOCATION, loc)
-            v.put(CalendarContract.Events.DESCRIPTION, "전두엽 데일리에서 말로 넣은 일정")
+            v.put(CalendarContract.Events.DESCRIPTION, "범키데일리에서 말로 넣은 일정")
             val allDay = o.optBoolean("allDay") || o.optString("start").isEmpty()
             if (allDay) {
                 val s = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()

@@ -19,7 +19,9 @@ import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
@@ -31,6 +33,11 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
             val ok = granted.containsAll(HealthReader.PERMISSIONS)
             js("window.onNativeHealthPermission && window.onNativeHealthPermission($ok)")
+        }
+
+    private val smsPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+            js("window.onNativeSmsPerm && window.onNativeSmsPerm($ok)")
         }
 
     private val calendarPermissionLauncher =
@@ -185,6 +192,36 @@ class MainActivity : ComponentActivity() {
                     .onFailure { js("window.onNativeVoice && window.onNativeVoice(\"\")") }
             }
             return true
+        }
+
+        @JavascriptInterface
+        fun smsStatus(): String = if (SmsReader.granted(this@MainActivity)) "granted" else "denied"
+
+        @JavascriptInterface
+        fun requestSmsPermission() {
+            runOnUiThread {
+                runCatching { smsPermissionLauncher.launch(SmsReader.PERMISSION) }
+                    .onFailure { js("window.onNativeSmsPerm && window.onNativeSmsPerm(false)") }
+            }
+        }
+
+        /** 문자함 읽기는 오래 걸릴 수 있어 뒤에서 하고, 끝나면 window.onNativeSms 로 넘김 */
+        @JavascriptInterface
+        fun readSms(since: String) {
+            val s = since.toLongOrNull() ?: 0L
+            lifecycleScope.launch {
+                val json = withContext(Dispatchers.IO) { runCatching { SmsReader.read(this@MainActivity, s) }.getOrDefault("[]") }
+                js("window.onNativeSms && window.onNativeSms(" + JSONObject.quote(json) + ")")
+            }
+        }
+
+        @JavascriptInterface
+        fun openAppInfo() {
+            runOnUiThread {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:$packageName")))
+                }
+            }
         }
 
         @JavascriptInterface

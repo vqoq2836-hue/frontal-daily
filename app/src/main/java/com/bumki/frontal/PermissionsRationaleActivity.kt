@@ -14,7 +14,7 @@ class PermissionsRationaleActivity : Activity() {
             textSize = 16f
             setPadding(pad, pad * 2, pad, pad)
             text = """
-                전두엽 데일리가 건강 데이터를 쓰는 방법
+                범키데일리가 건강 데이터를 쓰는 방법
 
                 • 읽는 것: 오늘 걸음 수, 어젯밤 수면 시간
                 • 쓰는 곳: 오늘의 미션 점수 계산과 기록 화면

@@ -31,7 +31,7 @@
             android:paddingTop="3dp"
             android:paddingEnd="10dp"
             android:paddingBottom="3dp"
-            android:text="전두엽 데일리"
+            android:text="범키데일리"
             android:textColor="#E6F7F1"
             android:textSize="11sp" />
     </LinearLayout>

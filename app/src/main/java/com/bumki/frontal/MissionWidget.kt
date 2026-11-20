@@ -41,7 +41,7 @@ class MissionWidget : AppWidgetProvider() {
             rv.setOnClickPendingIntent(R.id.w_root, open)
 
             if (info.empty) {
-                rv.setTextViewText(R.id.w_head, "전두엽 데일리")
+                rv.setTextViewText(R.id.w_head, "범키데일리")
                 rv.setTextViewText(R.id.w_title, "앱을 한 번 열어 주세요")
                 rv.setTextViewText(R.id.w_sub, "앱을 열면 오늘 루틴이 위젯에 나타나요.")
                 rv.setViewVisibility(R.id.w_buttons, View.GONE)
