@@ -545,6 +545,13 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .jmic svg{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .jmic svg rect{fill:var(--co)}
 .jmic:active,.jmic.on{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink);background:var(--co)}
+
+/* 생활비 예산 막대 */
+.m-bbar{position:relative;height:12px;border:1.3px solid var(--ink);border-radius:7px;background:var(--surface-2);margin:2px 0 6px}
+.m-bbar i{display:block;height:100%;background:var(--g500);border-radius:5px 0 0 5px}
+.m-bal.warn .m-bbar i{background:var(--ye)} .m-bal.bad .m-bbar i{background:var(--co)}
+.m-bbar b{position:absolute;top:-5px;bottom:-5px;width:2.5px;margin-left:-1px;background:var(--ink);border-radius:2px}
+.m-perday .tl{font-style:normal;font-weight:800;color:var(--ink)} .m-perday .tl.m-out{color:var(--m-out)}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -1974,7 +1981,7 @@ function renderMoney(){
   const ym=M.ym, [y,mo]=ym.split("-").map(Number), st=moneyMonthStats(ym);
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">가계부</span><b>${mo}월의 돈</b></div><div class="row" style="gap:6px"><button class="btn sm" data-m="prev" aria-label="이전 달">‹</button><button class="btn sm" data-m="next" aria-label="다음 달" ${ym>=ymOf(today())?"disabled":""}>›</button></div></div>`;
   h+=moneyPermCard();
-  h+=moneyBalanceCard();
+  h+=moneyBudgetCard(ym);
   /* 합계 */
   h+=`<section class="glass card m-sum"><div class="row" style="justify-content:space-between;align-items:flex-end">
       <div><span class="eyebrow">${y===new Date().getFullYear()?"":y+"년 "}${mo}월 합계</span><div class="m-big ${st.net<0?"m-out":"m-in"}">${st.net>0?"+":""}${won(st.net)}</div></div>
@@ -2053,16 +2060,45 @@ function moneyPermCard(){
       <div class="row"><button class="btn" data-m="appinfo">앱 정보 열기</button></div></div>`:""}
     <p class="small muted" style="margin-top:8px">문자 없이도 ‘직접 추가’로 적을 수 있어요.</p></section>`+moneyNotiCard();
 }
-function moneyBudgetLine(st){
-  const b=S.money.meta.budget||0;
-  if(S.money.budgetEdit) return `<div class="m-budget"><label class="vc-f"><span>한 달 생활비 예산(원) · 0이면 끄기</span><input type="number" inputmode="numeric" id="mBudget" value="${b||""}" placeholder="예: 1500000"></label><div class="row"><button class="btn primary sm" data-m="budgetSave">저장</button><button class="btn sm" data-m="budget">취소</button></div></div>`;
-  if(!b) return `<button class="linkish small" data-m="budget">한 달 생활비 예산 정하기</button>`;
-  const used=st.out, left=b-used, pct=Math.min(100,Math.round(used/b*100));
-  const isCur=S.money.ym===ymOf(today());
-  const dLeft = isCur ? (new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate() - new Date().getDate() + 1) : 0;
-  return `<div class="m-budget"><div class="m-bar"><i style="width:${pct}%" class="${pct>=100?"over":pct>=85?"warn":""}"></i></div>
-    <div class="row" style="justify-content:space-between"><span class="small">예산 ${won(b)} 중 <b>${pct}%</b></span><span class="small ${left<0?"m-out":""}">${left>=0?"남은 돈 "+won(left):won(-left)+" 넘었어요"}</span></div>
-    ${isCur&&left>0?`<p class="small muted" style="margin:2px 0 0">이번 달 남은 ${dLeft}일, 하루 <b>${won(Math.floor(left/dLeft))}원</b> 이하면 맞아요 · <button class="linkish small" data-m="budget">예산 바꾸기</button></p>`:`<button class="linkish small" data-m="budget">예산 바꾸기</button>`}</div>`;
+function moneyBudgetLine(st){ return ""; }
+/* 한 달 생활비 예산 기준 판단 (통장 잔액이 아니라 이번 달에 쓴 돈으로) */
+function moneyBudgetJudge(ym){
+  const M=S.money, b=M.meta.budget||0; if(!b) return null;
+  const [y,mo]=ym.split("-").map(Number), dim=new Date(y,mo,0).getDate(), isCur=ym===ymOf(today());
+  const dom=isCur?parse(today()).getDate():dim;
+  const liv=(M.months[ym]||{tx:[]}).tx.filter(moneyIsLiving);
+  const used=liv.reduce((s,t)=>s+t.amount,0);
+  const usedToday=isCur?moneyDayOut(today()):0, usedBefore=used-usedToday;
+  const dLeft=isCur?dim-dom+1:0;
+  const todayCap=isCur?Math.floor((b-usedBefore)/dLeft):0, todayLeft=todayCap-usedToday;
+  const expected=Math.round(b*dom/dim);
+  const level = used>b ? "over" : used<=expected*0.9 ? "good" : used<=expected*1.05 ? "warn" : "bad";
+  const forecast = isCur&&dom>=3 ? Math.round(used/dom*dim) : null;
+  return {b, used, left:b-used, pct:Math.round(used/b*100), expPct:Math.round(dom/dim*100), isCur, dom, dim, dLeft, usedToday, todayCap, todayLeft, level, forecast, mo};
+}
+function moneyBudgetCard(ym){
+  const M=S.money, j=moneyBudgetJudge(ym);
+  if(M.budgetEdit||!j) return `<section class="glass card m-bal"><h2 style="margin:0">한 달 생활비</h2>
+    <p class="small muted">한 달에 쓸 생활비를 정하면, 쓴 돈을 기준으로 남은 돈과 오늘 쓸 수 있는 돈을 알려 드려요. 이체·송금은 빼고 계산해요.</p>
+    <label class="vc-f"><span>한 달 생활비(원) · 0이면 끄기</span><input type="number" inputmode="numeric" id="mBudget" value="${M.meta.budget||""}" placeholder="예: 1650000"></label>
+    <div class="row"><button class="btn primary sm" data-m="budgetSave">저장</button>${M.meta.budget?`<button class="btn sm" data-m="budget">취소</button>`:""}</div></section>`;
+  const lab={good:"여유 있어요", warn:"딱 맞아요", bad:"빠듯해요 · 아껴요", over:"예산을 넘었어요"}[j.level];
+  const cls=j.level==="good"?"good":j.level==="warn"?"warn":"bad";
+  const bal=M.meta.balance;
+  let h=`<section class="glass card m-bal ${cls}"><div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div><span class="eyebrow">${j.mo}월 생활비 ${won(j.b)}원 중</span><div class="m-big">${j.left>=0?won(j.left):"-"+won(-j.left)}<small>원 ${j.left>=0?"남음":"초과"}</small></div><span class="small muted">쓴 돈 ${won(j.used)}원 · ${j.pct}%</span></div>
+      <span class="m-lv">${lab}</span></div>
+    <div class="m-bbar" aria-hidden="true"><i style="width:${Math.min(100,j.pct)}%"></i>${j.isCur?`<b style="left:${j.expPct}%"></b>`:""}</div>
+    ${j.isCur?`<p class="small muted" style="margin-top:-4px">세로 선 = 오늘(${j.dom}일)까지 써도 되는 만큼 · ${won(Math.round(j.b*j.dom/j.dim))}원</p>`:""}`;
+  if(j.isCur){
+    h+=`<div class="m-perday"><span><b>오늘 ${j.todayCap>0?won(j.todayCap):0}원</b>까지 쓸 수 있어요</span><span class="small muted">남은 ${j.dLeft}일로 나눈 금액 · 오늘 쓴 돈 ${won(j.usedToday)}원${j.todayCap>0?` · <em class="tl ${j.todayLeft<0?"m-out":""}">${j.todayLeft>=0?won(j.todayLeft)+"원 남음":won(-j.todayLeft)+"원 넘음"}</em>`:""}</span></div>`;
+    if(j.forecast!=null) h+=`<p class="small">지금 속도면 이번 달 약 <b>${won(j.forecast)}원</b> ${j.forecast<=j.b?"· 예산 안에 들어와요":"· 예산을 "+won(j.forecast-j.b)+"원 넘어요"}</p>`;
+  } else {
+    h+=`<p class="small">${j.left>=0?`예산 안에서 썼어요 · ${won(j.left)}원 남겼어요`:`예산보다 ${won(-j.left)}원 더 썼어요`}</p>`;
+  }
+  if(bal&&j.isCur) h+=`<p class="small muted">참고 · 통장 잔액 ${won(bal.amount)}원 (판단에는 쓰지 않아요)</p>`;
+  h+=`<button class="linkish small" data-m="budget">생활비 바꾸기</button></section>`;
+  return h;
 }
 function moneyCalendar(ym,st){
   const M=S.money, [y,mo]=ym.split("-").map(Number);
@@ -2209,7 +2245,7 @@ function moneyWeekCard(){
   const st=moneyMonthStats(ymOf(today())); const top=Object.entries(st.byCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
   return `<section class="glass card"><div class="row" style="justify-content:space-between"><span class="eyebrow">이번 주 돈 돌아보기</span><a class="small" href="#money">가계부 열기 ›</a></div>
     <p style="margin:6px 0 4px">이번 주 지출 <b>${won(v)}원</b> · 지난주 ${won(pv)}원</p>
-    ${(()=>{ const j=moneyJudge2(); return j?`<p class="small" style="margin:0 0 4px">통장 ${won(j.B.amount)}원 · 월급날까지 하루 <b>${won(Math.max(0,j.perDay))}원</b></p>`:""; })()}
+    ${(()=>{ const j=moneyBudgetJudge(ymOf(today())); return j?`<p class="small" style="margin:0 0 4px">생활비 ${won(j.b)}원 중 <b>${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b> · 오늘 ${won(Math.max(0,j.todayCap))}원까지</p>`:""; })()}
     <p class="small" style="margin:0 0 4px">무지출 데이 <b>${moneyZeroDays(mon)}일</b> / 목표 2일 ${moneyZeroDays(mon)>=2?"· 달성 🎉":""}</p>
     ${top.length?`<p class="small muted" style="margin:0">이번 달 많이 쓴 곳: ${top.map(([id,x])=>catOf(id).icon+" "+catOf(id).name+" "+won(x)).join(" · ")}</p>`:""}
     <p class="small muted" style="margin:6px 0 0">반성 한 줄: 다음 주에 줄일 항목 하나만 정해 ‘저녁 3줄 기록’에 적어 보세요.</p></section>`;
@@ -2587,6 +2623,7 @@ async function boot(){
     toast("기록을 불러오지 못했어요. 앱을 다시 열어 주세요.");
   }
   try{ await moneyLoad(); }catch(e){}
+  try{ if(S.money&&S.money.meta&&!S.money.meta.budgetV){ S.money.meta.budget=1650000; S.money.meta.budgetV=1; moneySaveMeta(); } }catch(e){} /* 2026-11-21 한 달 생활비 165만 원 기준 */
   S.loaded=true; render(); setSync();
   if(NATIVE){ applyPending(); nativeSync(); readHealth(); checkUpdate(); moneySync(); feedFetch(true); }
 }
