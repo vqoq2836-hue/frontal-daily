@@ -36,7 +36,9 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
 
       # 폰에서 바로 받을 수 있게 고정 주소(latest-apk)에 올립니다.
+      # 앱 업데이트는 app-v1 브랜치에서만 내보냅니다. 다른 브랜치는 빌드가 되는지만 확인해요.
       - name: Publish APK
+        if: github.ref == 'refs/heads/app-v1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
