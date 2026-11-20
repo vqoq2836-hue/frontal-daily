@@ -1266,6 +1266,7 @@ const MONEY_CATS = [
   {id:"health", name:"의료·운동",   icon:"💊", color:"#E07A8B", kw:["병원","의원","약국","치과","한의원","정형외과","내과","피부과","안과","이비인후과","헬스","피트니스","짐","GYM","필라테스","요가","수영"]},
   {id:"life",   name:"생활·공과금", icon:"🏠", color:"#C9A85C", kw:["관리비","전기","가스","수도","보험","세탁","미용","헤어","이발","네일","공과금","국세","지방세","도시가스","한전"]},
   {id:"edu",    name:"교육·책",     icon:"📚", color:"#5FB3B3", kw:["교보","예스24","YES24","알라딘","영풍","서점","학원","대학교","대학원","등록금","클래스101","인프런","유데미"]},
+  {id:"culture", name:"문화·여가", icon:"🎬", color:"#F2BE4A", kw:["CGV","메가박스","롯데시네마","씨네","영화","극장","공연","콘서트","뮤지컬","연극","전시","미술관","박물관","티켓","인터파크","티켓링크","멜론티켓","예스24티켓","야놀자","여기어때","에어비앤비","AIRBNB","AGODA","아고다","호텔","리조트","펜션","숙박","캠핑","글램핑","대한항공","아시아나","제주항공","진에어","티웨이","에어부산","항공","여행","투어","골프","골프존","스크린골프","볼링","당구","노래방","코인노래","PC방","피씨방","방탈출","에버랜드","롯데월드","테마파크","워터파크","스파","찜질","STEAM","스팀","닌텐도","NINTENDO","플레이스테이션","PLAYSTATION"]},
   {id:"social", name:"모임·경조사", icon:"🎁", color:"#D98FC6", kw:["축의","부의","경조","선물","꽃","플라워"]},
   {id:"transfer", name:"이체·송금", icon:"🔁", color:"#9AA3AE", kw:["이체","송금","카카오페이","토스","TOSS"]},
   {id:"etc",    name:"기타",       icon:"🧾", color:"#8C8C99", kw:[]}
@@ -1373,6 +1374,18 @@ async function moneyLoad(){
   try{ const m=await getDoc("money/meta"); if(m) S.money.meta=Object.assign(S.money.meta,m); }catch(e){}
   S.money.ym = ymOf(today()); S.money.sel = today();
   for(let i=0;i<4;i++) await moneyLoadMonth(ymAdd(S.money.ym,-i));
+  /* 새 항목(문화·여가 등)이 생기면 '기타'로 둔 자동 기록과 확인 대기 목록을 다시 분류 */
+  const M=S.money, CATV=2;
+  if((M.meta.catv||1)<CATV){
+    for(const [ym,m] of Object.entries(M.months)){ let ch=false; for(const t of m.tx){ if(t.auto&&!t.userCat&&t.cat==="etc"){ const g=guessCat(t,M.meta.rules); if(g!=="etc"){ t.cat=g; ch=true; } } } if(ch) moneySaveMonth(ym); }
+    const keep=[];
+    for(const x of (M.meta.review||[])){
+      const onlyCat=x.reasons.length===1&&/항목/.test(x.reasons[0]); const g=guessCat(x.tx,M.meta.rules);
+      if(onlyCat && g!=="etc" && g!=="inetc"){ x.tx.cat=g; const ym=ymOf(x.tx.date); await moneyLoadMonth(ym); M.months[ym].tx.push(x.tx); moneySaveMonth(ym); }
+      else keep.push(x);
+    }
+    M.meta.review=keep; M.meta.catv=CATV; moneySaveMeta();
+  }
   S.money.loaded=true;
 }
 function moneySaveMonth(ym){ try{ setDoc("money/m/"+ym, S.money.months[ym]); }catch(e){} }
