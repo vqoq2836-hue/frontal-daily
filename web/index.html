@@ -134,6 +134,16 @@ nav.tabs.glass{border-color:var(--s-line)}
 .state.is-next i{background:var(--faint);animation:none}
 @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 70%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
 .hero-time{font-family:var(--num);font-weight:200;font-size:84px;line-height:.9;letter-spacing:-.03em}
+.hero-trow{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.hero-trow .hero-time{font-size:clamp(52px,18vw,84px);min-width:0}
+.hero-steps{flex:none;display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--h-ink,inherit);padding:5px 10px 5px 5px;border-radius:16px;background:var(--h-tile,rgba(0,0,0,.05));margin-bottom:4px}
+.hero-steps svg{width:34px;height:34px;flex:none}
+.hero-steps .tr{fill:none;stroke:currentColor;opacity:.15;stroke-width:3.5}
+.hero-steps .pg{fill:none;stroke:var(--h-accent);stroke-width:3.5;stroke-linecap:round}
+.hero-steps path{fill:currentColor;opacity:.75}
+.hero-steps span{display:flex;flex-direction:column;line-height:1.1}
+.hero-steps b{font-family:var(--num);font-size:17px;font-weight:600}
+.hero-steps small{font-size:10px;opacity:.65;white-space:nowrap}
 .hero-title{font-family:var(--display);font-size:34px;font-weight:400;letter-spacing:-.01em;line-height:1.2;word-break:keep-all}
 .hero-cue{font-size:13px;color:var(--muted);letter-spacing:.01em}
 .big{width:100%;border:0;border-radius:18px;padding:17px 20px;font-family:var(--display);font-size:21px;font-weight:400;
@@ -895,6 +905,15 @@ function heroBody(t,v){
   const acts=[extra,snz,skp].filter(Boolean);
   return `${top}${main}<div class="acts">${acts.join("")}${undo}</div>${how}`;
 }
+/* 시간 옆 오늘 걸음 수 (삼성헬스) */
+function heroSteps(v){
+  if(!NATIVE && v.steps==null) return "";
+  const n=v.steps, pct=n==null?0:Math.min(100,Math.round(n/STEP.full*100));
+  const R=17, C=2*Math.PI*R;
+  return `<a class="hero-steps" href="#day" aria-label="오늘 걸음 수 ${n==null?"불러오는 중":n.toLocaleString()+"보"}">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="${R}" class="tr"/><circle cx="20" cy="20" r="${R}" class="pg" stroke-dasharray="${(C*pct/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 20 20)"/><path d="M15 23c-1.6 0-2.4-1.4-2-3.2.4-1.6 1.6-2.4 2.6-2 1 .4 1.2 1.8.8 3.2-.3 1.2-.6 2-1.4 2zM24 19c-1 0-1.6-1-1.4-2.4.3-1.3 1.2-2 2-1.7.8.3 1 1.4.7 2.5-.3 1-.6 1.6-1.3 1.6zM14.6 24.6l2.4.5-.4 1.6c-.3 1-1.6 1.1-2 .3-.3-.6-.2-1.6 0-2.4zM23.4 20.6l2.4.5-.4 1.6c-.3 1-1.6 1.1-2 .3-.3-.6-.2-1.6 0-2.4z"/></svg>
+    <span><b>${n==null?"—":n.toLocaleString()}</b><small>걸음 · ${pct}%</small></span></a>`;
+}
 function renderNow(){
   const d=today(), v=day(d), f=focusTask(d), s=score(d), g=goal(d), tasks=dayTasks(d);
   const doneN=tasks.filter(t=>settled(v,t.id)).length, missed=missedTasks(d);
@@ -906,7 +925,7 @@ function renderNow(){
     const cue=jailOn?`휴대폰은 감옥에 있어요. ${t.time}에 꺼내면서 체크해요`:f.state==="next"?`${t.time}에 알림으로 알려 드릴게요 · 미리 해도 돼요`:t.core?`${t.core.cue} → ${t.title}`:`오늘 ${idx}번째 할 일 · 남은 일 ${left}개`;
     h+=`<section class="hero glass">
       <div class="hero-top"><span class="state ${f.state==="now"?"":"is-next"}"><i></i>${label}</span><span class="small muted">${esc(t.blockTitle)}</span></div>
-      <div class="hero-time">${esc(t.time||"")}</div>
+      <div class="hero-trow"><div class="hero-time">${esc(t.time||"")}</div>${heroSteps(v)}</div>
       <h1 class="hero-title">${esc(t.title)}</h1>
       <p class="hero-cue">${esc(cue)}</p>
       ${heroBody(t,v)}
