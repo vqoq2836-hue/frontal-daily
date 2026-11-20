@@ -2079,6 +2079,8 @@ function diagText(r){
     if(r.stepsError) L.push(["걸음 데이터", r.stepsError, "bad"]);
     else {
       L.push(["오늘 걸음 기록", (r.stepsTodayRecords||0)+"건 · 합계 "+(r.stepsTodaySum||0).toLocaleString()+"보", r.stepsTodayRecords?"ok":"bad"]);
+      const bd=r.stepsTodayByDevice||{}, bk=Object.keys(bd);
+      if(bk.length) L.push(["오늘 걸음 출처별", bk.map(k=>k.replace(/\((shealth)\)/,"(삼성헬스)").replace(/\((fitness)\)/,"(구글 피트니스)")+" "+Number(bd[k]).toLocaleString()+"보").join(" · "), "ok"]);
       L.push(["최근 7일 걸음을 넣은 앱", origins(r.stepsOrigins), (r.stepsOrigins&&r.stepsOrigins["com.sec.android.app.shealth"])?"ok":"bad"]);
       if(r.stepsWeekLatest) L.push(["마지막 걸음 기록", r.stepsWeekLatest.replace("T"," ").slice(0,16), "ok"]);
     }
@@ -2113,7 +2115,7 @@ window.onNativeHealth = function(str){
   let changed=false;
   if(typeof r.steps==="number"){ v.steps=r.steps; const l=r.steps>=STEP.full?2:r.steps>=STEP.mini?1:0; if(l) v.done.steps={lvl:l,at:Date.now()}; else delete v.done.steps; changed=true; }
   if(typeof r.sleepMinutes==="number"){ const h=Math.round(r.sleepMinutes/6)/10; v.sleepH=h; v.done.sleep={lvl:h>=7?2:1,at:Date.now()}; changed=true; }
-  const t=new Date(); S.health.msg="불러옴 "+pad(t.getHours())+":"+pad(t.getMinutes())+(r.stepsLatest?" · 걸음은 "+r.stepsLatest+"까지 반영":"")+(r.stepsMissing?" · 오늘 걸음 데이터 없음":"")+(typeof r.sleepMinutes!=="number"?" · 어젯밤 수면 기록 없음":"");
+  const t=new Date(); S.health.msg="불러옴 "+pad(t.getHours())+":"+pad(t.getMinutes())+(r.stepsSource==="shealth"?" · 삼성헬스 기준":"")+(r.stepsLatest?" · 걸음은 "+r.stepsLatest+"까지 반영":"")+(r.stepsMissing?" · 오늘 걸음 데이터 없음":"")+(typeof r.sleepMinutes!=="number"?" · 어젯밤 수면 기록 없음":"");
   if(r.stepsMissing || typeof r.sleepMinutes!=="number") S.health.hint=true;
   if(changed) saveDay(d);
   refreshBoard();

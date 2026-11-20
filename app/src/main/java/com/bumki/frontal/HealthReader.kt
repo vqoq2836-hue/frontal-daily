@@ -24,6 +24,7 @@ class HealthReader(private val context: Context) {
         private val STEPS = HealthPermission.getReadPermission(StepsRecord::class)
         private val SLEEP = HealthPermission.getReadPermission(SleepSessionRecord::class)
         val PERMISSIONS: Set<String> = setOf(STEPS, SLEEP)
+        private const val SHEALTH = "com.sec.android.app.shealth"
     }
 
     fun status(): String = when (HealthConnectClient.getSdkStatus(context)) {
@@ -54,17 +55,25 @@ class HealthReader(private val context: Context) {
             )
             val agg = result[StepsRecord.COUNT_TOTAL]
             val recs = readAllSteps(client, start, end)
+            // 삼성헬스가 넣은 기록이 있으면 그것만 씁니다. 삼성헬스는 폰·워치 걸음을 이미 합쳐 두기 때문에,
+            // 다른 앱(구글 피트니스, 폰 자체 만보기 등)이 몇 시간 단위로 뭉쳐 넣은 기록까지 섞으면 걸음이 부풀어 납니다.
+            val shRecs = recs.filter { it.metadata.dataOrigin.packageName == SHEALTH }
             if (recs.isEmpty() && agg == null) {
                 out.put("stepsMissing", true)
             } else {
-                // 폰과 워치가 같은 시간에 함께 기록한 걸음은 한 번만 셉니다(분 단위로 큰 쪽만).
-                val dedup = dedupSteps(recs, start, end)
-                out.put("steps", if (recs.isNotEmpty()) dedup else (agg ?: 0L))
+                val steps = when {
+                    shRecs.isNotEmpty() -> dedupSteps(shRecs, start, end)
+                    agg != null -> agg
+                    else -> dedupSteps(recs, start, end)
+                }
+                out.put("steps", steps)
+                out.put("stepsSource", if (shRecs.isNotEmpty()) "shealth" else if (agg != null) "healthconnect" else "all")
                 if (agg != null) out.put("stepsSum", agg)
+                out.put("stepsAllDedup", dedupSteps(recs, start, end))
                 out.put("stepsDevices", deviceTotals(recs))
             }
             // 오늘 걸음이 헬스 커넥트에 마지막으로 들어온 시각 (동기화 지연 확인용)
-            recs.maxOfOrNull { it.endTime }?.let {
+            (shRecs.ifEmpty { recs }).maxOfOrNull { it.endTime }?.let {
                 val t = it.atZone(zone).toLocalTime()
                 out.put("stepsLatest", "%02d:%02d".format(t.hour, t.minute))
             }
@@ -126,6 +135,7 @@ class HealthReader(private val context: Context) {
                 ).records
                 out.put("stepsTodayRecords", todayRecords.size)
                 out.put("stepsTodaySum", todayRecords.sumOf { it.count })
+                out.put("stepsTodayByDevice", deviceTotals(todayRecords))
                 out.put("stepsWeekRecords", weekRecords.size)
                 out.put("stepsWeekLatest", weekRecords.maxOfOrNull { it.endTime }?.atZone(zone)?.toLocalDateTime()?.toString() ?: "")
                 out.put("stepsOrigins", originCounts(weekRecords.map { it.metadata.dataOrigin.packageName }))
