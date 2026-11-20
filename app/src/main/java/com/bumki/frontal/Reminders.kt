@@ -258,6 +258,9 @@ object Reminders {
                 if (t > System.currentTimeMillis() && !isItemSettled(ctx, id)) setAlarm(ctx, t, alarmIntent(ctx, id, 1, true))
             }
         }
+        // 매달 1일 아침 9시: 지난달 결산 알림
+        val first = todayDate.withDayOfMonth(1).plusMonths(1)
+        setAlarm(ctx, first.atTime(9, 0).atZone(zone).toInstant().toEpochMilli(), alarmIntent(ctx, "report@" + first.toString().substring(0, 7), 0, false))
         // 자정이 지나면 잠금화면 할 일(알림·배경)을 새 날로 바꿈
         setAlarm(ctx, tomorrow.atStartOfDay(zone).plusSeconds(30).toInstant().toEpochMilli(), alarmIntent(ctx, "board@midnight", 0, false))
         updateBoard(ctx)
@@ -460,6 +463,26 @@ object Reminders {
             }
         }
         try { nm.notify(BOARD_ID, b.build()) } catch (_: SecurityException) { }
+    }
+
+    /** 매달 1일: 지난달 결산이 나왔다고 알려 줌 */
+    fun showReport(ctx: Context) {
+        if (!canNotify(ctx)) return
+        val prev = LocalDate.now().minusMonths(1).monthValue
+        val open = PendingIntent.getActivity(
+            ctx, 9300,
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val n = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat)
+            .setContentTitle("${prev}월 결산이 나왔어요")
+            .setContentText("아쉬운 점 세 가지와 다음 달 한 가지를 확인해 보세요")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        try { NotificationManagerCompat.from(ctx).notify(9300, n) } catch (_: SecurityException) { }
     }
 
     /** "오늘 할 일 2개 남았어요" 알림 */

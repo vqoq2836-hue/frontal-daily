@@ -21,6 +21,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 Reminders.updateBoard(ctx)
                 if (id.startsWith("board@")) { Reminders.scheduleAll(ctx); MissionWidget.updateAll(ctx); return }
                 if (id.startsWith("todo@")) { Reminders.showTodos(ctx); return }
+                if (id.startsWith("report@")) { Reminders.showReport(ctx); Reminders.scheduleAll(ctx); return }
                 val nag = intent.getIntExtra(Reminders.EXTRA_NAG, 0)
                 // 같은 시각에 묶인 할 일은 맨 앞 하나가 묶음 알림을 대표해서 띄움
                 val sib = Reminders.siblings(ctx, id)

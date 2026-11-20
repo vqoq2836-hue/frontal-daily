@@ -320,6 +320,16 @@ details.how{border-top:1px solid var(--edge)}
 .m-perday b{font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--g800)}
 .m-bal.warn .m-perday{background:#FFF8EE;border-color:#F6E2C2}.m-bal.warn .m-perday b{color:#8A4F08}
 .m-bal.bad .m-perday{background:#FFF3F2;border-color:#F6D2CF}.m-bal.bad .m-perday b{color:#A62C28}
+.m-rep{gap:12px}
+.m-rep-k{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.m-rep-k div{background:var(--surface-2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.m-rep-k b{font-size:17px;font-weight:800;letter-spacing:-.03em} .m-rep-k small{font-size:12px;color:var(--muted);font-weight:600}
+.m-rep-sec{display:flex;flex-direction:column;gap:8px}
+.m-rep-sec .lbl{align-self:flex-start;font-size:12px;font-weight:800;padding:3px 10px;border-radius:99px}
+.m-rep-sec .lbl.bad{background:#FFF1DC;color:#9A5A0B} .m-rep-sec .lbl.good{background:var(--g100);color:var(--g800)}
+.m-rep-i{display:flex;flex-direction:column;gap:2px;padding-left:2px} .m-rep-i b{font-size:14.5px;font-weight:700;letter-spacing:-.02em} .m-rep-i .small{color:var(--muted)}
+.m-rep-next{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:16px;background:linear-gradient(180deg,var(--g50),#fff);border:1px solid var(--g100)}
+.m-rep-next b{color:var(--g800);font-size:15px;letter-spacing:-.02em}
 .m-zero{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--g400);margin-top:2px}
 .m-zl{display:flex;align-items:center;gap:6px;margin:6px 8px 0}.m-zl .m-zero{margin:0}
 .dchips{display:flex;gap:4px;margin-top:4px}
@@ -822,6 +832,7 @@ function renderNow(){
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
   if(f.t && f.t.id==="t_money") h+=moneyWeekCard();
+  h+=moneyReportNudge();
   { const n=((S.money&&S.money.meta&&S.money.meta.review)||[]).length; if(n) h+=`<a class="glass card m-nudge" href="#money"><span>💳 돈 내역 <b>${n}건</b>을 확인해 주세요</span><span class="small muted">결제인지·어떤 항목인지 애매한 것들 ›</span></a>`; }
   h+=vcCard(); h+=todoCard(v);
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
@@ -941,6 +952,7 @@ document.addEventListener("click",e=>{
     if(k==="plan"){ const n=(v.todos||[]).length; if(!n){ toast("할 일을 하나라도 적어 주세요"); return; } mark("plan", n>=3&&(v.todos||[]).some(x=>x.top)?2:1); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.mReport){ S.money.ym=b.dataset.mReport; S.money.view="stats"; moneyLoadMonth(S.money.ym).then(()=>{ if(S.tab==="money") render(); }); }
   if(b.dataset.m){ moneyHandle(b); return; }
   if(b.dataset.vc && NATIVE){ vcHandle(b.dataset.vc); return; }
   if(b.dataset.lwpAsk){ S.lwpAsk=b.dataset.lwpAsk==="1"; render(); return; }
@@ -1519,7 +1531,7 @@ function moneyCalendar(ym,st){
   let cells=""; for(let i=0;i<lead;i++) cells+=`<div class="mc empty"></div>`;
   for(let d=1; d<=days; d++){
     const ds=ym+"-"+pad(d), x=st.byDay[ds], isT=ds===today(), isS=ds===M.sel;
-    const nospend = ds<=today() && ds>=(M.meta.trackFrom||"9999") && !(x&&x.out>0);
+    const nospend = ds<=today() && ds>=(M.meta.trackFrom||"9999") && moneyDayOut(ds)<=0;
     cells+=`<button class="mc ${isS?"sel":""} ${isT?"today":""}" data-m="day" data-a="${ds}"><span class="n">${d}</span>${x&&x.inc?`<span class="m-in">+${won(x.inc)}</span>`:""}${x&&x.out?`<span class="m-out">-${won(x.out)}</span>`:""}${nospend?`<i class="m-zero" title="무지출"></i>`:""}</button>`;
   }
   let h=`<section class="glass card m-cal"><div class="m-dow">${"월화수목금토일".split("").map(c=>`<span>${c}</span>`).join("")}</div><div class="m-grid">${cells}</div><p class="small muted m-zl"><i class="m-zero"></i> 지출 0원인 날(무지출)</p></section>`;
@@ -1558,9 +1570,10 @@ function moneyDonut(entries,total){
 }
 function moneyStats(ym,st){
   const M=S.money;
+  if(ym<ymOf(today())){ M.meta.reportSeen=M.meta.reportSeen||{}; if(!M.meta.reportSeen[ym]){ M.meta.reportSeen[ym]=true; moneySaveMeta(); } }
   const cats=Object.entries(st.byCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   const totalOut=cats.reduce((s,[,v])=>s+v,0);
-  let h=`<section class="glass card"><h2>어디에 썼나</h2>${totalOut?moneyDonut(cats,totalOut):`<p class="small muted">이번 달 지출 기록이 아직 없어요.</p>`}
+  let h=moneyReportCard(ym)+`<section class="glass card"><h2>어디에 썼나</h2>${totalOut?moneyDonut(cats,totalOut):`<p class="small muted">이번 달 지출 기록이 아직 없어요.</p>`}
     ${cats.map(([id,v])=>{ const c=catOf(id); const p=Math.round(v/totalOut*100); return `<button class="m-catrow" data-m="cat" data-a="${id}" aria-pressed="${M.catFilter===id}"><span class="m-ic" style="background:${c.color}22">${c.icon}</span><span class="m-tt"><b>${c.name}</b><span class="m-pbar"><i style="width:${p}%;background:${c.color}"></i></span></span><span class="m-amt"><b>${won(v)}</b><span class="small muted">${p}%</span></span></button>${M.catFilter===id?st.tx.filter(t=>t.type==="out"&&t.cat===id).sort((a,b)=>b.ts-a.ts).map(t=>`<div class="m-sub"><span class="small muted">${parse(t.date).getMonth()+1}/${parse(t.date).getDate()}</span><span>${esc(t.merchant)}</span><span class="m-out small">${won(t.amount)}</span></div>`).join(""):""}`; }).join("")}
   </section>`;
   /* 주간 지출: 이 달에 걸친 주(월~일) */
@@ -1649,7 +1662,7 @@ async function moneyHandle(b){
 }
 /* 금요일 '가계부 정리' 시간에 지금 화면에 보여 줄 한 주 요약 */
 function moneyZeroDays(mon){ /* 이번 주(오늘까지) 지출 0원인 날 */
-  let n=0; for(let i=0;i<7;i++){ const d=addDays(mon,i); if(d>today()||d<(S.money.meta.trackFrom||"9999")) continue; const m=S.money.months[ymOf(d)]; const out=m?m.tx.filter(t=>!t.excluded&&t.type==="out"&&t.date===d).reduce((s,t)=>s+t.amount,0):0; if(out<=0) n++; } return n;
+  let n=0; for(let i=0;i<7;i++){ const d=addDays(mon,i); if(d>today()||d<(S.money.meta.trackFrom||"9999")) continue; if(moneyDayOut(d)<=0) n++; } return n;
 }
 function moneyWeekCard(){
   const mon=weekDates(today())[0], v=moneyWeekOut(mon), pv=moneyWeekOut(addDays(mon,-7));
@@ -1662,6 +1675,69 @@ function moneyWeekCard(){
     <p class="small muted" style="margin:6px 0 0">반성 한 줄: 다음 주에 줄일 항목 하나만 정해 ‘저녁 3줄 기록’에 적어 보세요.</p></section>`;
 }
 
+
+/* ---------- 한 달 결산: 아쉬운 점·잘한 점·다음 달 한 가지 ---------- */
+function josa(w,a,b){ const ch=String(w||"").replace(/[^가-힣]/g,"").slice(-1); if(!ch) return w+a; return w+(((ch.charCodeAt(0)-0xAC00)%28)?a:b); }
+function moneyIsLiving(t){ return t.type==="out" && !t.excluded && t.cat!=="transfer"; }
+function moneyDayOut(d){ const m=S.money.months[ymOf(d)]; return m?m.tx.filter(t=>moneyIsLiving(t)&&t.date===d).reduce((s,t)=>s+t.amount,0):0; }
+function moneyReport(ym){
+  const M=S.money, tx=(M.months[ym]||{tx:[]}).tx, liv=tx.filter(t=>moneyIsLiving(t)&&t.amount>0);
+  const [y,mo]=ym.split("-").map(Number), last=ymd(new Date(y,mo,0)), end=last<today()?last:today();
+  const from=(M.meta.trackFrom||ym+"-01")>ym+"-01"?M.meta.trackFrom:ym+"-01";
+  const out=liv.reduce((s,t)=>s+t.amount,0), inc=tx.filter(t=>t.type==="in"&&!t.excluded).reduce((s,t)=>s+t.amount,0);
+  const transfers=tx.filter(t=>t.type==="out"&&!t.excluded&&t.cat==="transfer").reduce((s,t)=>s+t.amount,0);
+  const byCat={}; liv.forEach(t=>byCat[t.cat]=(byCat[t.cat]||0)+t.amount);
+  const prevYm=ymAdd(ym,-1), prev=M.months[prevYm]&&M.months[prevYm].tx.some(t=>t.type==="out")?M.months[prevYm].tx.filter(t=>moneyIsLiving(t)&&t.amount>0):null;
+  const prevOut=prev?prev.reduce((s,t)=>s+t.amount,0):null, prevCat={}; if(prev) prev.forEach(t=>prevCat[t.cat]=(prevCat[t.cat]||0)+t.amount);
+  let days=0, zero=0; for(let d=from; d<=end; d=addDays(d,1)){ days++; if(moneyDayOut(d)<=0) zero++; }
+  const weeks=Math.max(1,Math.round(days/7)), zeroGoal=weeks*2;
+  const small=liv.filter(t=>t.amount<10000), cafe=liv.filter(t=>t.cat==="cafe"), mart=liv.filter(t=>t.cat==="mart");
+  const late=liv.filter(t=>{ const h=new Date(t.ts).getHours(); return h>=22||h<4; });
+  const wkend=liv.filter(t=>{ const g=parse(t.date).getDay(); return g===0||g===6; }).reduce((s,t)=>s+t.amount,0);
+  const deliv=liv.filter(t=>/배달의민족|배민|쿠팡이츠|요기요/.test(t.merchant||""));
+  const biggest=liv.slice().sort((a,b)=>b.amount-a.amount)[0];
+  const bad=[], good=[];
+  if(prev){ let worst=null; for(const [c,v] of Object.entries(byCat)){ const d=v-(prevCat[c]||0); if(d>20000 && (!worst||d>worst.d)) worst={c,d,v}; }
+    if(worst) bad.push({w:worst.d, t:`${josa(catOf(worst.c).name,"이","가")} 지난달보다 ${won(worst.d)}원 늘었어요`, tip:`다음 달 ${josa(catOf(worst.c).name,"은","는")} ${won(Math.round((prevCat[worst.c]||worst.v*0.7)/1000)*1000)}원 안쪽으로 잡아 봐요`});
+    if(prevOut && out<prevOut*0.95) good.push(`생활 지출이 지난달보다 ${won(prevOut-out)}원 줄었어요`); }
+  if(small.length>=12) bad.push({w:small.reduce((s,t)=>s+t.amount,0), t:`1만 원 미만 결제가 ${small.length}번, 모두 ${won(small.reduce((s,t)=>s+t.amount,0))}원이에요`, tip:"작은 결제는 무지출 데이에 특히 피하고, 사기 전 ‘지금 꼭?’ 한 번만 물어봐요"});
+  if(cafe.length>=8) bad.push({w:cafe.reduce((s,t)=>s+t.amount,0), t:`카페·간식에 ${cafe.length}번, ${won(cafe.reduce((s,t)=>s+t.amount,0))}원 썼어요`, tip:"커피는 주 3번까지만, 나머지는 텀블러에 집에서 내려 가요"});
+  if(mart.length>=10) bad.push({w:mart.reduce((s,t)=>s+t.amount,0)*0.8, t:`편의점·마트를 ${mart.length}번 들렀어요`, tip:"장보기는 주말 한 번에 몰아서, 평일 편의점은 줄여 봐요"});
+  if(deliv.length>=3) bad.push({w:deliv.reduce((s,t)=>s+t.amount,0)*1.2, t:`배달 주문이 ${deliv.length}번이에요`, tip:"사 둔 재료로 해 먹는 무지출 데이를 먼저 지켜요"});
+  if(late.length>=3) bad.push({w:late.reduce((s,t)=>s+t.amount,0)*1.1, t:`밤 10시 이후 결제가 ${late.length}번, ${won(late.reduce((s,t)=>s+t.amount,0))}원이에요`, tip:"22시 ‘쇼츠·SNS 그만’ 때 쇼핑 앱도 같이 닫아요"});
+  if(out>0 && wkend/out>0.45) bad.push({w:wkend*0.5, t:`지출의 ${Math.round(wkend/out*100)}%가 주말에 몰렸어요`, tip:"주말엔 쓸 돈을 금요일에 미리 정해 두고 그 안에서만 써요"});
+  if(biggest && out>0 && biggest.amount>out*0.2 && biggest.amount>=50000) bad.push({w:biggest.amount*0.6, t:`가장 큰 지출은 ${biggest.merchant} ${won(biggest.amount)}원 (생활 지출의 ${Math.round(biggest.amount/out*100)}%)`, tip:"5만 원이 넘는 건 장바구니에 하루 넣어 두고 다음 날 사요"});
+  if(M.meta.budget && out>M.meta.budget) bad.push({w:out, t:`생활비 예산을 ${won(out-M.meta.budget)}원 넘었어요`, tip:"다음 달은 예산을 주 단위로 나눠 금요일마다 확인해요"});
+  if(zero<zeroGoal) bad.push({w:(zeroGoal-zero)*15000, t:`무지출 데이 ${zero}일 / 목표 ${zeroGoal}일`, tip:"화·목 무지출 데이 아침 알림을 보면 카드를 지갑 안쪽에 넣어 둬요"});
+  else good.push(`무지출 데이 ${zero}일로 목표(${zeroGoal}일)를 지켰어요`);
+  if(M.meta.budget && out<=M.meta.budget) good.push(`예산 안에서 썼어요 (${won(M.meta.budget-out)}원 남음)`);
+  if(!cafe.length && liv.length>5) good.push("카페 지출이 한 번도 없었어요");
+  bad.sort((a,b)=>b.w-a.w);
+  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return {ym, out, inc, transfers, prevOut, days, zero, zeroGoal, cats, bad:bad.slice(0,3), good:good.slice(0,2), done:last<today(), n:liv.length};
+}
+function moneyReportCard(ym){
+  const r=moneyReport(ym), mo=+ym.slice(5);
+  if(!r.n) return `<section class="glass card m-rep"><h2 style="margin:0">${mo}월 결산</h2><p class="small muted">아직 이 달 기록이 없어요.</p></section>`;
+  const diff=r.prevOut!=null?r.out-r.prevOut:null;
+  return `<section class="glass card m-rep"><div class="row" style="justify-content:space-between;align-items:baseline"><h2 style="margin:0">${mo}월 결산</h2><span class="small muted">${r.done?"한 달 마감":"진행 중 · "+r.days+"일째"}</span></div>
+    <div class="m-rep-k"><div><span class="small muted">생활 지출</span><b>${won(r.out)}</b></div>
+      <div><span class="small muted">지난달 대비</span><b class="${diff==null?"":diff>0?"m-out":"m-in"}">${diff==null?"—":(diff>0?"+":"")+won(diff)}</b></div>
+      <div><span class="small muted">무지출 데이</span><b>${r.zero}<small>/${r.zeroGoal}일</small></b></div></div>
+    ${r.cats.length?`<p class="small muted" style="margin:0">많이 쓴 곳 · ${r.cats.map(([c,v])=>catOf(c).icon+" "+catOf(c).name+" "+won(v)).join(" · ")}${r.transfers?` · 이체 ${won(r.transfers)}는 따로`:""}</p>`:""}
+    ${r.bad.length?`<div class="m-rep-sec"><span class="lbl bad">아쉬운 점</span>${r.bad.map((x,i)=>`<div class="m-rep-i"><b>${i+1}. ${esc(x.t)}</b><span class="small">→ ${esc(x.tip)}</span></div>`).join("")}</div>`:`<div class="m-rep-sec"><span class="lbl good">아쉬운 점이 거의 없어요</span></div>`}
+    ${r.good.length?`<div class="m-rep-sec"><span class="lbl good">잘한 점</span>${r.good.map(g=>`<div class="m-rep-i"><span class="small">✓ ${esc(g)}</span></div>`).join("")}</div>`:""}
+    ${r.bad[0]?`<div class="m-rep-next"><span class="small muted">다음 달 한 가지만</span><b>${esc(r.bad[0].tip)}</b></div>`:""}
+  </section>`;
+}
+/* 달이 바뀌면 지난달 결산을 지금 화면에서 한 번 알려 줌 */
+function moneyReportNudge(){
+  const M=S.money; if(!M||!M.meta||!M.meta.trackFrom) return "";
+  const prev=ymAdd(ymOf(today()),-1); if((M.meta.trackFrom||"")>prev+"-31") return "";
+  if((M.meta.reportSeen||{})[prev]) return "";
+  if(!(M.months[prev]&&M.months[prev].tx.length)) return "";
+  return `<a class="glass card m-nudge" href="#money" data-m-report="${prev}"><span>📊 <b>${+prev.slice(5)}월 결산</b>이 나왔어요</span><span class="small muted">아쉬운 점과 다음 달 한 가지를 확인해요 ›</span></a>`;
+}
 function applyPending(){
   if(!NATIVE) return;
   let arr=[]; try{ arr=JSON.parse(NATIVE.takePendingChecks()||"[]"); }catch(e){}
