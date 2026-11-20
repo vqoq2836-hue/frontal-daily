@@ -537,6 +537,14 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .eng-rv{display:flex;flex-direction:column;gap:8px}
 .eng-rc{border:1.2px solid var(--ink);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
 .eng-rc.on{background:#F1F8FD}
+
+/* 3줄 기록: 글 + 말 */
+.jrow{display:flex;gap:8px;align-items:flex-start}
+.jrow textarea{flex:1;min-width:0}
+.jmic{flex:none;width:46px;height:46px;border-radius:12px;border:1.3px solid var(--ink);background:var(--co3);box-shadow:2px 2px 0 var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.jmic svg{width:22px;height:22px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.jmic svg rect{fill:var(--co)}
+.jmic:active,.jmic.on{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--ink);background:var(--co)}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -1320,9 +1328,8 @@ function heroBody(t,v){
     main=`<button class="big" data-confirm="steps">확인했어요<small>${STEP.full.toLocaleString()}보 2점 · ${STEP.mini.toLocaleString()}보 1점</small></button>`;
   } else if(m.kind==="journal"){
     const j=v.journal||{};
-    top=`<div class="field"><label for="j-good">오늘 잘한 것 하나</label><textarea id="j-good" data-j="good" rows="1">${esc(j.good)}</textarea></div>
-      <div class="field"><label for="j-bad">다르게 하고 싶은 것 하나</label><textarea id="j-bad" data-j="bad" rows="1">${esc(j.bad)}</textarea></div>
-      <div class="field"><label for="j-next">내일 가장 먼저 할 일 하나</label><textarea id="j-next" data-j="next" rows="1">${esc(j.next)}</textarea></div>
+    const jf=(k,lab)=>`<div class="field"><label for="j-${k}">${lab}</label><div class="jrow"><textarea id="j-${k}" data-j="${k}" rows="1" placeholder="글로 쓰거나 🎙를 눌러 말해 보세요">${esc(j[k])}</textarea><button class="jmic" data-jmic="${k}" aria-label="${lab} 말로 쓰기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div></div>`;
+    top=jf("good","오늘 잘한 것 하나")+jf("bad","다르게 하고 싶은 것 하나")+jf("next","내일 가장 먼저 할 일 하나")+`
       <div class="field"><label>오늘 스트레스는 어느 정도였나요?</label><div class="seg">${[1,2,3,4,5].map(n=>`<button data-stress="${n}" aria-pressed="${v.stress===n}"><b>${n}</b><span>${["아주 낮음","낮음","보통","높음","아주 높음"][n-1]}</span></button>`).join("")}</div></div>`;
     main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 1점 · 세 줄 2점</small></button>`;
   } else if(m.kind==="novel"){
@@ -2444,6 +2451,25 @@ function renderWhy(){
 
 function journalLevel(v){ const j=v.journal||{}; const n=["good","bad","next"].filter(k=>(j[k]||"").trim()).length; return n===0?0:n===3?2:1; }
 
+/* 3줄 기록: 칸마다 말로 쓰기 (글쓰기와 함께). 말한 내용은 그 칸 끝에 이어 붙임 */
+document.addEventListener("click", ev=>{
+  const b=ev.target.closest("[data-jmic]"); if(!b) return;
+  const k=b.dataset.jmic, lab=(b.getAttribute("aria-label")||"").replace(/ 말로 쓰기$/,"");
+  let ok=false;
+  try{ if(NATIVE&&NATIVE.startVoiceLang){ S.jMic=k; ok=NATIVE.startVoiceLang(lab+" — 말해 주세요","ko-KR","onNativeJournalVoice"); } }catch(e){}
+  if(!ok){ S.jMic=null; toast("이 폰에서 음성 입력을 열 수 없어요. 글로 써 주세요"); return; }
+  b.classList.add("on");
+});
+window.onNativeJournalVoice = function(text){
+  const k=S.jMic; S.jMic=null; document.querySelectorAll(".jmic.on").forEach(x=>x.classList.remove("on"));
+  if(!k) return;
+  text=String(text||"").trim(); if(!text){ toast("못 들었어요. 다시 눌러 말해 주세요"); return; }
+  const d=today(), v=day(d); v.journal=v.journal||{good:"",bad:"",next:""};
+  const cur=(v.journal[k]||"").trim(); v.journal[k]=cur?cur+" "+text:text; saveDay(d);
+  const el=document.getElementById("j-"+k);
+  if(el){ el.value=v.journal[k]; el.style.height="auto"; el.style.height=Math.max(46,el.scrollHeight+2)+"px"; }
+  else render();
+};
 /* ---------- 호흡 타이머 ---------- */
 let breathT=null, wake=null;
 async function startBreath(sec){
