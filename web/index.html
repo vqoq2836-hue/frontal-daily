@@ -304,6 +304,9 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .m-legend{display:flex;gap:14px;justify-content:center;margin:8px 0;color:var(--muted)} .m-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .m-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .m-cards .v{font-size:17px}
+.m-rv{border-top:1px solid var(--tile-line);padding:10px 0} .m-rv:first-of-type{border-top:0}
+.m-rv .m-chips{margin:6px 0} .m-src{gap:14px;margin-top:4px}
+.m-nudge{display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--ink)}
 .lwp-ask{margin:4px 0 8px;padding:12px;border-radius:14px;background:var(--tile);border:1px solid var(--tile-line)}
 .xbtn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--tile-line);background:var(--tile);color:var(--muted);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 .top-star{color:var(--accent)}
@@ -913,6 +916,7 @@ function renderNow(){
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
   if(f.t && f.t.id==="t_money") h+=moneyWeekCard();
+  { const n=((S.money&&S.money.meta&&S.money.meta.review)||[]).length; if(n) h+=`<a class="glass card m-nudge" href="#money"><span>💳 돈 내역 <b>${n}건</b>을 확인해 주세요</span><span class="small muted">결제인지·어떤 항목인지 애매한 것들 ›</span></a>`; }
   h+=vcCard(); h+=todoCard(v);
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
   const inTxt=t=>{ const m=toMin(t.time)-nowMin(); return m<=0?"지금":m<60?m+"분 뒤":Math.floor(m/60)+"시간 "+(m%60?m%60+"분 ":"")+"뒤"; };
@@ -1322,7 +1326,7 @@ function parseFinSms(body, ts, addr){
     .replace(/(입금|출금|이체|지급)\s*:?\s*(\d{1,3}(?:,\d{3})+|\d+)/g," ")
     .replace(/\(금액\)/g," ")
     .replace(/(USD|US\$|EUR|JPY|CNY|\$)\s*[\d,]+(?:\.\d+)?/g," ")
-    .replace(/(\d{1,2})[\/.-](\d{1,2})\s*(?:\([^)]\))?\s*(\d{1,2}):(\d{2})/g,"\n")
+    .replace(/(\d{1,2})[\/.-](\d{1,2})\s*(?:\([^)]\))?\s*(\d{1,2}):(\d{2})/g,"\n\u0001")
     .replace(/\d{2,6}-\*{2,}-?[\d*]*|\d{3,}\*+\d*|[\d*]{4,}/g," ")
     .replace(/\(\s*[\d*]{3,5}\s*\)|[\d]\*[\d]\*/g," ")
     .replace(/[가-힣]\*[가-힣]{0,2}\s*님?/g," ")
@@ -1331,9 +1335,10 @@ function parseFinSms(body, ts, addr){
     .replace(/\[[^\]]*\]/g," ")
     .replace(FIN_SRC," ")
     .replace(/카드|은행|님/g," ");
+  const withMark = rest; rest = rest.replace(/\u0001/g,"");
   const parts = rest.split(/\n/).map(s=>s.replace(/[()]/g," ").replace(/\s+/g," ").trim()).filter(s=>s && /[가-힣A-Za-z]/.test(s) && !/^(M|ZERO|the|X|Edition|SOL|KB)$/i.test(s));
   let merchant = "";
-  if(dm){ const after = rest.split(/\n/).slice(1).join("\n").split(/\n/).map(s=>s.replace(/[()]/g," ").replace(/\s+/g," ").trim()).filter(s=>s && /[가-힣A-Za-z]/.test(s)); merchant = after[0] || ""; }
+  if(dm){ const after = withMark.slice(withMark.indexOf("\u0001")+1).split(/\n/).map(s=>s.replace(/[()]/g," ").replace(/\s+/g," ").trim()).filter(s=>s && /[가-힣A-Za-z]/.test(s)); merchant = after[0] || ""; }
   if(!merchant) merchant = parts[parts.length-1] || "";
   merchant = merchant.replace(/^[\s\-:·]+|[\s\-:·]+$/g,"").slice(0,30) || source || "알 수 없음";
 
@@ -1354,7 +1359,7 @@ function guessCat(tx, rules){
 }
 
 /* ---------- 가계부: 저장·동기화 ---------- */
-S.money = {months:{}, meta:{lastSync:0, rules:{}, budget:0, deleted:[]}, ym:null, sel:null, view:"cal", edit:null, catFilter:null, syncing:false, loaded:false, permDenied:false};
+S.money = {months:{}, meta:{lastSync:0, rules:{}, budget:0, deleted:[], review:[], srcRules:{}}, ym:null, sel:null, view:"cal", edit:null, catFilter:null, syncing:false, loaded:false, permDenied:false};
 const won = n => (n<0?"-":"")+Math.abs(Math.round(n)).toLocaleString("ko-KR");
 const ymOf = d => d.slice(0,7);
 function ymAdd(ym,n){ const [y,m]=ym.split("-").map(Number); const d=new Date(y,m-1+n,1); return d.getFullYear()+"-"+pad(d.getMonth()+1); }
@@ -1375,33 +1380,79 @@ function moneySaveMeta(){ try{ setDoc("money/meta", S.money.meta); }catch(e){} }
 function moneyAllTx(){ return Object.values(S.money.months).flatMap(m=>m.tx); }
 function smsOk(){ return !!(NATIVE && NATIVE.smsStatus && NATIVE.smsStatus()==="granted"); }
 function moneySync(){
-  if(!smsOk() || !NATIVE.readSms || S.money.syncing) return;
+  if(!smsOk() || !NATIVE.readSms){ moneyTakeNotisOnly(); return; }
+  if(S.money.syncing) return;
   const m=S.money.meta;
   const since = m.lastSync ? m.lastSync - 3*86400000 : new Date(new Date().getFullYear(), new Date().getMonth()-2, 1).getTime();
   S.money.syncing=true;
   try{ NATIVE.readSms(String(since)); }catch(e){ S.money.syncing=false; }
 }
+/* 들어온 문자·알림을 판단: 확실하면 바로 기록, 애매하면 '확인 필요'로 물어봄 */
+const FIN_APP = /kbstar|kbcard|kbpay|kbank|shinhan|shcard|hanabank|hanacard|hanaskcard|wooribank|wooricard|nonghyup|nhcard|nhbank|nhallone|toss|kakaobank|kakaopay|ibk|citibank|bccard|samsungcard|hyundaicard|lottecard|scbank|epost|suhyup|kfcc|sbi|busanbank|knbank|dgb|kjbank|jbbank|spay|samsung\.android\.wallet|naverfin|payco/i;
+const FIN_APP_LABEL = /카드|은행|뱅크|페이|SOL|KB|하나|우리|NH|농협|토스|신한|국민|삼성|현대|롯데|씨티|기업|우체국|새마을|신협/;
+function moneySrcKey(s){ return s.pkg ? "app:"+s.pkg : "sms:"+(s.addr||""); }
+function moneyJudge(s,p){
+  const r=[], key=moneySrcKey(s), srcRule=(S.money.meta.srcRules||{})[key];
+  if(p.fx && !p.amount) r.push("해외 결제라 원화 금액을 확인해 주세요");
+  if(!p.merchant || (p.merchant===p.source && !s.pkg) || p.merchant==="알 수 없음") r.push("어디서 쓴 돈인지 못 읽었어요");
+  if(srcRule!=="auto"){
+    if(s.pkg){
+      if(s.pkg==="com.kakao.talk"){ if(!(FIN_SRC.test(s.body) && /(승인|출금|입금|결제)/.test(s.body))) r.push("카톡 알림이라 결제인지 확실하지 않아요"); }
+      else if(!FIN_APP.test(s.pkg) && !FIN_APP_LABEL.test(s.app||"")) r.push("‘"+(s.app||s.pkg)+"’ 앱 알림이라 결제인지 확실하지 않아요");
+    } else if(!FIN_SRC.test(s.body)) r.push("보낸 곳이 카드사·은행인지 모르겠어요");
+  }
+  return r;
+}
+function moneyDup(p){ /* 같은 결제가 문자와 앱 알림으로 두 번 온 경우 */
+  const near=moneyAllTx().filter(t=>t.type===p.type && t.amount===p.amount && Math.abs((t.ts||0)-p.ts)<=15*60000);
+  if(!near.length) return null;
+  const m=(p.merchant||"").replace(/\s/g,"");
+  const same=near.find(t=>{ const tm=(t.merchant||"").replace(/\s/g,""); return !m || !tm || tm.includes(m.slice(0,4)) || m.includes(tm.slice(0,4)); });
+  return same ? "same" : "similar";
+}
+async function moneyIngest(arr, label){
+  const M=S.money; M.meta.review=M.meta.review||[]; M.meta.srcRules=M.meta.srcRules||{};
+  const known=new Set(moneyAllTx().map(t=>t.id).concat(M.meta.deleted||[], M.meta.review.map(x=>x.id)));
+  const touched=new Set(); let added=0, asked=0;
+  for(const s of arr){
+    if(!s || !s.id || known.has(s.id)) continue;
+    known.add(s.id);
+    if((M.meta.srcRules[moneySrcKey(s)])==="ignore") continue;
+    const p=parseFinSms(s.body, s.date, s.addr); if(!p) continue;
+    /* 쇼핑앱 등 카드·은행이 아닌 앱 알림은 앱 이름을 가맹점으로 */
+    if(s.pkg && s.pkg!=="com.kakao.talk" && !FIN_APP.test(s.pkg) && !FIN_APP_LABEL.test(s.app||"")) p.merchant=s.app||p.merchant;
+    const dup=moneyDup(p); if(dup==="same") continue;
+    const cat=guessCat(p, M.meta.rules), rule=M.meta.rules[p.merchant]||{};
+    const reasons=moneyJudge(s,p);
+    if(dup==="similar") reasons.push("비슷한 시각에 같은 금액이 이미 기록돼 있어요");
+    if(cat==="etc" || cat==="inetc") reasons.push("어떤 항목인지 골라 주세요");
+    const d=ymd(new Date(p.ts));
+    const tx={id:s.id, ts:p.ts, date:d, type:p.type, amount:p.amount, fx:p.fx||null, merchant:p.merchant, source:p.source||s.app||"", cat, excluded:!!rule.excluded, auto:true, body:String(s.body||"").slice(0,300), via:s.pkg?"app":"sms"};
+    if(reasons.length){ M.meta.review.push({id:s.id, src:moneySrcKey(s), srcLabel:s.pkg?(s.app||s.pkg):(s.addr||"문자"), reasons, tx}); asked++; continue; }
+    const ym=ymOf(d); await moneyLoadMonth(ym); M.months[ym].tx.push(tx); touched.add(ym); added++;
+  }
+  touched.forEach(moneySaveMonth);
+  M.meta.review=M.meta.review.slice(-300);
+  return {added, asked};
+}
 window.onNativeSms = async function(json){
   S.money.syncing=false;
   let arr=[]; try{ arr=JSON.parse(json||"[]"); }catch(e){}
-  const known=new Set(moneyAllTx().map(t=>t.id).concat(S.money.meta.deleted||[]));
-  const touched=new Set(); let added=0, maxTs=S.money.meta.lastSync||0;
-  for(const s of arr){
-    maxTs=Math.max(maxTs, s.date||0);
-    if(!s || known.has(s.id)) continue;
-    const p=parseFinSms(s.body, s.date, s.addr); if(!p) continue;
-    const d=ymd(new Date(p.ts)), ym=ymOf(d);
-    await moneyLoadMonth(ym);
-    const rule=S.money.meta.rules[p.merchant]||{};
-    S.money.months[ym].tx.push({id:s.id, ts:p.ts, date:d, type:p.type, amount:p.amount, fx:p.fx||null, merchant:p.merchant, source:p.source,
-      cat:guessCat(p, S.money.meta.rules), excluded:!!rule.excluded, auto:true, body:String(s.body||"").slice(0,300)});
-    known.add(s.id); touched.add(ym); added++;
-  }
-  touched.forEach(moneySaveMonth);
+  let notis=[]; try{ if(NATIVE&&NATIVE.takeNotis) notis=JSON.parse(NATIVE.takeNotis()||"[]"); }catch(e){}
+  const maxTs=arr.reduce((m,s)=>Math.max(m,s.date||0), S.money.meta.lastSync||0);
+  const a=await moneyIngest(arr.concat(notis).sort((x,y)=>(x.date||0)-(y.date||0)));
   S.money.meta.lastSync = Math.max(maxTs, Date.now()-60000); moneySaveMeta();
-  if(added) toast("문자에서 "+added+"건을 가계부에 넣었어요");
-  if(S.tab==="money" || added) render();
+  if(a.added||a.asked) toast((a.added?a.added+"건을 가계부에 넣었어요":"")+(a.added&&a.asked?" · ":"")+(a.asked?a.asked+"건은 확인해 주세요":""));
+  if(S.tab==="money" || S.tab==="now" || a.added || a.asked) render();
 };
+/* 문자 권한이 없어도 카드사 앱 알림은 가져옴 */
+async function moneyTakeNotisOnly(){
+  if(!NATIVE||!NATIVE.takeNotis) return;
+  let notis=[]; try{ notis=JSON.parse(NATIVE.takeNotis()||"[]"); }catch(e){}
+  if(!notis.length) return;
+  const a=await moneyIngest(notis); moneySaveMeta();
+  if(a.added||a.asked){ toast((a.added?a.added+"건을 가계부에 넣었어요 ":"")+(a.asked?a.asked+"건은 확인해 주세요":"")); render(); }
+}
 window.onNativeSmsPerm = function(ok){
   if(ok){ S.money.permDenied=false; toast("문자를 읽어 가계부를 채울게요"); moneySync(); }
   else S.money.permDenied=true;
@@ -1431,6 +1482,7 @@ function renderMoney(){
   const ym=M.ym, [y,mo]=ym.split("-").map(Number), st=moneyMonthStats(ym);
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">가계부</span><b>${mo}월의 돈</b></div><div class="row" style="gap:6px"><button class="btn sm" data-m="prev" aria-label="이전 달">‹</button><button class="btn sm" data-m="next" aria-label="다음 달" ${ym>=ymOf(today())?"disabled":""}>›</button></div></div>`;
   h+=moneyPermCard();
+  h+=moneyReviewCard();
   /* 합계 */
   h+=`<section class="glass card m-sum"><div class="row" style="justify-content:space-between;align-items:flex-end">
       <div><span class="eyebrow">${y===new Date().getFullYear()?"":y+"년 "}${mo}월 합계</span><div class="m-big ${st.net<0?"m-out":"m-in"}">${st.net>0?"+":""}${won(st.net)}</div></div>
@@ -1442,14 +1494,36 @@ function renderMoney(){
   h+= M.view==="stats" ? moneyStats(ym,st) : moneyCalendar(ym,st);
   return h;
 }
+function moneyReviewCard(){
+  const R=S.money.meta.review||[]; if(!R.length) return "";
+  const shown=R.slice(0,8);
+  return `<section class="glass card m-review"><div class="row" style="justify-content:space-between"><h2 style="margin:0">확인이 필요해요 · ${R.length}건</h2>${R.length>1?`<button class="btn sm" data-m="rvAll">모두 이대로 기록</button>`:""}</div>
+    <p class="small muted" style="margin:4px 0 6px">애매한 건 바로 넣지 않고 여기 모아 둬요. 골라 주시면 그대로 기록하고, 같은 가맹점·앱은 다음부터 알아서 처리해요.</p>
+    ${shown.map(x=>{ const t=x.tx, c=catOf(t.cat), catOnly=x.reasons.length===1&&/항목/.test(x.reasons[0]);
+      const d=parse(t.date); const cats=t.type==="in"?INCOME_CATS:MONEY_CATS;
+      return `<div class="m-rv"><div class="row" style="justify-content:space-between;gap:8px"><span class="small"><b>${t.type==="in"?"수입":t.amount<0?"취소":"지출"} ${t.amount?won(Math.abs(t.amount))+"원":esc(t.fx||"")}</b> · ${esc(t.merchant)} · ${d.getMonth()+1}/${d.getDate()}</span><span class="small muted">${esc(x.srcLabel)}</span></div>
+        <p class="small warn-t" style="margin:4px 0">${x.reasons.map(esc).join(" · ")}</p>
+        <p class="small muted m-body">${esc(String(t.body||"").replace(/\s+/g," ").slice(0,140))}</p>
+        ${catOnly?`<div class="m-chips">${cats.filter(k=>k.id!=="etc"&&k.id!=="inetc").map(k=>`<button class="m-chip" data-m="rvCat" data-a="${esc(x.id)}" data-c="${k.id}">${k.icon} ${k.name}</button>`).join("")}</div>`:""}
+        <div class="row" style="flex-wrap:wrap"><button class="btn sm primary" data-m="rvOk" data-a="${esc(x.id)}">${catOnly?"기타로 기록":"맞아요, 기록"}</button><button class="btn sm" data-m="rvEdit" data-a="${esc(x.id)}">고쳐서 기록</button><button class="btn sm" data-m="rvNo" data-a="${esc(x.id)}">결제 아님</button></div>
+        ${/^app:/.test(x.src)&&x.src!=="app:com.kakao.talk"&&!catOnly?`<div class="row m-src"><button class="linkish small" data-m="rvSrc" data-a="${esc(x.id)}" data-c="auto">이 앱 알림은 앞으로 바로 기록</button><button class="linkish small" data-m="rvSrc" data-a="${esc(x.id)}" data-c="ignore">이 앱 알림은 앞으로 무시</button></div>`:""}
+      </div>`; }).join("")}
+    ${R.length>shown.length?`<p class="small muted">나머지 ${R.length-shown.length}건은 위의 것을 정리하면 이어서 보여요.</p>`:""}</section>`;
+}
+function moneyNotiCard(){
+  if(!NATIVE||!NATIVE.notiStatus||NATIVE.notiStatus()==="granted") return "";
+  return `<section class="glass card"><h2>카드사 앱 알림도 읽기</h2><p class="small muted">신한 SOL·KB Pay 같은 카드·은행 앱 알림과 카카오톡 결제 알림톡도 가계부에 넣어요. 문자로 오지 않는 결제까지 잡혀요.</p>
+    <ol class="small"><li>아래 버튼으로 ‘알림 읽기’ 설정을 열어요.</li><li><b>범키데일리 가계부</b>를 켜요. 막혀 있으면 앱 정보 → ⋮ → ‘제한된 설정 허용’ 후 다시 켜요.</li></ol>
+    <div class="row"><button class="btn primary" data-m="noti">알림 읽기 켜기</button><button class="btn" data-m="appinfo">앱 정보 열기</button></div></section>`;
+}
 function moneyPermCard(){
-  if(!NATIVE || !NATIVE.readSms || smsOk()) return "";
+  if(!NATIVE || !NATIVE.readSms || smsOk()) return moneyNotiCard();
   return `<section class="glass card"><h2>문자로 자동 기록</h2><p class="small muted">카드 승인·은행 입출금 문자를 읽어 쓴 돈과 들어온 돈을 자동으로 적고 분류해요. 문자 내용은 폰 안에만 저장돼요.</p>
     <div class="row"><button class="btn primary" data-m="perm">문자 읽기 허용</button></div>
     ${S.money.permDenied?`<div class="m-guide"><p class="small"><b>허용 창이 안 뜨거나 막혔다면</b> (앱 스토어 밖에서 설치한 앱이라 한 번 더 풀어 줘야 해요)</p>
       <ol class="small"><li>아래 ‘앱 정보 열기’를 눌러요.</li><li>오른쪽 위 <b>⋮</b> → <b>‘제한된 설정 허용’</b>을 눌러요.</li><li>권한 → SMS → <b>허용</b>으로 바꾸고 돌아와요.</li></ol>
       <div class="row"><button class="btn" data-m="appinfo">앱 정보 열기</button></div></div>`:""}
-    <p class="small muted" style="margin-top:8px">문자 없이도 ‘직접 추가’로 적을 수 있어요.</p></section>`;
+    <p class="small muted" style="margin-top:8px">문자 없이도 ‘직접 추가’로 적을 수 있어요.</p></section>`+moneyNotiCard();
 }
 function moneyBudgetLine(st){
   const b=S.money.meta.budget||0;
@@ -1550,6 +1624,18 @@ async function moneyHandle(b){
   if(a==="day"){ M.sel=arg; M.edit=null; render(); return; }
   if(a==="sync"){ moneySync(); render(); return; }
   if(a==="perm"){ try{ NATIVE.requestSmsPermission(); }catch(e){ M.permDenied=true; render(); } return; }
+  if(a==="noti"){ try{ NATIVE.openNotiAccess(); }catch(e){} return; }
+  if(a==="rvAll"||a==="rvOk"||a==="rvNo"||a==="rvCat"||a==="rvEdit"||a==="rvSrc"){
+    const R=M.meta.review||[]; const take=id=>{ const i=R.findIndex(x=>x.id===id); return i>=0?R.splice(i,1)[0]:null; };
+    const record=async (x,cat)=>{ const t=x.tx; if(cat){ t.cat=cat; M.meta.rules[t.merchant]={cat, excluded:!!t.excluded}; } const ym=ymOf(t.date); await moneyLoadMonth(ym); M.months[ym].tx.push(t); moneySaveMonth(ym); };
+    if(a==="rvAll"){ for(const x of R.splice(0)) await record(x); toast("모두 기록했어요"); }
+    else if(a==="rvOk"){ const x=take(arg); if(x){ await record(x); toast("기록했어요"); } }
+    else if(a==="rvCat"){ const x=take(arg); if(x){ await record(x,b.dataset.c); toast(catOf(b.dataset.c).name+"(으)로 기록했어요 · ‘"+x.tx.merchant+"’은 다음부터 자동"); } }
+    else if(a==="rvNo"){ const x=take(arg); if(x){ (M.meta.deleted=M.meta.deleted||[]).push(x.id); toast("기록하지 않았어요"); } }
+    else if(a==="rvSrc"){ const x=R.find(y=>y.id===arg); if(x){ M.meta.srcRules[x.src]=b.dataset.c; take(arg); if(b.dataset.c==="auto"){ await record(x); toast("이 앱 알림은 다음부터 바로 기록해요"); } else { (M.meta.deleted=M.meta.deleted||[]).push(x.id); toast("이 앱 알림은 다음부터 무시해요"); } } }
+    else if(a==="rvEdit"){ const x=R.find(y=>y.id===arg); if(x){ M.view="cal"; M.sel=x.tx.date; M.ym=ymOf(x.tx.date); await moneyLoadMonth(M.ym); M.edit=Object.assign({rule:true, fromReview:x.id}, clone(x.tx), {id:null, amount:Math.abs(x.tx.amount)}); render(); window.scrollTo(0,0); return; } }
+    moneySaveMeta(); render(); return;
+  }
   if(a==="appinfo"){ try{ NATIVE.openAppInfo(); }catch(e){} return; }
   if(a==="cat"){ M.catFilter = M.catFilter===arg?null:arg; render(); return; }
   if(a==="budget"){ M.budgetEdit=!M.budgetEdit; render(); return; }
@@ -1570,7 +1656,9 @@ async function moneyHandle(b){
         if(f.ym!==ym){ S.money.months[f.ym].tx.splice(f.i,1); f.t.ts=parse(e.date).getTime()+12*3600000; S.money.months[ym].tx.push(f.t); moneySaveMonth(f.ym); }
         moneySaveMonth(ym); }
     } else {
-      S.money.months[ym].tx.push({id:"m_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts:parse(e.date).getTime()+12*3600000, date:e.date, type:e.type, amount:e.amount, merchant:e.merchant, source:"직접", cat:e.cat, memo:e.memo, excluded:e.excluded, manual:true});
+      const rv = e.fromReview ? (M.meta.review||[]).find(x=>x.id===e.fromReview) : null;
+      if(rv){ M.meta.review=M.meta.review.filter(x=>x.id!==e.fromReview); moneySaveMeta(); }
+      S.money.months[ym].tx.push({id: rv ? rv.id : "m_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5), ts: rv ? rv.tx.ts : parse(e.date).getTime()+12*3600000, date:e.date, type:e.type, amount:(rv&&rv.tx.amount<0?-1:1)*e.amount, merchant:e.merchant, source: rv ? rv.tx.source : "직접", cat:e.cat, memo:e.memo, excluded:e.excluded, manual:!rv, auto:!!rv, userCat:!!rv, body: rv ? rv.tx.body : undefined});
       moneySaveMonth(ym);
     }
     if(e.rule && e.merchant){ M.meta.rules[e.merchant]={cat:e.cat, excluded:e.excluded}; moneySaveMeta();
@@ -1587,6 +1675,7 @@ function moneyWeekCard(){
     ${top.length?`<p class="small muted" style="margin:0">이번 달 많이 쓴 곳: ${top.map(([id,x])=>catOf(id).icon+" "+catOf(id).name+" "+won(x)).join(" · ")}</p>`:""}
     <p class="small muted" style="margin:6px 0 0">반성 한 줄: 다음 주에 줄일 항목 하나만 정해 ‘저녁 3줄 기록’에 적어 보세요.</p></section>`;
 }
+
 function applyPending(){
   if(!NATIVE) return;
   let arr=[]; try{ arr=JSON.parse(NATIVE.takePendingChecks()||"[]"); }catch(e){}

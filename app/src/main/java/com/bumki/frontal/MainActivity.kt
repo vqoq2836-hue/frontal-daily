@@ -216,6 +216,25 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
+        fun notiStatus(): String = if (FinNotifListener.enabled(this@MainActivity)) "granted" else "denied"
+
+        /** 카드사 앱 알림 읽기: 설정의 '알림 읽기(기기 및 앱 알림)' 화면을 엶 */
+        @JavascriptInterface
+        fun openNotiAccess() {
+            runOnUiThread {
+                val tries = listOf(
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                        .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, FinNotifListener.component(this@MainActivity).flattenToString()),
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                )
+                for (i in tries) if (runCatching { startActivity(i) }.isSuccess) break
+            }
+        }
+
+        @JavascriptInterface
+        fun takeNotis(): String = FinNotifListener.take(this@MainActivity)
+
+        @JavascriptInterface
         fun openAppInfo() {
             runOnUiThread {
                 runCatching {
