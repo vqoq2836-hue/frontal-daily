@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 크림 종이 -->
+<!-- 초록 별색 판 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFF6F1E6" android:pathData="M0,0h108v108h-108z" />
-    <path android:fillColor="#141F2A3A" android:pathData="M20,22h1v1h-1zM31,15h1v1h-1zM84,26h1v1h-1zM90,40h1v1h-1zM17,64h1v1h-1zM24,86h1v1h-1zM88,82h1v1h-1zM70,92h1v1h-1zM40,92h1v1h-1zM93,60h1v1h-1z" />
+    <path android:fillColor="#FF43B489" android:pathData="M0,0h108v108h-108z" />
+    <path android:fillColor="#1A1F2A3A" android:pathData="M20,22h1v1h-1zM31,15h1v1h-1zM84,26h1v1h-1zM90,40h1v1h-1zM17,64h1v1h-1zM24,86h1v1h-1zM88,82h1v1h-1zM70,92h1v1h-1zM40,92h1v1h-1zM93,60h1v1h-1z" />
 </vector>
