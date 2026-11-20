@@ -330,6 +330,31 @@ details.how{border-top:1px solid var(--edge)}
 .m-rep-i{display:flex;flex-direction:column;gap:2px;padding-left:2px} .m-rep-i b{font-size:14.5px;font-weight:700;letter-spacing:-.02em} .m-rep-i .small{color:var(--muted)}
 .m-rep-next{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:16px;background:linear-gradient(180deg,var(--g50),#fff);border:1px solid var(--g100)}
 .m-rep-next b{color:var(--g800);font-size:15px;letter-spacing:-.02em}
+/* 루틴 아이콘 */
+.ric{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--ib);position:relative}
+.ric svg{width:21px;height:21px}
+.ric.lg{width:48px;height:48px;border-radius:15px}.ric.lg svg{width:30px;height:30px}
+.ric.sm{width:34px;height:34px;border-radius:11px}
+.ric.xs{width:28px;height:28px;border-radius:9px}.ric.xs svg{width:17px;height:17px}
+.hero-ttl{display:flex;align-items:center;gap:12px}
+.hero-ttl .hero-title{min-width:0}
+.next-row{grid-template-columns:48px 34px 1fr auto!important}
+.tl-row{grid-template-columns:48px 28px 1fr auto!important}
+.tl-row.s1 .ric::after,.tl-row.s2 .ric::after{content:"";position:absolute;right:-3px;bottom:-3px;width:13px;height:13px;border-radius:50%;background:var(--g500) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2l2 2 4-4.4' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat;box-shadow:0 0 0 2px #fff}
+.tl-row.s1 .ric::after{background-color:var(--g300)}
+.tl-row.sk .ric{filter:grayscale(1);opacity:.45}
+.tl-row.cur .ric{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--g400)}
+.ed-t{display:flex;align-items:center;gap:8px;min-width:0}
+/* 66일 나무 */
+.tree-card{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:center;padding:14px 16px 14px 10px;background:linear-gradient(180deg,var(--g50),var(--surface) 60%)}
+.tree-art{background:radial-gradient(circle at 50% 70%,#fff 0%,rgba(255,255,255,0) 70%);border-radius:18px}
+.tree-svg{display:block;width:100%;height:auto}
+.tree-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tree-txt b{font-size:19px;font-weight:800;letter-spacing:-.03em}
+.tree-txt .g,.small.g{color:var(--g700);font-weight:800}
+.tree-txt .bar{margin:4px 0 2px}
+.tree-big{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:center}
+.tree-steps{display:flex;flex-wrap:wrap;gap:4px 10px;color:var(--faint)} .tree-steps .on{color:var(--g700);font-weight:700}
 .m-zero{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--g400);margin-top:2px}
 .m-zl{display:flex;align-items:center;gap:6px;margin:6px 8px 0}.m-zl .m-zero{margin:0}
 .dchips{display:flex;gap:4px;margin-top:4px}
@@ -542,6 +567,101 @@ const ADVICE = [
 ];
 function adviceFor(dateStr){ return adviceRaw(dateStr).replace(/\n/g," "); }
 function adviceRaw(dateStr){ const d=new Date(dateStr+"T00:00:00Z"); const n=Math.floor(d.getTime()/86400000); return ADVICE[((n%ADVICE.length)+ADVICE.length)%ADVICE.length]; }
+
+/* ---------- 루틴 아이콘: 원·직선 위주, 한 팔레트·한 방향 (토스페이스식 규칙) ---------- */
+const IC_FAM = {
+  sun:["#FFF3D6","#D8941C"], water:["#E3F1FB","#3A8FD6"], body:["#E1F4EA","#14A26E"], money:["#FFF0DA","#C8761A"],
+  digital:["#E8ECF3","#55657F"], mind:["#FFEBDD","#E07A3A"], love:["#FDE8EC","#E5677D"], night:["#ECE8FA","#7B68D9"], home:["#DDF3F1","#1E9C8F"]
+};
+const W="#fff";
+const IC = {
+  bed:["home",`<rect x="6" y="19" width="28" height="9" rx="3"/><rect x="8" y="13" width="10" height="7" rx="3" opacity=".55"/><rect x="6" y="27" width="3.5" height="6" rx="1.5"/><rect x="30.5" y="27" width="3.5" height="6" rx="1.5"/>`],
+  window:["water",`<rect x="9" y="6" width="22" height="28" rx="3.5"/><path d="M20 6v28M9 19h22" stroke="${W}" stroke-width="2.6"/>`],
+  drop:["water",`<path d="M20 5c6 8 10 13 10 18.5a10 10 0 0 1-20 0C10 18 14 13 20 5z"/><ellipse cx="16" cy="23" rx="2.2" ry="3.6" fill="${W}" opacity=".6"/>`],
+  moonz:["night",`<path d="M24 8a12 12 0 1 0 8 19A10.5 10.5 0 0 1 24 8z"/><path d="M27 8h5l-5 5h5" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" opacity=".6"/>`],
+  lunch:["sun",`<rect x="7" y="14" width="26" height="18" rx="4"/><rect x="14" y="8" width="12" height="7" rx="3" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M7 21.5h26" stroke="${W}" stroke-width="2.2"/>`],
+  capsule:["body",`<g transform="rotate(-38 20 20)"><rect x="7" y="14" width="26" height="12" rx="6"/><rect x="20" y="14" width="13" height="12" rx="6" fill="${W}" opacity=".45"/></g>`],
+  check:["mind",`<rect x="9" y="5" width="22" height="30" rx="4"/><path d="M13.5 14l2.4 2.4 4.2-4.6M13.5 24l2.4 2.4 4.2-4.6" stroke="${W}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 14h4M23 24h4" stroke="${W}" stroke-width="2.4" stroke-linecap="round"/>`],
+  bag:["sun",`<rect x="7" y="14" width="26" height="20" rx="4.5"/><path d="M14.5 14v-3a5.5 5.5 0 0 1 11 0v3" fill="none" stroke="currentColor" stroke-width="2.8"/><rect x="17" y="20" width="6" height="4" rx="1.5" fill="${W}" opacity=".7"/>`],
+  wallet:["money",`<rect x="5" y="10" width="30" height="21" rx="4.5"/><rect x="22" y="17" width="13" height="8" rx="3" fill="${W}" opacity=".75"/><circle cx="26.5" cy="21" r="1.6"/>`],
+  jail:["digital",`<rect x="13" y="4" width="14" height="22" rx="3.5" opacity=".5"/><rect x="7" y="18" width="26" height="17" rx="3.5"/><path d="M14 18v-3M20 18v-3M26 18v-3" stroke="${W}" stroke-width="2"/>`],
+  phoneok:["digital",`<rect x="11" y="4" width="18" height="32" rx="4.5"/><path d="M15 20l3.4 3.4 6.6-7" stroke="${W}" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`],
+  shoe:["body",`<path d="M5 25c0-6 3-12 6.5-14l5 6.2 6.5 2.3c5.5 1.2 12 3 12 7.5V29H5z"/><rect x="5" y="29" width="30" height="4" rx="2" opacity=".55"/>`],
+  brief:["digital",`<rect x="5" y="13" width="30" height="20" rx="4"/><path d="M15 13v-3.5h10V13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M5 21.5h30" stroke="${W}" stroke-width="2.2"/>`],
+  dumbbell:["body",`<rect x="4" y="15" width="5" height="10" rx="2"/><rect x="9" y="11" width="6" height="18" rx="2.2"/><rect x="25" y="11" width="6" height="18" rx="2.2"/><rect x="31" y="15" width="5" height="10" rx="2"/><rect x="15" y="18" width="10" height="4" rx="1.5"/>`],
+  bowl:["sun",`<path d="M5 19h30a15 13 0 0 1-30 0z"/><path d="M14 14c0-3 3-3 3-6.5M22 14c0-3 3-3 3-6.5" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".55"/>`],
+  dish:["home",`<circle cx="18" cy="23" r="11"/><circle cx="18" cy="23" r="5.5" fill="${W}" opacity=".5"/><circle cx="30" cy="10" r="3.2" opacity=".55"/><circle cx="34" cy="17" r="2" opacity=".4"/>`],
+  chart:["money",`<rect x="7" y="19" width="6.5" height="14" rx="2"/><rect x="16.8" y="12" width="6.5" height="21" rx="2"/><rect x="26.5" y="6" width="6.5" height="27" rx="2" opacity=".6"/>`],
+  film:["mind",`<rect x="5" y="15" width="30" height="19" rx="3.5"/><path d="M5 15l2.2-7.5 27.6 0L32.6 15z" opacity=".55"/><path d="M12 8l-2 7M20 8l-2 7M28 8l-2 7" stroke="${W}" stroke-width="2"/>`],
+  feet:["body",`<ellipse cx="14" cy="24" rx="5" ry="7.5" transform="rotate(-12 14 24)"/><ellipse cx="26" cy="16" rx="5" ry="7.5" transform="rotate(12 26 16)"/>`],
+  nosns:["digital",`<rect x="11" y="4" width="18" height="32" rx="4.5"/><path d="M8 33L32 7" stroke="${W}" stroke-width="6" stroke-linecap="round"/><path d="M8 33L32 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>`],
+  broom:["home",`<rect x="22" y="3" width="4" height="18" rx="2" transform="rotate(28 24 12)"/><path d="M10 21h14l3 13H7z"/><path d="M12 25v7M17 25v7M22 25v7" stroke="${W}" stroke-width="1.8" opacity=".7"/>`],
+  shower:["water",`<path d="M11 8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4H11z"/><g opacity=".7"><circle cx="13.5" cy="18" r="2"/><circle cx="20" cy="19" r="2"/><circle cx="26.5" cy="18" r="2"/><circle cx="16.5" cy="25" r="2"/><circle cx="23.5" cy="25" r="2"/><circle cx="20" cy="31.5" r="2"/></g>`],
+  shirt:["sun",`<path d="M14 6l-9 5 3.5 7 4.5-2.2V34h14V15.8l4.5 2.2 3.5-7-9-5c-1 3-3.2 4.5-6 4.5S15 9 14 6z"/>`],
+  pen:["mind",`<path d="M9 31l4-12.5 14.5-10.5 4.5 4.5-10.5 14.5z"/><path d="M9 31l4.4-1.2-3.2-3.2z" opacity=".55"/>`],
+  note:["mind",`<rect x="9" y="5" width="22" height="30" rx="3.5"/><path d="M14 13h12M14 19.5h12M14 26h8" stroke="${W}" stroke-width="2.3" stroke-linecap="round"/>`],
+  heart:["love",`<path d="M20 33S7 25.5 7 15.5a6.5 6.5 0 0 1 13-1.8 6.5 6.5 0 0 1 13 1.8C33 25.5 20 33 20 33z"/>`],
+  box:["digital",`<path d="M5 14l15-7 15 7v15l-15 7-15-7z"/><path d="M5 14l15 7 15-7M20 21v15" stroke="${W}" stroke-width="2" fill="none" opacity=".75"/>`],
+  moon:["night",`<path d="M24 6a14 14 0 1 0 9.5 22A12 12 0 0 1 24 6z"/><circle cx="31" cy="11" r="1.6" opacity=".6"/><circle cx="34" cy="17" r="1.1" opacity=".5"/>`],
+  washer:["water",`<rect x="8" y="5" width="24" height="30" rx="4.5"/><circle cx="20" cy="22" r="7.5" fill="${W}" opacity=".6"/><circle cx="13.5" cy="10" r="1.7" fill="${W}"/><circle cx="18.5" cy="10" r="1.7" fill="${W}" opacity=".6"/>`],
+  cart:["money",`<path d="M5 8h4.5l3.2 15.5h17l3.3-11.5H12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/><circle cx="15.5" cy="30" r="2.8"/><circle cx="28" cy="30" r="2.8"/>`],
+  spark:["sun",`<path d="M20 4l3.4 9.6L33 17l-9.6 3.4L20 30l-3.4-9.6L7 17l9.6-3.4z"/><circle cx="31" cy="30" r="2.6" opacity=".55"/>`],
+  cal:["mind",`<rect x="6" y="8" width="28" height="26" rx="4.5"/><path d="M6 16h28" stroke="${W}" stroke-width="2.4"/><rect x="12" y="5" width="3.4" height="7" rx="1.7"/><rect x="24.6" y="5" width="3.4" height="7" rx="1.7"/><rect x="12" y="21" width="5" height="4" rx="1" fill="${W}" opacity=".7"/>`],
+  scale:["body",`<rect x="6" y="7" width="28" height="27" rx="7"/><path d="M13.5 18.5a6.5 6.5 0 0 1 13 0" stroke="${W}" stroke-width="2.4" fill="none"/><path d="M20 18.5l3-3.5" stroke="${W}" stroke-width="2.2" stroke-linecap="round"/>`],
+  phonebell:["love",`<path d="M20 33S7 25.5 7 15.5a6.5 6.5 0 0 1 13-1.8 6.5 6.5 0 0 1 13 1.8C33 25.5 20 33 20 33z" opacity=".35"/><rect x="13" y="9" width="14" height="22" rx="3.5"/>`],
+  dot:["body",`<circle cx="20" cy="20" r="9"/>`]
+};
+const IC_BY_ID = {
+  t_bed:"bed", t_window:"window", t_water:"drop", sleep:"moonz", t_lunch:"lunch", t_creatine:"capsule", plan:"check", t_pack:"bag",
+  t_nospend_am:"wallet", t_nospend:"wallet", t_jail:"jail", detox:"phoneok", t_walk:"shoe", t_work:"brief", move:"dumbbell",
+  t_dinner:"bowl", t_dishes:"dish", t_money:"chart", focus:"film", steps:"feet", t_nosns:"nosns", t_tidy:"broom", t_shower:"shower",
+  t_clothes:"shirt", novel:"pen", journal:"note", t_warm:"heart", phone:"box", t_sleep:"moon", t_laundry:"washer", newday:"spark",
+  t_clean:"broom", t_market:"cart", t_mealprep:"lunch", t_thanks:"phonebell", t_week:"cal", t_body:"scale", t_prep:"lunch", breath:"spark"
+};
+const IC_BY_WORD = [[/물|수분/,"drop"],[/샤워|목욕/,"shower"],[/운동|헬스|근력/,"dumbbell"],[/걷|산책|러닝/,"shoe"],[/책|독서|필사|공부/,"pen"],[/기록|일기|메모/,"note"],[/잠|취침|눕기/,"moon"],[/청소|정리/,"broom"],[/빨래/,"washer"],[/장보기|마트/,"cart"],[/밥|식사|저녁|점심|아침/,"bowl"],[/돈|가계부|지출/,"wallet"],[/약|영양제|비타민/,"capsule"],[/연락|전화|한마디|감사/,"heart"],[/폰|휴대폰/,"box"],[/일정|계획/,"cal"],[/옷/,"shirt"]];
+function iconKey(t){ const id=(t&&(t.id||t.core&&t.core.id))||""; if(IC_BY_ID[id]) return IC_BY_ID[id]; const ti=(t&&t.title)||""; for(const [re,k] of IC_BY_WORD) if(re.test(ti)) return k; return "dot"; }
+function ricon(t,size){ const k=iconKey(t), [fam,inner]=IC[k]||IC.dot, [bg,fg]=IC_FAM[fam]; return `<span class="ric ${size||""}" style="--ib:${bg};color:${fg}" aria-hidden="true"><svg viewBox="0 0 40 40" fill="currentColor">${inner}</svg></span>`; }
+
+/* ---------- 66일 나무: 목표를 채운 날만큼 자람. 빠진 날은 멈춰만 있음 ---------- */
+function grownDays(){
+  const st=S.settings&&S.settings.startDate; if(!st) return 0;
+  let n=0; for(let d=st; d<=today(); d=addDays(d,1)) if(success(d)) n++; return n;
+}
+function treeStage(n){ return n>=66?["나무","🌳"]:n>=42?["어린 나무","🌲"]:n>=21?["줄기","🌿"]:n>=7?["어린 싹","🌱"]:n>=1?["새싹","🌱"]:["씨앗","🌰"]; }
+function treeSVG(n){
+  const g=Math.min(66,n)/66, cx=50, base=82;
+  const vb = n<7 ? "14 36 72 54" : "0 0 100 90";
+  let s=`<svg viewBox="${vb}" class="tree-svg" role="img" aria-label="66일 나무 ${n}일째"><ellipse cx="50" cy="84" rx="${22+g*12}" ry="4.5" fill="#CDEBDB"/>`;
+  if(n<=0){ return s+`<ellipse cx="50" cy="80" rx="5" ry="3.6" fill="#B08A63"/><path d="M50 77c0-3 2-5 4-6" stroke="#4CBB8B" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`; }
+  const h=10+g*44, top=base-h, tw=2.2+g*4.2;
+  s+=`<path d="M${cx-tw/2} ${base} L${cx-tw/3} ${top+4} L${cx+tw/3} ${top+4} L${cx+tw/2} ${base}z" fill="#9B7651"/>`;
+  if(n<21){ /* 새싹·어린 싹: 잎 두세 장 */
+    const L=6+n*0.9;
+    s+=`<path d="M${cx} ${top+6}c-${L} 0-${L*1.5}-${L*.7}-${L*1.5}-${L*1.4} ${L} 0 ${L*1.5} ${L*.6} ${L*1.5} ${L*1.4}z" fill="#4CBB8B"/>`;
+    s+=`<path d="M${cx} ${top+2}c${L} 0 ${L*1.6}-${L*.8} ${L*1.6}-${L*1.6}-${L} 0-${L*1.6} ${L*.7}-${L*1.6} ${L*1.6}z" fill="#14A26E"/>`;
+    if(n>=7) s+=`<path d="M${cx} ${top+12}c${L*.8} 0 ${L*1.2}-${L*.5} ${L*1.2}-${L}-${L*.8} 0-${L*1.2} ${L*.4}-${L*1.2} ${L}z" fill="#8DD2B0"/>`;
+  } else { /* 줄기·나무: 둥근 수관이 겹겹이 */
+    const r=13+g*13;
+    s+=`<path d="M${cx} ${top+r*.9} l-${r*.5} -${r*.35} M${cx} ${top+r*1.1} l${r*.45} -${r*.4}" stroke="#9B7651" stroke-width="${tw*.55}" stroke-linecap="round"/>`;
+    s+=`<circle cx="${cx-r*.55}" cy="${top+r*.55}" r="${r*.72}" fill="#4CBB8B"/><circle cx="${cx+r*.6}" cy="${top+r*.5}" r="${r*.7}" fill="#14A26E"/><circle cx="${cx}" cy="${top}" r="${r*.85}" fill="#22AE79"/>`;
+    s+=`<circle cx="${cx-r*.25}" cy="${top-r*.3}" r="${r*.3}" fill="#8DD2B0" opacity=".55"/>`;
+    if(n>=42) s+=`<circle cx="${cx-r*.9}" cy="${top+r*.1}" r="${r*.45}" fill="#0D8A5D" opacity=".85"/>`;
+    if(n>=66) [[-.4,-.1],[.35,.2],[.7,-.2],[-.75,.45],[.1,.55]].forEach(([a,b])=>{ s+=`<circle cx="${cx+a*r}" cy="${top+b*r}" r="${2.2+r*.05}" fill="#F2BE4A"/>`; });
+  }
+  return s+`</svg>`;
+}
+function treeCard(compact){
+  const n=grownDays(), [name]=treeStage(n), d=today(), s=score(d), g=goal(d), doneToday=success(d);
+  const tasks=dayTasks(d), v=day(d), left=tasks.filter(t=>!settled(v,t.id)).length, missed=missedTasks(d);
+  return `<section class="glass tree-card">
+    <div class="tree-art">${treeSVG(n)}</div>
+    <div class="tree-txt"><span class="eyebrow">66일 나무</span><b>${name} <span class="g">${n}일째</span></b>
+      <span class="small muted">${n<66?`목표를 채운 날 ${n}일 · 나무까지 ${66-n}일`:"66일을 채워 나무가 됐어요"}</span>
+      <div class="bar"><i style="width:${Math.min(100,n/66*100)}%"></i></div>
+      <span class="small ${doneToday?"g":""}">${doneToday?"오늘 목표 달성 · 오늘 한 뼘 자랐어요":`오늘 ${s}/${g}점 · 목표를 채우면 한 뼘 자라요`}</span>
+      ${compact?"":`<span class="small muted">남은 일 ${left}개${missed.length?` · <button class="linkish small" data-goto="day">놓친 일 ${missed.length}개</button>`:""}</span>`}
+    </div></section>`;
+}
 const NOVELTY = [
   "처음 가 보는 길로 퇴근하기","안 써 본 재료 하나로 도시락 만들기","왼손으로 양치하기",
   "처음 듣는 장르의 앨범 한 장을 끝까지 듣기","카메라 수동 모드로 사진 5장 찍기",
@@ -823,7 +943,7 @@ function renderNow(){
     h+=`<section class="hero glass">
       <div class="hero-top"><span class="state ${f.state==="now"?"":"is-next"}"><i></i>${label}</span><span class="small muted">${esc(t.blockTitle)}</span></div>
       <div class="hero-trow"><div class="hero-time">${esc(t.time||"")}</div>${heroSteps(v)}</div>
-      <h1 class="hero-title">${esc(t.title)}</h1>
+      <div class="hero-ttl">${ricon(t,"lg")}<h1 class="hero-title">${esc(t.title)}</h1></div>
       <p class="hero-cue">${esc(cue)}</p>
       ${heroBody(t,v)}
       ${f.state==="pick"?`<button class="linkish" data-unpick="1">지금 할 일로 돌아가기</button>`:""}
@@ -831,21 +951,15 @@ function renderNow(){
   } else {
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
+  h+=treeCard(false);
   if(f.t && f.t.id==="t_money") h+=moneyWeekCard();
   h+=moneyReportNudge();
   { const n=((S.money&&S.money.meta&&S.money.meta.review)||[]).length; if(n) h+=`<a class="glass card m-nudge" href="#money"><span>💳 돈 내역 <b>${n}건</b>을 확인해 주세요</span><span class="small muted">결제인지·어떤 항목인지 애매한 것들 ›</span></a>`; }
   h+=vcCard(); h+=todoCard(v);
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
   const inTxt=t=>{ const m=toMin(t.time)-nowMin(); return m<=0?"지금":m<60?m+"분 뒤":Math.floor(m/60)+"시간 "+(m%60?m%60+"분 ":"")+"뒤"; };
-  if(upcoming.length) h+=`<section class="glass next"><div class="row" style="justify-content:space-between"><span class="eyebrow">이어서 예정</span><span class="small muted">${upcoming.length}개</span></div>${upcoming.map(t=>`<button class="next-row" data-pick="${t.id}"><span class="t">${esc(t.time)}</span><span class="tb"><span class="n">${esc(t.title)}</span><span class="b">${esc(t.blockTitle)}${t.core?" · 핵심":""}</span></span><span class="in">${inTxt(t)}</span></button>`).join("")}</section>`;
-  const C2=2*Math.PI*22, pct=Math.min(1,s/Math.max(1,g));
-  h+=`<section class="glass progress">
-    <div class="mini-ring" role="img" aria-label="오늘 ${doneN}/${tasks.length}개 완료"><svg viewBox="0 0 54 54"><circle cx="27" cy="27" r="22" stroke="rgba(0,0,0,.18)" stroke-width="6" fill="none"/><circle cx="27" cy="27" r="22" stroke="var(--accent)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="${C2}" stroke-dashoffset="${C2*(1-pct)}"/></svg><b>${Math.round(pct*100)}%</b></div>
-    <div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span class="eyebrow">오늘 진행</span><p style="font-size:15px"><b>${doneN}/${tasks.length}</b>개 지남 · 목표 ${g}점 중 <b>${s}점</b></p>
-    ${missed.length?`<button class="pill missed" data-goto="day">놓친 일 ${missed.length}개 보기</button>`:""}</div>
-    <div class="stats3"><div class="stat3"><b>${streak().n}</b><span>연속 일</span></div><div class="stat3"><b>${Math.min(TARGET_DAYS,Math.max(1,diffDays(S.settings.startDate,d)+1))}</b><span>66일 중</span></div><div class="stat3"><b>${tasks.length-doneN}</b><span>남은 일</span></div></div>
-  </section>
-  <p class="sync" id="sync">${esc(syncText())}</p>`;
+  if(upcoming.length) h+=`<section class="glass next"><div class="row" style="justify-content:space-between"><span class="eyebrow">이어서 예정</span><span class="small muted">${upcoming.length}개</span></div>${upcoming.map(t=>`<button class="next-row" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"sm")}<span class="tb"><span class="n">${esc(t.title)}</span><span class="b">${esc(t.blockTitle)}${t.core?" · 핵심":""}</span></span><span class="in">${inTxt(t)}</span></button>`).join("")}</section>`;
+  h+=`<p class="sync" id="sync">${esc(syncText())}</p>`;
   return h;
 }
 
@@ -857,7 +971,7 @@ function renderDay(){
     const its=tasks.filter(t=>t.block===b.id); if(!its.length) return;
     const dn=its.filter(t=>settled(v,t.id)).length;
     h+=`<section class="glass tl-block"><div class="tl-h"><h3>${esc(b.title)}</h3><span class="small muted num">${esc(b.start)}–${esc(b.end)} · ${dn}/${its.length}</span></div>
-    ${its.map(t=>{ const x=v.done[t.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":x&&x.skipped?"sk":(f.t&&f.t.id===t.id?"cur":""); const lab=x&&x.lvl===2?"제대로":x&&x.lvl===1?(t.core?"조금":"완료"):x&&x.skipped?"넘김":snoozed(v,t.id)?"미룸":""; return `<button class="tl-row ${c}" data-pick="${t.id}"><span class="t">${esc(t.time)}</span><span class="dot"></span><span class="n">${esc(t.title)}${t.core?`<span class="tag">핵심</span>`:""}</span><span class="lab">${lab}</span></button>`; }).join("")}
+    ${its.map(t=>{ const x=v.done[t.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":x&&x.skipped?"sk":(f.t&&f.t.id===t.id?"cur":""); const lab=x&&x.lvl===2?"제대로":x&&x.lvl===1?(t.core?"조금":"완료"):x&&x.skipped?"넘김":snoozed(v,t.id)?"미룸":""; return `<button class="tl-row ${c}" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"xs")}<span class="n">${esc(t.title)}${t.core?`<span class="tag">핵심</span>`:""}</span><span class="lab">${lab}</span></button>`; }).join("")}
     </section>`;
   });
   const w=isoWeek(d), wk=S.weeks[w]||{};
@@ -880,7 +994,7 @@ function renderRoutine(){
     h+=`<section class="glass card">
       <input type="text" data-bk="${i}:title" value="${esc(b.title)}" aria-label="시간대 이름" style="font-weight:700;font-size:16px">
       <div class="row"><input type="time" data-bk="${i}:start" value="${esc(b.start)}" aria-label="시작" style="width:auto;flex:1"><span class="muted">–</span><input type="time" data-bk="${i}:end" value="${esc(b.end)}" aria-label="끝" style="width:auto;flex:1"></div>
-      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small">${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}${ti.days?`<span class="dchips">${(type==="weekend"?[6,0]:[1,2,3,4,5]).map(n=>`<button class="dchip" data-tday="${i}:${j}:${n}" aria-pressed="${ti.days.includes(n)}">${"일월화수목금토"[n]}</button>`).join("")}</span>`:""}</span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
+      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small ed-t">${ricon(ti,"xs")}<span>${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}${ti.days?`<span class="dchips">${(type==="weekend"?[6,0]:[1,2,3,4,5]).map(n=>`<button class="dchip" data-tday="${i}:${j}:${n}" aria-pressed="${ti.days.includes(n)}">${"일월화수목금토"[n]}</button>`).join("")}</span>`:""}</span></span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
       <div class="ed-row" style="grid-template-columns:92px 1fr auto"><input type="time" id="addt-${i}" value="${esc(b.start)}" aria-label="새 할 일 시각"><input type="text" id="add-${i}" placeholder="할 일 추가 (예: 분리수거)"><button class="btn" data-add-task="${i}">추가</button></div>
       ${coreOpts.length?`<div class="row"><select id="core-${i}" style="flex:1;width:auto">${coreOpts.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join("")}</select><button class="btn" data-add-core="${i}">핵심 미션 넣기</button></div>`:""}
     </section>`;
@@ -1842,6 +1956,7 @@ function renderHistory(){
   const cells=[]; for(let d=firstMon; cells.length<77; d=addDays(d,1)) cells.push(d);
   const st=streak();
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">${firstMon===startMon?"시작한 주부터":"최근 11주"}</span><b>기록</b></div></div>
+  ${(()=>{ const n=grownDays(), [nm]=treeStage(n); return `<section class="glass card tree-big"><div class="tree-art">${treeSVG(n)}</div><div class="tree-txt"><span class="eyebrow">66일 나무</span><b>${nm} <span class="g">${n}일째</span></b><span class="small muted">${n<66?"목표를 채운 날만큼 자라요. 빠진 날은 시들지 않고 멈춰만 있어요.":"66일을 채웠어요. 이제 루틴이 몸에 붙었어요."}</span><div class="bar"><i style="width:${Math.min(100,n/66*100)}%"></i></div><div class="tree-steps small"><span class="${n>=1?"on":""}">🌱 새싹</span><span class="${n>=7?"on":""}">어린 싹 7</span><span class="${n>=21?"on":""}">🌿 줄기 21</span><span class="${n>=42?"on":""}">어린 나무 42</span><span class="${n>=66?"on":""}">🌳 66</span></div></div></section>`; })()}
   <section class="glass card"><div class="heat" role="img" aria-label="최근 11주 성공 기록">
   ${DOW.slice(1).concat(DOW[0]).map(x=>`<div class="small muted" style="text-align:center">${x}</div>`).join("")}
   ${cells.map(d=>{ let cls="c"; if(d>t) cls+=" future"; else if(d>=start){ const s=score(d), g=goal(d); if(s>=g) cls+=" s2"; else if(s>0) cls+=" s1"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; } if(d===t) cls+=" today"; return `<div class="${cls}" title="${d} · ${score(d)}점"></div>`; }).join("")}
