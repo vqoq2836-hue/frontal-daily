@@ -3,6 +3,7 @@ package com.bumki.frontal
 import android.Manifest
 import android.content.Intent
 import android.provider.Settings
+import android.speech.RecognizerIntent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -30,6 +31,19 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
             val ok = granted.containsAll(HealthReader.PERMISSIONS)
             js("window.onNativeHealthPermission && window.onNativeHealthPermission($ok)")
+        }
+
+    private val calendarPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
+            val ok = r.values.isNotEmpty() && r.values.all { it }
+            js("window.onNativeCalPerm && window.onNativeCalPerm($ok)")
+        }
+
+    /** 구글 음성 입력 창을 띄우고, 받아 적은 문장을 화면으로 넘김 */
+    private val voiceLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+            val text = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: ""
+            js("window.onNativeVoice && window.onNativeVoice(" + JSONObject.quote(text) + ")")
         }
 
     private val notificationPermissionLauncher =
@@ -158,6 +172,40 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun lockWallpaperPreview(): String = runCatching { LockWallpaper.preview(this@MainActivity) }.getOrDefault("")
+
+        @JavascriptInterface
+        fun startVoice(prompt: String): Boolean {
+            val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
+                .putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
+            if (i.resolveActivity(packageManager) == null) return false
+            runOnUiThread {
+                runCatching { voiceLauncher.launch(i) }
+                    .onFailure { js("window.onNativeVoice && window.onNativeVoice(\"\")") }
+            }
+            return true
+        }
+
+        @JavascriptInterface
+        fun calendarStatus(): String = if (CalendarWriter.granted(this@MainActivity)) "granted" else "denied"
+
+        @JavascriptInterface
+        fun requestCalendarPermission() {
+            runOnUiThread {
+                runCatching { calendarPermissionLauncher.launch(CalendarWriter.PERMISSIONS) }
+                    .onFailure { js("window.onNativeCalPerm && window.onNativeCalPerm(false)") }
+            }
+        }
+
+        @JavascriptInterface
+        fun listCalendars(): String = CalendarWriter.list(this@MainActivity)
+
+        @JavascriptInterface
+        fun addEvent(json: String): String = CalendarWriter.add(this@MainActivity, json)
+
+        @JavascriptInterface
+        fun deleteEvent(id: String): Boolean = id.toLongOrNull()?.let { CalendarWriter.delete(this@MainActivity, it) } ?: false
 
         @JavascriptInterface
         fun boardStatus(): String = Reminders.boardStatus(this@MainActivity)

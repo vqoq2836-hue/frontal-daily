@@ -242,6 +242,13 @@ details.how .tip{margin-top:8px;font-size:13px;color:var(--warn)}
 .todo-add{display:grid;grid-template-columns:1fr auto;gap:8px}
 .todo-card .chk{padding:6px 0;font-size:15px;flex:1;min-width:0}
 .todo-line{display:flex;align-items:center;gap:6px}
+.vc .vc-f{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:13px;color:var(--muted)}
+.vc .vc-f input,.vc .vc-f select,.vc .vc-raw input{font:inherit;font-size:15px;color:var(--ink);background:var(--tile);border:1px solid var(--tile-line);border-radius:12px;padding:10px 12px;width:100%;box-sizing:border-box}
+.vc .vc-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vc .vc-chk{flex-direction:row;align-items:center;gap:8px;margin-top:30px}
+.vc .vc-chk input{width:20px;height:20px}
+.vc .vc-raw{display:flex;gap:8px;margin:12px 0 4px}
+.vc .vc-last{margin-top:10px;justify-content:space-between;align-items:center}
 .lwp-ask{margin:4px 0 8px;padding:12px;border-radius:14px;background:var(--tile);border:1px solid var(--tile-line)}
 .xbtn{flex:none;width:32px;height:32px;border-radius:50%;border:1px solid var(--tile-line);background:var(--tile);color:var(--muted);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 .top-star{color:var(--accent)}
@@ -849,7 +856,7 @@ function renderNow(){
   } else {
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
-  h+=todoCard(v);
+  h+=vcCard(); h+=todoCard(v);
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
   const inTxt=t=>{ const m=toMin(t.time)-nowMin(); return m<=0?"지금":m<60?m+"분 뒤":Math.floor(m/60)+"시간 "+(m%60?m%60+"분 ":"")+"뒤"; };
   if(upcoming.length) h+=`<section class="glass next"><div class="row" style="justify-content:space-between"><span class="eyebrow">이어서 예정</span><span class="small muted">${upcoming.length}개</span></div>${upcoming.map(t=>`<button class="next-row" data-pick="${t.id}"><span class="t">${esc(t.time)}</span><span class="tb"><span class="n">${esc(t.title)}</span><span class="b">${esc(t.blockTitle)}${t.core?" · 핵심":""}</span></span><span class="in">${inTxt(t)}</span></button>`).join("")}</section>`;
@@ -967,6 +974,7 @@ document.addEventListener("click",e=>{
     if(k==="plan"){ const n=(v.todos||[]).length; if(!n){ toast("할 일을 하나라도 적어 주세요"); return; } mark("plan", n>=3&&(v.todos||[]).some(x=>x.top)?2:1); return; }
     if(k==="journal"){ const l=journalLevel(v); if(!l){ toast("한 줄이라도 적어 주세요"); return; } mark("journal", l); return; }
   }
+  if(b.dataset.vc && NATIVE){ vcHandle(b.dataset.vc); return; }
   if(b.dataset.lwpAsk){ S.lwpAsk=b.dataset.lwpAsk==="1"; render(); return; }
   if(b.dataset.lwp && NATIVE){ const a=b.dataset.lwp; try{
       if(a==="preview"){ S.lwpPreview=NATIVE.lockWallpaperPreview()||null; if(!S.lwpPreview) toast("미리 보기를 만들지 못했어요"); render(); }
@@ -1044,6 +1052,146 @@ let toastT; function toast(msg){ let el=document.querySelector(".toast"); if(!el
 const nowMin = () => { const n=new Date(); return n.getHours()*60+n.getMinutes(); };
 const toMin = t => { if(!t) return null; const [h,m]=t.split(":").map(Number); return h*60+m; };
 
+
+/* ---------- 말로 일정 넣기: 한국어 문장 → {제목, 날짜, 시간, 장소} ---------- */
+const VC_NATIVE_NUM = {"열한":11,"열두":12,"열":10,"한":1,"두":2,"세":3,"네":4,"다섯":5,"여섯":6,"일곱":7,"여덟":8,"아홉":9};
+const VC_DOW = "일월화수목금토";
+function vcPad(n){ return String(n).padStart(2,"0"); }
+function vcYmd(dt){ return dt.getFullYear()+"-"+vcPad(dt.getMonth()+1)+"-"+vcPad(dt.getDate()); }
+function vcAdd(dt,n){ const x=new Date(dt); x.setDate(x.getDate()+n); return x; }
+function vcNum(s){ if(s==null) return null; if(/^\d+$/.test(s)) return parseInt(s,10); return VC_NATIVE_NUM[s]!=null?VC_NATIVE_NUM[s]:null; }
+function vcHour(period,h){
+  if(h==null) return null;
+  if(/오후|저녁|밤/.test(period||"")) return h<12?h+12:h;
+  if(/오전|아침|새벽/.test(period||"")) return h===12?0:h;
+  if(/낮/.test(period||"")) return h<7?h+12:h;
+  return (h>=1&&h<=6)?h+12:h;   /* '3시 상담' → 오후 3시로 봄 */
+}
+const VC_H = "(\\d{1,2}|열한|열두|열|한|두|세|네|다섯|여섯|일곱|여덟|아홉)";
+const VC_P = "(오전|오후|아침|낮|저녁|밤|새벽)?";
+function parseSchedule(raw, now){
+  now = now || new Date();
+  let s = " "+String(raw||"").replace(/[.,!?]/g," ").replace(/\s+/g," ").trim()+" ";
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let date=null, start=null, end=null, durMin=null, location="";
+  const eat = (re, fn) => { const m=s.match(re); if(!m) return false; if(fn(m)===false) return false; s=s.replace(m[0]," "); return true; };
+
+  /* 날짜 */
+  eat(/(\d{1,2})\s*월\s*(\d{1,2})\s*일(에|에는|날)?/, m=>{ let d=new Date(base.getFullYear(), +m[1]-1, +m[2]); if(d<base) d=new Date(base.getFullYear()+1, +m[1]-1, +m[2]); date=d; })
+  || eat(/(\d{1,2})\s*\/\s*(\d{1,2})(에|에는)?/, m=>{ let d=new Date(base.getFullYear(), +m[1]-1, +m[2]); if(d<base) d=new Date(base.getFullYear()+1, +m[1]-1, +m[2]); date=d; })
+  || eat(/다음\s*달\s*(\d{1,2})\s*일(에|에는)?/, m=>{ date=new Date(base.getFullYear(), base.getMonth()+1, +m[1]); })
+  || eat(/(\d{1,2})\s*일\s*(뒤|후)(에)?/, m=>{ date=vcAdd(base,+m[1]); })
+  || eat(/(다다음|다음|이번|담)\s*주\s*([월화수목금토일])요일(에|에는|날)?/, m=>{
+       const off = m[1]==="다다음"?2:(m[1]==="이번"?0:1);
+       const mon = vcAdd(base, -((base.getDay()+6)%7));
+       date = vcAdd(mon, off*7 + ((VC_DOW.indexOf(m[2])+6)%7)); })
+  || eat(/([월화수목금토일])요일(에|에는|날)?/, m=>{ const g=VC_DOW.indexOf(m[1]); date=vcAdd(base, (g-base.getDay()+7)%7); })
+  || eat(/(오늘|금일)(은|에|에는)?/, ()=>{ date=new Date(base); })
+  || eat(/(내일)(은|에|에는)?/, ()=>{ date=vcAdd(base,1); })
+  || eat(/(모레)(는|에|에는)?/, ()=>{ date=vcAdd(base,2); })
+  || eat(/(글피)(는|에|에는)?/, ()=>{ date=vcAdd(base,3); })
+  || eat(/\s(\d{1,2})\s*일(에|에는|날)?\s/, m=>{ let d=new Date(base.getFullYear(), base.getMonth(), +m[1]); if(d<base) d=new Date(base.getFullYear(), base.getMonth()+1, +m[1]); date=d; return true; });
+
+  /* 시간: 범위 → 한 시점 → 시:분 → 정오 */
+  const tm = (p,h,half,mm)=>{ const hh=vcHour(p,vcNum(h)); if(hh==null||hh>23) return null; return {h:hh, m: half?30:(mm?+mm:0)}; };
+  eat(new RegExp(VC_P+"\\s*"+VC_H+"\\s*시\\s*(반|(\\d{1,2})\\s*분)?\\s*(부터|에서|~|-)\\s*"+VC_P+"\\s*"+VC_H+"\\s*시\\s*(반|(\\d{1,2})\\s*분)?\\s*(까지)?"), m=>{
+    start=tm(m[1],m[2],m[3]==="반",m[4]); const p2=m[6]||m[1];
+    let e=tm(p2,m[7],m[8]==="반",m[9]);
+    if(start&&e&&(e.h*60+e.m)<=(start.h*60+start.m)&&e.h<12) e={h:e.h+12,m:e.m};
+    end=e; if(!start) return false; })
+  || eat(new RegExp(VC_P+"\\s*"+VC_H+"\\s*시\\s*(반|(\\d{1,2})\\s*분)?(에|에는|부터|쯤|까지)?"), m=>{ start=tm(m[1],m[2],m[3]==="반",m[4]); if(!start) return false; })
+  || eat(new RegExp(VC_P+"\\s*(\\d{1,2}):(\\d{2})(에|부터)?"), m=>{ const hh=vcHour(m[1],+m[2]); start={h:hh, m:+m[3]}; })
+  || eat(/정오(에)?/, ()=>{ start={h:12,m:0}; });
+  if(!start) eat(/(아침|점심|저녁|밤)(에|에는|쯤)?(?=\s)/, m=>{ start={h:{"아침":8,"점심":12,"저녁":19,"밤":21}[m[1]], m:0}; });
+  eat(/(\d+|한|두|세|네)\s*시간\s*(반)?\s*(동안)?/, m=>{ durMin = vcNum(m[1])*60 + (m[2]?30:0); })
+  || eat(/(\d+)\s*분\s*동안/, m=>{ durMin = +m[1]; });
+
+  /* 장소: 'OO에서' */
+  eat(/\s([^\s]+?)에서\s/, m=>{ if(/^(거기|여기|저기)$/.test(m[1])) return false; location=m[1]; return true; });
+
+  /* 제목: 남은 말에서 부탁 표현과 조사를 걷어냄 */
+  let title = s.replace(/(일정|약속)?\s*(을|를)?\s*(잡아\s*줘|넣어\s*줘|추가해\s*줘|추가\s*해줘|등록해\s*줘|저장해\s*줘|기록해\s*줘|해\s*줘|알려\s*줘|잡아\s*주세요|넣어\s*주세요|추가해\s*주세요)/g," ")
+               .replace(/\s(에|에는|은|는|이|가|을|를|부터|까지|쯤|날)\s/g," ")
+               .replace(/\s+(있어|있어요|있음|있다|있습니다)\s*$/," ")
+               .replace(/\s+/g," ").trim()
+               .replace(/^(에|에는|은|는|부터)\s+/,"").replace(/\s+일정$/,"").trim();
+  if(!title) title="새 일정";
+
+  if(!date){
+    if(start){ const t=new Date(base); t.setHours(start.h,start.m); date = t>now ? new Date(base) : vcAdd(base,1); }
+    else date=new Date(base);
+  }
+  if(start && !end){ const em=start.h*60+start.m+(durMin||60); end={h:Math.floor(em/60)%24, m:em%60}; }
+  const hm = t => t ? vcPad(t.h)+":"+vcPad(t.m) : "";
+  return {raw:String(raw||"").trim(), title, date:vcYmd(date), allDay:!start, start:hm(start), end:hm(end), location};
+}
+function vcLabel(d){ const dt=parse(d.date); return `${dt.getMonth()+1}/${dt.getDate()}(${VC_DOW[dt.getDay()]}) ${d.allDay?"하루 종일":d.start+"~"+d.end} ${d.title}`; }
+/* 화면: 지금 탭의 '말해서 일정 넣기' */
+S.vc = {draft:null, last:null, pendingAdd:false};
+function vcCalendars(){ try{ return JSON.parse(NATIVE.listCalendars()||"[]"); }catch(e){ return []; } }
+function vcPickCalendar(list){
+  const saved=(S.settings||{}).calendarId; if(saved && list.some(c=>String(c.id)===String(saved))) return list.find(c=>String(c.id)===String(saved));
+  const g=list.filter(c=>c.type==="com.google");
+  return g.find(c=>c.primary) || g[0] || list.find(c=>c.primary) || list[0] || null;
+}
+function vcCard(){
+  if(!NATIVE||!NATIVE.startVoice) return "";
+  const d=S.vc.draft, last=S.vc.last;
+  if(!d) return `<section class="glass card vc"><div class="row" style="justify-content:space-between;align-items:center"><button class="btn primary" data-vc="mic">🎤 말해서 일정 넣기</button><button class="btn sm" data-vc="type">글로 쓰기</button></div>
+    <p class="small muted" style="margin:8px 0 0">예: “다음 주 화요일 오후 3시 학부모 상담”</p>
+    ${last?`<div class="row vc-last"><span class="small">넣었어요 · ${esc(last.label)}</span><button class="btn sm" data-vc="undo">되돌리기</button></div>`:""}</section>`;
+  const granted = NATIVE.calendarStatus && NATIVE.calendarStatus()==="granted";
+  const cals = granted ? vcCalendars() : [];
+  const cur = vcPickCalendar(cals);
+  return `<section class="glass card vc"><div class="row" style="justify-content:space-between"><span class="eyebrow">이렇게 넣을까요?</span>${d.raw?`<span class="small muted">“${esc(d.raw)}”</span>`:""}</div>
+    <label class="vc-f"><span>제목</span><input type="text" id="vcTitle" value="${esc(d.title)}"></label>
+    <div class="vc-2"><label class="vc-f"><span>날짜</span><input type="date" id="vcDate" value="${esc(d.date)}"></label>
+      <label class="vc-f vc-chk"><input type="checkbox" id="vcAll" ${d.allDay?"checked":""}><span>하루 종일</span></label></div>
+    <div class="vc-2" ${d.allDay?'style="opacity:.45"':""}><label class="vc-f"><span>시작</span><input type="time" id="vcStart" value="${esc(d.start||"09:00")}"></label><label class="vc-f"><span>끝</span><input type="time" id="vcEnd" value="${esc(d.end||"10:00")}"></label></div>
+    <label class="vc-f"><span>장소</span><input type="text" id="vcLoc" value="${esc(d.location||"")}" placeholder="없으면 비워 두세요"></label>
+    ${cals.length>1?`<label class="vc-f"><span>캘린더</span><select id="vcCal">${cals.map(c=>`<option value="${c.id}" ${cur&&c.id===cur.id?"selected":""}>${esc(c.name)}${c.account&&c.account!==c.name?" · "+esc(c.account):""}</option>`).join("")}</select></label>`:""}
+    <div class="vc-raw"><input type="text" id="vcRaw" value="${esc(d.raw)}" placeholder="말 대신 문장으로 써도 돼요"><button class="btn sm" data-vc="reparse">다시 해석</button></div>
+    <div class="row"><button class="btn primary" data-vc="add">구글 캘린더에 넣기</button><button class="btn" data-vc="mic">다시 말하기</button><button class="btn" data-vc="cancel">취소</button></div>
+    ${cur?`<p class="small muted" style="margin:6px 0 0">${esc(cur.name)}${cur.account&&cur.account!==cur.name?" ("+esc(cur.account)+")":""}에 30분 전 알림과 함께 들어가요.</p>`:granted?`<p class="small warn-t">폰에 연결된 캘린더가 없어요. 설정 → 계정에서 구글 계정 동기화를 켜 주세요.</p>`:`<p class="small muted" style="margin:6px 0 0">처음 한 번은 캘린더 접근을 허용해 주세요.</p>`}
+  </section>`;
+}
+function vcReadForm(){
+  const g=id=>document.getElementById(id); const d=S.vc.draft; if(!d) return;
+  if(g("vcTitle")) d.title=g("vcTitle").value.trim()||"새 일정";
+  if(g("vcDate")&&g("vcDate").value) d.date=g("vcDate").value;
+  if(g("vcAll")) d.allDay=g("vcAll").checked;
+  if(g("vcStart")) d.start=g("vcStart").value||d.start;
+  if(g("vcEnd")) d.end=g("vcEnd").value||d.end;
+  if(g("vcLoc")) d.location=g("vcLoc").value.trim();
+  if(g("vcCal")){ S.settings.calendarId=g("vcCal").value; }
+}
+function vcDoAdd(){
+  const d=S.vc.draft; if(!d) return;
+  const cal=vcPickCalendar(vcCalendars());
+  if(!cal){ toast("폰에 연결된 구글 캘린더가 없어요"); render(); return; }
+  if(String((S.settings||{}).calendarId||"")!==String(cal.id)){ S.settings.calendarId=String(cal.id); try{ setDoc("meta/settings",S.settings); }catch(e){} }
+  let r={}; try{ r=JSON.parse(NATIVE.addEvent(JSON.stringify(Object.assign({},d,{calendarId:cal.id, remind:30})))); }catch(e){ r={ok:false,error:String(e)}; }
+  if(r.ok){ S.vc.last={id:String(r.id), label:vcLabel(d)}; S.vc.draft=null; toast("구글 캘린더에 넣었어요 · "+vcLabel(d)); }
+  else toast("넣지 못했어요: "+(r.error==="no_permission"?"캘린더 권한이 필요해요":r.error||"다시 시도해 주세요"));
+  render();
+}
+window.onNativeVoice = function(text){
+  text=String(text||"").trim();
+  if(!text){ toast("못 알아들었어요. 다시 말하거나 글로 써 주세요"); return; }
+  S.vc.draft=parseSchedule(text,new Date()); if(S.tab!=="now") location.hash="#now"; render(); window.scrollTo(0,0);
+};
+window.onNativeCalPerm = function(ok){
+  if(ok && S.vc.pendingAdd){ S.vc.pendingAdd=false; vcDoAdd(); return; }
+  S.vc.pendingAdd=false; if(!ok) toast("캘린더 접근을 허용해야 일정을 넣을 수 있어요"); render();
+};
+function vcHandle(a){
+  if(a==="mic"){ vcReadForm(); let ok=false; try{ ok=NATIVE.startVoice("일정을 말해 주세요 (예: 다음 주 화요일 오후 3시 상담)"); }catch(e){} if(!ok){ toast("이 폰에서 음성 입력을 열 수 없어요. 글로 써 주세요"); S.vc.draft=S.vc.draft||parseSchedule("",new Date()); render(); } return; }
+  if(a==="type"){ S.vc.draft=parseSchedule("",new Date()); S.vc.draft.raw=""; render(); setTimeout(()=>{ const r=document.getElementById("vcRaw"); if(r) r.focus(); },50); return; }
+  if(a==="reparse"){ const r=document.getElementById("vcRaw"); S.vc.draft=parseSchedule(r?r.value:"",new Date()); render(); return; }
+  if(a==="cancel"){ S.vc.draft=null; render(); return; }
+  if(a==="add"){ vcReadForm(); if(NATIVE.calendarStatus()!=="granted"){ S.vc.pendingAdd=true; NATIVE.requestCalendarPermission(); return; } vcDoAdd(); return; }
+  if(a==="undo"){ const l=S.vc.last; if(l&&NATIVE.deleteEvent(l.id)){ toast("방금 넣은 일정을 지웠어요"); S.vc.last=null; } else toast("지우지 못했어요. 캘린더 앱에서 지워 주세요"); render(); return; }
+}
 function applyPending(){
   if(!NATIVE) return;
   let arr=[]; try{ arr=JSON.parse(NATIVE.takePendingChecks()||"[]"); }catch(e){}
