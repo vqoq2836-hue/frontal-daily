@@ -517,6 +517,26 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .bgart-top .sp{mix-blend-mode:multiply}
 .bgart-bottom{position:fixed;left:0;right:0;bottom:0;height:150px;pointer-events:none;z-index:0;opacity:.85}
 .bgart-bottom svg{width:100%;height:100%}
+
+/* 밤 영어 10분 */
+.eng-card{padding:0!important;overflow:hidden}
+.eng-h{position:relative;padding:14px 16px 12px;min-height:84px;background:#D3E8F8;border-bottom:var(--bw) solid var(--ink)}
+.eng-h>div{position:relative;z-index:1;max-width:60%;display:flex;flex-direction:column;gap:2px}
+.eng-h h3{font-size:18px;font-weight:850;letter-spacing:-.03em}.eng-h .small{color:rgba(31,42,58,.72);font-weight:600}
+.eng-b{padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px}
+.eng-s{display:flex;flex-direction:column;gap:4px;padding-bottom:14px;border-bottom:1.2px dashed rgba(31,42,58,.22)}
+.eng-k{align-self:flex-start;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:7px;border:1.2px solid var(--ink)}
+.eng-k.c{background:var(--ye)} .eng-k.l{background:var(--co3)}
+.eng-en{font-size:20px;font-weight:800;letter-spacing:-.02em;line-height:1.35;margin-top:4px;word-break:keep-all}
+.eng-en.sm{font-size:16px}
+.eng-en .ok{color:var(--g700)} .eng-en .miss{color:var(--co);text-decoration:underline;text-decoration-thickness:2px}
+.eng-ko{font-size:14.5px;color:var(--muted)}
+.eng-alt{font-size:13px;color:var(--ink);background:var(--surface-2);border-radius:10px;padding:6px 10px;margin-top:2px}
+.eng-alt b{font-size:11.5px;color:var(--g700);margin-right:4px}
+.eng-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.eng-rv{display:flex;flex-direction:column;gap:8px}
+.eng-rc{border:1.2px solid var(--ink);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.eng-rc.on{background:#F1F8FD}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -735,6 +755,180 @@ const ADVICE = [
 function adviceFor(dateStr){ return adviceRaw(dateStr).replace(/\n/g," "); }
 function adviceRaw(dateStr){ const d=new Date(dateStr+"T00:00:00Z"); const n=Math.floor(d.getTime()/86400000); return ADVICE[((n%ADVICE.length)+ADVICE.length)%ADVICE.length]; }
 
+/* ---------- 밤 영어 10분: 교실 영어 1 + 일상 회화 1, 듣기 → 따라 말하기 → 복습 ---------- */
+/* 문장은 앱 안에 저장. [영어, 뜻, 바꿔 말하기] */
+const ENG_C = [
+  ["Let's get started.","자, 시작해 볼까요?","Let's begin today's lesson."],
+  ["Take out your textbooks and turn to page 24.","교과서 꺼내서 24쪽 펴세요.","Turn to page 30. (쪽수만 바꿔 말해 보기)"],
+  ["Eyes on me, please.","선생님 보세요.","Look this way, please."],
+  ["Raise your hand if you know the answer.","답을 알면 손 들어요.","Raise your hand if you have a question."],
+  ["Work with your partner.","짝과 함께 해요.","Work in groups of four."],
+  ["You have five minutes. Ready, go!","5분 줄게요. 준비, 시작!","You have two more minutes."],
+  ["Who wants to try?","누가 해 볼래요?","Any volunteers?"],
+  ["Good job! That's exactly right.","잘했어요! 딱 맞아요.","Nice try! You're almost there."],
+  ["Can you say that again a little louder?","조금 더 크게 다시 말해 줄래요?","Can you speak up a little?"],
+  ["Listen carefully and repeat after me.","잘 듣고 따라 해요.","Say it with me."],
+  ["Let's check the answers together.","같이 답을 맞춰 봐요.","Let's go over it together."],
+  ["Put your things away and line up at the door.","물건 정리하고 문 앞에 줄 서요.","Line up quietly, please."],
+  ["It's time to clean up.","정리할 시간이에요.","Five more minutes, then we clean up."],
+  ["Please be quiet. Your friend is talking.","조용히 해요. 친구가 말하고 있어요.","Let's listen to her."],
+  ["Don't worry about mistakes.","실수해도 괜찮아요.","It's okay to make mistakes."],
+  ["Is everyone here today?","오늘 다 왔나요?","Who's absent today?"],
+  ["Hand in your homework, please.","숙제 내세요.","Pass your papers to the front."],
+  ["Write your name at the top.","맨 위에 이름 쓰세요.","Write the date, too."],
+  ["What do you think?","어떻게 생각해요?","Why do you think so?"],
+  ["Let's take a short break.","잠깐 쉬어요.","Let's stretch for a minute."],
+  ["Come up to the board, please.","칠판 앞으로 나와요.","Show us on the board."],
+  ["Read the first sentence out loud.","첫 문장을 소리 내어 읽어요.","Let's read it together."],
+  ["Who can help him?","누가 도와줄래요?","Can you help your friend?"],
+  ["Let's give him a big hand!","큰 박수 쳐 주세요!","Let's give her a round of applause."],
+  ["Are you finished? Then check your work.","다 했어요? 그럼 다시 확인해요.","Double-check your answers."],
+  ["Open your notebooks and copy this down.","공책 펴고 이걸 받아 적어요.","Copy the sentences on the board."],
+  ["Remember to bring your gym clothes tomorrow.","내일 체육복 챙겨 오는 것 잊지 마세요.","Don't forget your recorder."],
+  ["Let's play a game.","게임해요.","Let's make two teams."],
+  ["Whose turn is it?","누구 차례죠?","It's your turn."],
+  ["Walk, don't run in the hallway.","복도에서는 뛰지 말고 걸어요.","Use your indoor voice."],
+  ["Wash your hands before lunch.","점심 먹기 전에 손 씻어요.","Let's go to the cafeteria."],
+  ["That's all for today. See you tomorrow!","오늘은 여기까지. 내일 봐요!","Have a great weekend!"],
+  ["Can everyone see the screen?","다들 화면 보여요?","Can you hear me in the back?"],
+  ["Let me show you how to do it.","어떻게 하는지 보여 줄게요.","Watch me first."],
+  ["Talk about it with your group.","모둠끼리 이야기해 봐요.","Share your ideas with the class."],
+  ["I'm proud of you.","정말 자랑스러워요.","You've improved a lot."],
+  ["Let's review what we learned yesterday.","어제 배운 걸 복습해 봐요.","Do you remember what we learned?"],
+  ["Choose one and circle it.","하나 골라서 동그라미 쳐요.","Underline the key words."],
+  ["Any questions before we move on?","넘어가기 전에 질문 있어요?","Is everything clear?"],
+  ["Be kind to each other.","서로 친절하게 대해요.","Take turns and share."]
+];
+const ENG_L = [
+  ["How's your day going?","오늘 하루 어때요?","How was your weekend?"],
+  ["I'm running a little late.","조금 늦을 것 같아요.","I'll be there in ten minutes."],
+  ["Could I get this to go?","이거 포장돼요?","For here or to go?"],
+  ["What do you recommend?","뭐 추천하세요?","What's popular here?"],
+  ["Do you mind if I sit here?","여기 앉아도 될까요?","Is this seat taken?"],
+  ["Sorry, could you say that again?","죄송한데 다시 말해 줄래요?","Could you speak a little slower?"],
+  ["That sounds great.","좋아요.","That works for me."],
+  ["I'm just looking, thanks.","그냥 둘러보는 중이에요.","Do you have this in a different size?"],
+  ["How long does it take to get there?","거기까지 얼마나 걸려요?","How far is it from here?"],
+  ["Can I pay by card?","카드 돼요?","Can I get a receipt?"],
+  ["I'll have the same, please.","저도 같은 걸로요.","Can I get it without onions?"],
+  ["What do you do for a living?","무슨 일 하세요?","I teach at an elementary school."],
+  ["I teach fourth grade.","저는 4학년을 가르쳐요.","I've been teaching for over ten years."],
+  ["Let's keep in touch.","연락하고 지내요.","Let me know when you're free."],
+  ["I'm not sure. Let me check.","잘 모르겠어요. 확인해 볼게요.","I'll get back to you."],
+  ["It was nice talking to you.","이야기 나눠서 좋았어요.","Nice to meet you."],
+  ["Could you take a picture of us?","사진 좀 찍어 주실래요?","One more, please!"],
+  ["Where is the restroom?","화장실이 어디예요?","Is there a restroom nearby?"],
+  ["I'd like to check in, please.","체크인하려고요.","What time is checkout?"],
+  ["Is breakfast included?","조식 포함인가요?","What time is breakfast?"],
+  ["Can I get the check, please?","계산서 주세요.","Can we split the bill?"],
+  ["I'm into photography these days.","요즘 사진에 빠져 있어요.","I'm into golf these days."],
+  ["What are you up to this weekend?","이번 주말에 뭐 해요?","Any plans for tonight?"],
+  ["Sorry, I didn't catch your name.","죄송해요, 이름을 못 들었어요.","How do you spell it?"],
+  ["Thanks for having me.","초대해 줘서 고마워요.","Thanks for your help."],
+  ["No worries.","괜찮아요, 신경 쓰지 마요.","It's not a big deal."],
+  ["Let me think about it.","생각해 볼게요.","Let me sleep on it."],
+  ["It's on me.","제가 낼게요.","Let's split it."],
+  ["Could you help me with this?","이것 좀 도와줄래요?","Do you need a hand?"],
+  ["What time do you open?","몇 시에 열어요?","Are you open on Sundays?"],
+  ["How much is this?","이거 얼마예요?","Is there a discount?"],
+  ["I'm on my way.","가는 중이에요.","I just left home."],
+  ["Long time no see!","오랜만이에요!","You haven't changed at all."],
+  ["I'm exhausted today.","오늘 너무 피곤해요.","I need some rest."],
+  ["Sounds like a plan.","좋아요, 그렇게 해요.","Let's do that."],
+  ["Have a good one!","좋은 하루 보내요!","Take care!"],
+  ["Can I try this on?","입어 봐도 돼요?","Where's the fitting room?"],
+  ["I have a reservation under Kim.","김 이름으로 예약했어요.","A table for two, please."],
+  ["Is this the right way to the station?","역 가는 길 이쪽 맞나요?","Which exit should I take?"],
+  ["I'm looking forward to it.","기대돼요.","I can't wait."]
+];
+const ENG_REV = [1,3,7];
+function engPick(v){
+  if(v.eng) return v.eng;
+  const p=(S.settings&&S.settings.eng)||{c:0,l:0};
+  v.eng={c:p.c%ENG_C.length, l:p.l%ENG_L.length, heard:{}, said:{}, rev:{}};
+  return v.eng;
+}
+function engItem(k,i){ const a=(k==="c"?ENG_C:ENG_L)[i]; return {en:a[0],ko:a[1],alt:a[2]}; }
+function engWords(s){ return String(s||"").toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9' ]+/g," ").split(/\s+/).filter(Boolean); }
+function engScore(target,heard){
+  const T=engWords(target), H=engWords(heard); let j=0; const marks=T.map(w=>{ const k=H.indexOf(w,j); if(k>=0){ j=k+1; return 1; } return 0; });
+  const n=marks.reduce((a,b)=>a+b,0); return {pct:T.length?Math.round(n/T.length*100):0, marks};
+}
+function engReviews(d){
+  const out=[]; ENG_REV.forEach(k=>{ const dd=addDays(d,-k), vv=S.days[dd]; if(vv&&vv.eng&&vv.eng.fin){ out.push({key:dd+":c",k:"c",i:vv.eng.c,ago:k}); out.push({key:dd+":l",k:"l",i:vv.eng.l,ago:k}); } });
+  return out;
+}
+function engSentence(k,e){
+  const it=engItem(k,e[k]), sc=e.said[k];
+  const words=it.en.split(" ");
+  const shown = sc ? words.map((w,i)=>`<span class="${sc.marks&&sc.marks[i]?"ok":"miss"}">${esc(w)}</span>`).join(" ") : esc(it.en);
+  return `<div class="eng-s">
+    <span class="eng-k ${k}">${k==="c"?"교실 영어":"일상 회화"}</span>
+    <p class="eng-en">${shown}</p>
+    <p class="eng-ko">${esc(it.ko)}</p>
+    <p class="eng-alt"><b>바꿔 말하기</b> ${esc(it.alt)}</p>
+    <div class="eng-act">
+      <button class="btn sm" data-eng="say" data-k="${k}" data-r="0.7">🔊 천천히</button>
+      <button class="btn sm" data-eng="say" data-k="${k}" data-r="1">🔊 보통</button>
+      <button class="btn sm primary" data-eng="mic" data-k="${k}">🎙 따라 말하기</button>
+      <span class="small muted">${e.heard[k]?`들음 ${e.heard[k]}번`:""}${sc?` · 말하기 <b class="${sc.pct>=80?"g":""}">${sc.pct}%</b>`:""}</span>
+    </div>
+  </div>`;
+}
+function engCard(){
+  const d=today(), v=day(d), e=engPick(v), rv=engReviews(d), x=v.done.t_eng;
+  const rvh = rv.length ? `<div class="eng-rv"><div class="row" style="justify-content:space-between"><b class="small">복습 · ${rv.length}문장</b><span class="small muted">뜻을 보고 영어로 먼저 말해 본 뒤 눌러 보세요</span></div>
+    ${rv.map(r=>{ const it=engItem(r.k,r.i), st=e.rev[r.key]; return `<div class="eng-rc ${st?"on":""}"><span class="small muted">${r.ago}일 전</span><p class="eng-ko" style="margin:0">${esc(it.ko)}</p>
+      ${st?`<p class="eng-en sm">${esc(it.en)}</p><div class="row"><button class="btn sm" data-eng="say" data-txt="${esc(it.en)}" data-r="0.85">🔊</button><button class="btn sm ${st==="ok"?"primary":""}" data-eng="rev" data-key="${r.key}" data-v="ok">알았어요</button><button class="btn sm ${st==="hard"?"primary":""}" data-eng="rev" data-key="${r.key}" data-v="hard">헷갈려요</button></div>`
+          :`<button class="linkish small" data-eng="rev" data-key="${r.key}" data-v="open">영어 보기</button>`}</div>`; }).join("")}</div>` : "";
+  return `<section class="glass eng-card" id="eng">
+    <div class="eng-h"><div><h3>밤 영어 10분</h3><span class="small">듣기 3번 → 따라 말하기 → 바꿔 말하기${rv.length?" → 복습":""}</span></div>
+      <svg class="tl-art" viewBox="0 0 130 70" aria-hidden="true"><g style="mix-blend-mode:multiply"><rect x="50" y="10" width="58" height="34" rx="12" fill="#FFD36E"/><path d="M66 44l-6 12 14-12z" fill="#FFD36E"/><rect x="18" y="28" width="40" height="26" rx="10" fill="#FFFDF8"/></g><g fill="none" stroke="#1F2A3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(-2 -1.6)"><rect x="50" y="10" width="58" height="34" rx="12"/><path d="M66 44l-6 12 14-12"/><rect x="18" y="28" width="40" height="26" rx="10"/><path d="M62 22h34M62 31h24M27 38h22M27 45h14"/></g></svg></div>
+    <div class="eng-b">${engSentence("c",e)}${engSentence("l",e)}${rvh}
+      ${x&&x.lvl?`<p class="small g" style="text-align:center">오늘 영어 끝 · ${x.lvl===2?"제대로 했어요":"했어요"}</p><button class="linkish small" data-eng="undo" style="align-self:center">다시 열기</button>`
+        :`<button class="big" data-eng="fin">오늘 영어 끝<small>${(e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70)?"두 문장 다 말했어요 · 2점":"1점 · 두 문장을 70% 넘게 말하면 2점"}</small></button>`}
+    </div></section>`;
+}
+function engSpeak(text,rate){
+  let ok=false; try{ if(NATIVE&&NATIVE.speak) ok=NATIVE.speak(text, Number(rate)||1); }catch(e){}
+  if(!ok && window.speechSynthesis){ try{ const u=new SpeechSynthesisUtterance(text); u.lang="en-US"; u.rate=Number(rate)||1; speechSynthesis.cancel(); speechSynthesis.speak(u); ok=true; }catch(e){} }
+  if(!ok) toast("이 폰에서 영어 읽어 주기를 쓸 수 없어요. 설정 → 일반 → 글자 읽어주기(TTS)에서 영어 음성을 받아 주세요.");
+}
+window.onNativeEngVoice = function(text){
+  const k=S.engMic; S.engMic=null; if(!k) return;
+  if(!text){ toast("못 들었어요. 다시 해 볼까요?"); return; }
+  const d=today(), v=day(d), e=engPick(v), it=engItem(k,e[k]), sc=engScore(it.en,text);
+  e.said[k]={pct:sc.pct, marks:sc.marks, heard:text}; saveDay(d);
+  toast(sc.pct>=90?"완벽해요! "+sc.pct+"%":sc.pct>=70?"좋아요 "+sc.pct+"% · 빨간 단어만 한 번 더":"들린 말: “"+text+"” · 빨간 단어를 또박또박");
+  render();
+};
+document.addEventListener("click", ev=>{
+  const b=ev.target.closest("[data-eng]"); if(!b) return;
+  const a=b.dataset.eng, d=today(), v=day(d), e=engPick(v);
+  if(a==="say"){ const k=b.dataset.k; const txt=b.dataset.txt||engItem(k,e[k]).en; engSpeak(txt,b.dataset.r); if(k){ e.heard[k]=(e.heard[k]||0)+1; saveDay(d); const s=b.parentNode.querySelector(".small.muted"); if(s) s.textContent="들음 "+e.heard[k]+"번"; } return; }
+  if(a==="mic"){ const k=b.dataset.k; S.engMic=k; let ok=false; try{ ok=NATIVE&&NATIVE.startVoiceLang&&NATIVE.startVoiceLang("Say: "+engItem(k,e[k]).en,"en-US","onNativeEngVoice"); }catch(x){} if(!ok){ S.engMic=null; toast("이 폰에서 영어 음성 인식을 열 수 없어요"); } return; }
+  if(a==="rev"){ const key=b.dataset.key, val=b.dataset.v; e.rev[key]= val==="open" ? (e.rev[key]||"seen") : val; saveDay(d); render(); return; }
+  if(a==="fin"){
+    const full=e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70;
+    v.done.t_eng={lvl:full?2:1, at:Date.now()}; e.fin=true;
+    if(!e.adv){ const p=S.settings.eng||{c:0,l:0}; S.settings.eng={c:p.c+1,l:p.l+1}; e.adv=true; try{ setDoc("meta/settings",S.settings); }catch(x){} }
+    saveDay(d); try{ nativeSync(); }catch(x){} toast(full?"오늘 영어 제대로 했어요 · 2점":"오늘 영어 했어요 · 1점"); render(); return; }
+  if(a==="undo"){ delete v.done.t_eng; saveDay(d); try{ nativeSync(); }catch(x){} render(); return; }
+});
+function engStats(){
+  let days=0, said=[], streak=0; const ds=Object.keys(S.days).sort();
+  ds.forEach(dd=>{ const e=S.days[dd]&&S.days[dd].eng; if(e&&e.fin){ days++; ["c","l"].forEach(k=>{ if(e.said&&e.said[k]) said.push(e.said[k].pct); }); } });
+  for(let dd=today(); S.days[dd]&&S.days[dd].eng&&S.days[dd].eng.fin; dd=addDays(dd,-1)) streak++;
+  const p=(S.settings&&S.settings.eng)||{c:0,l:0};
+  return {days, sentences:p.c+p.l, avg:said.length?Math.round(said.reduce((a,b)=>a+b,0)/said.length):null, streak};
+}
+function engHistCard(){
+  const s=engStats();
+  return `<div class="section-h"><h2>밤 영어</h2><span class="small muted">교실 ${ENG_C.length} · 일상 ${ENG_L.length}문장</span></div>
+  <section class="glass card"><div class="m-rep-k"><div><small>익힌 문장</small><b>${s.sentences}</b></div><div><small>연속</small><b>${s.streak}일</b></div><div><small>말하기 평균</small><b>${s.avg==null?"—":s.avg+"%"}</b></div></div>
+  <p class="small muted">하루 2문장씩 새로 익히고, 1·3·7일 뒤에 다시 복습해요. 문장을 다 돌면 처음부터 한 번 더 돌아요.</p></section>`;
+}
+
 /* ---------- 루틴 아이콘: 원·직선 위주, 한 팔레트·한 방향 (토스페이스식 규칙) ---------- */
 const IC_FAM = { /* [옅은 바탕, 별색] — 리소 인쇄 잉크 */
   sun:["#FFEDB8","#FFB511"], water:["#D6E9F8","#3D8FD1"], body:["#D3EEDF","#2DA86F"], money:["#FFE2C6","#FF8A3D"],
@@ -776,6 +970,7 @@ const IC = {
   cal:["mind",`<rect x="6" y="8" width="28" height="26" rx="4.5"/><path d="M6 16h28" stroke="${W}" stroke-width="2.4"/><rect x="12" y="5" width="3.4" height="7" rx="1.7"/><rect x="24.6" y="5" width="3.4" height="7" rx="1.7"/><rect x="12" y="21" width="5" height="4" rx="1" fill="${W}" opacity=".7"/>`],
   scale:["body",`<rect x="6" y="7" width="28" height="27" rx="7"/><path d="M13.5 18.5a6.5 6.5 0 0 1 13 0" stroke="${W}" stroke-width="2.4" fill="none"/><path d="M20 18.5l3-3.5" stroke="${W}" stroke-width="2.2" stroke-linecap="round"/>`],
   phonebell:["love",`<path d="M20 33S7 25.5 7 15.5a6.5 6.5 0 0 1 13-1.8 6.5 6.5 0 0 1 13 1.8C33 25.5 20 33 20 33z" opacity=".35"/><rect x="13" y="9" width="14" height="22" rx="3.5"/>`],
+  chat:["water",`<rect x="4" y="6" width="24" height="17" rx="6"/><path d="M10 23l-3 7 9-7z"/><rect x="16" y="17" width="20" height="14" rx="5" opacity=".55"/><path d="M10 12.5h12M10 17h8" stroke="${W}" stroke-width="2.2" stroke-linecap="round"/>`],
   dot:["body",`<circle cx="20" cy="20" r="9"/>`]
 };
 const IC_BY_ID = {
@@ -783,9 +978,9 @@ const IC_BY_ID = {
   t_nospend_am:"wallet", t_nospend:"wallet", t_jail:"jail", detox:"phoneok", t_walk:"shoe", t_work:"brief", move:"dumbbell",
   t_dinner:"bowl", t_dishes:"dish", t_money:"chart", focus:"film", steps:"feet", t_nosns:"nosns", t_tidy:"broom", t_shower:"shower",
   t_clothes:"shirt", novel:"pen", journal:"note", t_warm:"heart", phone:"box", t_sleep:"moon", t_laundry:"washer", newday:"spark",
-  t_clean:"broom", t_market:"cart", t_mealprep:"lunch", t_thanks:"phonebell", t_week:"cal", t_body:"scale", t_prep:"lunch", breath:"spark"
+  t_clean:"broom", t_market:"cart", t_mealprep:"lunch", t_thanks:"phonebell", t_week:"cal", t_body:"scale", t_prep:"lunch", breath:"spark", t_eng:"chat"
 };
-const IC_BY_WORD = [[/물|수분/,"drop"],[/샤워|목욕/,"shower"],[/운동|헬스|근력/,"dumbbell"],[/걷|산책|러닝/,"shoe"],[/책|독서|필사|공부/,"pen"],[/기록|일기|메모/,"note"],[/잠|취침|눕기/,"moon"],[/청소|정리/,"broom"],[/빨래/,"washer"],[/장보기|마트/,"cart"],[/밥|식사|저녁|점심|아침/,"bowl"],[/돈|가계부|지출/,"wallet"],[/약|영양제|비타민/,"capsule"],[/연락|전화|한마디|감사/,"heart"],[/폰|휴대폰/,"box"],[/일정|계획/,"cal"],[/옷/,"shirt"]];
+const IC_BY_WORD = [[/영어|English/i,"chat"],[/물|수분/,"drop"],[/샤워|목욕/,"shower"],[/운동|헬스|근력/,"dumbbell"],[/걷|산책|러닝/,"shoe"],[/책|독서|필사|공부/,"pen"],[/기록|일기|메모/,"note"],[/잠|취침|눕기/,"moon"],[/청소|정리/,"broom"],[/빨래/,"washer"],[/장보기|마트/,"cart"],[/밥|식사|저녁|점심|아침/,"bowl"],[/돈|가계부|지출/,"wallet"],[/약|영양제|비타민/,"capsule"],[/연락|전화|한마디|감사/,"heart"],[/폰|휴대폰/,"box"],[/일정|계획/,"cal"],[/옷/,"shirt"]];
 function iconKey(t){ const id=(t&&(t.id||t.core&&t.core.id))||""; if(IC_BY_ID[id]) return IC_BY_ID[id]; const ti=(t&&t.title)||""; for(const [re,k] of IC_BY_WORD) if(re.test(ti)) return k; return "dot"; }
 /* 리소 두 판: 별색으로 면을 찍고, 남색 잉크 선을 살짝 어긋나게 한 번 더 */
 function ricon(t,size){ const k=iconKey(t), [fam,inner]=IC[k]||IC.dot, [bg,fg]=IC_FAM[fam]; return `<span class="ric ${size||""}" style="--ib:${bg};color:${fg}" aria-hidden="true"><svg viewBox="0 0 40 40" fill="currentColor"><g class="f">${inner}</g><g class="o" transform="translate(-1.6 -1.3)">${inner}</g></svg></span>`; }
@@ -920,14 +1115,14 @@ const DEFAULT_BLOCKS = {
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
     {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", days:[1,3,5]}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", days:[2,4]}, T("t_dishes","설거지","19:10")]},
     {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:00", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), C("steps","21:50")]},
-    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
   ],
   weekend:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00"), T("t_creatine","크레아틴 먹기","08:05")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
-    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), T("t_eng","밤 영어 10분 · 교실·일상 문장","21:20"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
   ]
 };
 const NEWDAY_MISSION = {id:"newday", title:"오늘의 새로운 루틴", pillar:"새로움", kind:"newday", time:"12:50",
@@ -1140,11 +1335,13 @@ function renderNow(){
   } else {
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
+  if(f.t && f.t.id==="t_eng") h+=engCard();
   h+=treeCard(false);
   if(f.t && f.t.id==="t_money") h+=moneyWeekCard();
   h+=moneyReportNudge();
   { const n=((S.money&&S.money.meta&&S.money.meta.review)||[]).length; if(n) h+=`<a class="glass card m-nudge" href="#money"><span>💳 돈 내역 <b>${n}건</b>을 확인해 주세요</span><span class="small muted">결제인지·어떤 항목인지 애매한 것들 ›</span></a>`; }
   h+=vcCard(); h+=todoCard(v);
+  if(!(f.t && f.t.id==="t_eng")) h+=engCard();
   const upcoming=tasks.filter(t=>!settled(v,t.id) && (!f.t||t.id!==f.t.id) && toMin(t.time)>=nowMin()).slice(0,3);
   const inTxt=t=>{ const m=toMin(t.time)-nowMin(); return m<=0?"지금":m<60?m+"분 뒤":Math.floor(m/60)+"시간 "+(m%60?m%60+"분 ":"")+"뒤"; };
   if(upcoming.length) h+=`<section class="glass next"><div class="row" style="justify-content:space-between"><span class="eyebrow">이어서 예정</span><span class="small muted">${upcoming.length}개</span></div>${upcoming.map(t=>`<button class="next-row" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"sm")}<span class="tb"><span class="n">${esc(t.title)}</span><span class="b">${esc(t.blockTitle)}${t.core?" · 핵심":""}</span></span><span class="in">${inTxt(t)}</span></button>`).join("")}</section>`;
@@ -2160,6 +2357,7 @@ function renderHistory(){
   h+=`<div class="section-h"><h2>영역별 실천율</h2><span class="small muted">최근 ${last30.length}일</span></div><section class="pillars">`;
   MISSIONS.forEach(m=>{ const n=last30.filter(d=>S.days[d]&&S.days[d].done[m.id]&&S.days[d].done[m.id].lvl).length; const p=last30.length?Math.round(n/last30.length*100):0; h+=`<div class="pill pstat"><div class="pst-h">${ricon(m,"xs")}<span class="small muted">${esc(m.pillar)}</span></div><div class="v">${p}%</div><div class="bar" aria-hidden="true"><i style="width:${p}%"></i></div></div>`; });
   h+=`</section>`;
+  h+=engHistCard();
   // 수면
   const sl=last30.map(d=>S.days[d]&&S.days[d].sleepH).filter(x=>typeof x==="number");
   if(sl.length) h+=`<p class="small muted">평균 수면 <span class="num">${(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(1)}</span>시간 (${sl.length}일 기록)</p>`;
@@ -2316,6 +2514,13 @@ async function boot(){
         if(!ww.tasks.some(t=>t&&t.id==="t_creatine")) ww.tasks.push({id:"t_creatine", title:"크레아틴 먹기", time:"08:05"}); }
       const wn=we.find(b=>b.id==="night"); if(wn && !wn.tasks.some(t=>t&&t.id==="t_sleep")) wn.tasks.push({id:"t_sleep", title:"불 끄고 눕기", time:"23:00"});
       S.settings.v12=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v13){ /* 2026-11-20 밤 영어 10분 추가 (평일 22:30, 주말 21:20) */
+      const add=(type,time,before)=>{ const n=(S.settings.blocks[type]||[]).find(b=>b.id==="night"); if(!n||n.tasks.some(t=>t&&t.id==="t_eng")) return;
+        if(type==="weekday"){ const c=n.tasks.find(t=>t&&t.id==="t_clothes"); if(c&&c.time==="22:30") c.time="22:27"; }
+        const k=n.tasks.findIndex(t=>t&&(t.id===before||t.core===before)); n.tasks.splice(k<0?n.tasks.length:k,0,{id:"t_eng", title:"밤 영어 10분 · 교실·일상 문장", time}); };
+      add("weekday","22:30","novel"); add("weekend","21:20","novel");
+      S.settings.eng=S.settings.eng||{c:0,l:0};
+      S.settings.v13=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }

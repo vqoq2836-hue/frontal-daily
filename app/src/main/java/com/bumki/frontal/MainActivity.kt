@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.provider.Settings
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -50,8 +52,23 @@ class MainActivity : ComponentActivity() {
     private val voiceLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
             val text = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: ""
-            js("window.onNativeVoice && window.onNativeVoice(" + JSONObject.quote(text) + ")")
+            val cb = voiceCb; voiceCb = "onNativeVoice"
+            js("window.$cb && window.$cb(" + JSONObject.quote(text) + ")")
         }
+
+    /** 음성 인식 결과를 돌려줄 JS 함수 이름 (일정 넣기 = onNativeVoice, 밤 영어 = onNativeEngVoice) */
+    private var voiceCb = "onNativeVoice"
+
+    /** 밤 영어: 휴대폰 TTS로 영어 문장 읽기 */
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
+    private var ttsPending: Pair<String, Float>? = null
+    private fun speakNow(text: String, rate: Float) {
+        val t = tts ?: return
+        t.language = Locale.US
+        t.setSpeechRate(rate)
+        t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "eng")
+    }
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -110,7 +127,46 @@ class MainActivity : ComponentActivity() {
     }
 
     /** 웹 화면(index.html)에서 window.NativeApp 으로 부르는 기능들 */
+    override fun onDestroy() {
+        runCatching { tts?.shutdown() }
+        super.onDestroy()
+    }
+
     inner class Bridge {
+        @JavascriptInterface
+        fun speak(text: String, rate: Double): Boolean {
+            runOnUiThread {
+                if (tts == null) {
+                    ttsPending = text to rate.toFloat()
+                    tts = TextToSpeech(this@MainActivity) { st ->
+                        ttsReady = st == TextToSpeech.SUCCESS
+                        if (ttsReady) ttsPending?.let { speakNow(it.first, it.second) }
+                        else js("window.toastNative && window.toastNative('영어 읽어 주기를 시작하지 못했어요')")
+                        ttsPending = null
+                    }
+                } else if (ttsReady) speakNow(text, rate.toFloat())
+                else ttsPending = text to rate.toFloat()
+            }
+            return true
+        }
+
+        @JavascriptInterface
+        fun startVoiceLang(prompt: String, lang: String, cb: String): Boolean {
+            val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, lang)
+                .putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
+            if (i.resolveActivity(packageManager) == null) return false
+            if (!cb.matches(Regex("[A-Za-z]+"))) return false
+            runOnUiThread {
+                voiceCb = cb
+                runCatching { voiceLauncher.launch(i) }
+                    .onFailure { voiceCb = "onNativeVoice"; js("window.$cb && window.$cb(\"\")") }
+            }
+            return true
+        }
+
         @JavascriptInterface
         fun platform(): String = "android"
 
