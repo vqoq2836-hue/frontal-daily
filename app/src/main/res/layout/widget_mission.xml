@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="sans-serif-light"
-            android:textColor="#FFFFFF"
+            android:textColor="#16201B"
             android:textSize="22sp" />
 
         <TextView
@@ -32,7 +32,7 @@
             android:paddingEnd="10dp"
             android:paddingBottom="3dp"
             android:text="범키데일리"
-            android:textColor="#E6F7F1"
+            android:textColor="#0A563C"
             android:textSize="11sp" />
     </LinearLayout>
 
@@ -44,7 +44,7 @@
         android:ellipsize="end"
         android:maxLines="2"
         android:text="앱을 한 번 열어 주세요"
-        android:textColor="#FFFFFF"
+        android:textColor="#16201B"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -55,7 +55,7 @@
         android:layout_marginTop="2dp"
         android:ellipsize="end"
         android:maxLines="2"
-        android:textColor="#CFE7F2"
+        android:textColor="#65706A"
         android:textSize="12sp" />
 
     <LinearLayout
@@ -73,7 +73,7 @@
             android:layout_weight="1"
             android:background="@drawable/widget_btn"
             android:text="조금만 1점"
-            android:textColor="#FFFFFF"
+            android:textColor="#16201B"
             android:textSize="13sp" />
 
         <Button
@@ -83,7 +83,7 @@
             android:layout_weight="1.4"
             android:background="@drawable/widget_btn_primary"
             android:text="했어요"
-            android:textColor="#062A3A"
+            android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -96,7 +96,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:text="넘기기"
-            android:textColor="#CFE7F2"
+            android:textColor="#65706A"
             android:textSize="13sp" />
     </LinearLayout>
 </LinearLayout>

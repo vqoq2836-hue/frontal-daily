@@ -1,14 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 흰 카드 뒤로 겹친 두 장(매일 쌓이는 루틴) + 체크(오늘 한 일) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="6"
-        android:pathData="M54,30a24,24 0,1 0,0.01 0z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M51,40h6v15l10,6 -3,5 -13,-8z" />
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#33FFFFFF" android:pathData="M51,26h20a12,12 0,0 1,12,12v20a12,12 0,0 1,-12,12h-20a12,12 0,0 1,-12,-12v-20a12,12 0,0 1,12,-12z" />
+    <path android:fillColor="#6BFFFFFF" android:pathData="M46.5,31h20a12,12 0,0 1,12,12v20a12,12 0,0 1,-12,12h-20a12,12 0,0 1,-12,-12v-20a12,12 0,0 1,12,-12z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M42,36h20a12,12 0,0 1,12,12v20a12,12 0,0 1,-12,12h-20a12,12 0,0 1,-12,-12v-20a12,12 0,0 1,12,-12z" />
+    <path android:fillColor="#00000000" android:strokeColor="#FF0D8A5D" android:strokeWidth="6"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M41.5,58L49.5,66L63,51" />
 </vector>
