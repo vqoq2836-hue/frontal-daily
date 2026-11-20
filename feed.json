@@ -1,0 +1,231 @@
+{
+ "version": 1,
+ "updated": "2026-11-20T22:30:00+09:00",
+ "days": {
+  "2026-11-20": {
+   "advice": "지친 날엔 목표를 줄이고\n루틴은 지키자",
+   "eng": {
+    "c": {
+     "en": "Let's warm up with a quick question.",
+     "ko": "간단한 질문으로 몸풀기 해 볼까요?",
+     "alt": "Let's start with a quick review."
+    },
+    "l": {
+     "en": "What's the best way to get downtown?",
+     "ko": "시내로 가려면 뭘 타는 게 제일 좋아요?",
+     "alt": "Should I take a taxi or the subway?"
+    }
+   }
+  },
+  "2026-11-21": {
+   "advice": "잘한 일 하나를\n자기 전에 떠올리자",
+   "eng": {
+    "c": {
+     "en": "Please sit up straight and look at the board.",
+     "ko": "바르게 앉아서 칠판 보세요.",
+     "alt": "Look at the screen, please."
+    },
+    "l": {
+     "en": "Could you recommend a good place to eat around here?",
+     "ko": "이 근처 맛집 추천해 줄래요?",
+     "alt": "Is there a good café nearby?"
+    }
+   }
+  },
+  "2026-11-22": {
+   "advice": "결정이 어려우면\n내일의 나에게 물어보자",
+   "eng": {
+    "c": {
+     "en": "Who can tell me the answer in English?",
+     "ko": "영어로 답을 말해 볼 사람?",
+     "alt": "Can you say it in English?"
+    },
+    "l": {
+     "en": "Does this have nuts in it?",
+     "ko": "이거 견과류 들어 있어요?",
+     "alt": "I'm allergic to peanuts."
+    }
+   }
+  },
+  "2026-11-23": {
+   "advice": "쉬는 것도\n계획에 넣어야 쉰다",
+   "eng": {
+    "c": {
+     "en": "Take turns reading with your partner.",
+     "ko": "짝과 번갈아 읽어요.",
+     "alt": "Switch roles with your partner."
+    },
+    "l": {
+     "en": "Can I get some water, please?",
+     "ko": "물 좀 주시겠어요?",
+     "alt": "Could we get some more napkins?"
+    }
+   }
+  },
+  "2026-11-24": {
+   "advice": "돈은 쓰기 전에\n하루만 기다려 보자",
+   "eng": {
+    "c": {
+     "en": "Keep your voice down, please.",
+     "ko": "목소리를 조금 낮춰 주세요.",
+     "alt": "Use a quiet voice, please."
+    },
+    "l": {
+     "en": "I think there's a mistake on the bill.",
+     "ko": "계산서가 잘못된 것 같아요.",
+     "alt": "I didn't order this."
+    }
+   }
+  },
+  "2026-11-25": {
+   "advice": "어려운 일은\n기운 있는 오전에 하자",
+   "eng": {
+    "c": {
+     "en": "Raise your hand and wait to be called on.",
+     "ko": "손 들고 이름 부를 때까지 기다려요.",
+     "alt": "Please don't call out."
+    },
+    "l": {
+     "en": "How's the weather there?",
+     "ko": "거기 날씨 어때요?",
+     "alt": "It's freezing today."
+    }
+   }
+  },
+  "2026-11-26": {
+   "advice": "작게 약속하고\n반드시 지키자",
+   "eng": {
+    "c": {
+     "en": "Let me know when you're done.",
+     "ko": "다 하면 알려 줘요.",
+     "alt": "Who finished first?"
+    },
+    "l": {
+     "en": "Sorry for the late reply.",
+     "ko": "답장이 늦어서 미안해요.",
+     "alt": "I've been meaning to call you."
+    }
+   }
+  },
+  "2026-11-27": {
+   "advice": "듣는 사람이\n대화를 이끈다",
+   "eng": {
+    "c": {
+     "en": "Put your pencils down.",
+     "ko": "연필 내려놓으세요.",
+     "alt": "Close your books, please."
+    },
+    "l": {
+     "en": "Could you keep an eye on my bag?",
+     "ko": "제 가방 좀 봐 주실래요?",
+     "alt": "I'll be right back."
+    }
+   }
+  },
+  "2026-11-28": {
+   "advice": "끝낸 일을 세면\n힘이 난다",
+   "eng": {
+    "c": {
+     "en": "Great teamwork, everyone!",
+     "ko": "모두 협동 정말 잘했어요!",
+     "alt": "Your group did a great job."
+    },
+    "l": {
+     "en": "It's my first time here.",
+     "ko": "여기 처음 와 봐요.",
+     "alt": "Have you been here before?"
+    }
+   }
+  },
+  "2026-11-29": {
+   "advice": "실수는 기록하고\n자책은 내려놓자",
+   "eng": {
+    "c": {
+     "en": "Can you explain how you got that answer?",
+     "ko": "그 답이 어떻게 나왔는지 설명해 볼래요?",
+     "alt": "Show us your thinking."
+    },
+    "l": {
+     "en": "Have you tried Korean food?",
+     "ko": "한국 음식 먹어 봤어요?",
+     "alt": "You should try bibimbap."
+    }
+   }
+  },
+  "2026-11-30": {
+   "advice": "폰을 내려놓으면\n하루가 길어진다",
+   "eng": {
+    "c": {
+     "en": "We'll continue this tomorrow.",
+     "ko": "이건 내일 이어서 해요.",
+     "alt": "Let's finish this next time."
+    },
+    "l": {
+     "en": "What do you usually do on weekends?",
+     "ko": "주말엔 보통 뭐 해요?",
+     "alt": "I usually play golf on weekends."
+    }
+   }
+  },
+  "2026-12-01": {
+   "advice": "좋은 습관은\n쉬운 자리에 둔다",
+   "eng": {
+    "c": {
+     "en": "Make a circle, please.",
+     "ko": "동그랗게 둘러앉아요.",
+     "alt": "Move your desks together."
+    },
+    "l": {
+     "en": "Let me get back to you on that.",
+     "ko": "그건 확인하고 다시 알려 드릴게요.",
+     "alt": "I'll text you later."
+    }
+   }
+  },
+  "2026-12-02": {
+   "advice": "오늘 못 한 일은\n내일 첫 일로 옮기자",
+   "eng": {
+    "c": {
+     "en": "Pick up any trash around your desk.",
+     "ko": "책상 주변 쓰레기 주워요.",
+     "alt": "Push in your chairs."
+    },
+    "l": {
+     "en": "Could you send me the details?",
+     "ko": "자세한 내용 보내 줄래요?",
+     "alt": "Can you text me the address?"
+    }
+   }
+  },
+  "2026-12-03": {
+   "advice": "몸이 먼저 움직이면\n마음이 따라온다",
+   "eng": {
+    "c": {
+     "en": "Who's on lunch duty today?",
+     "ko": "오늘 급식 당번 누구죠?",
+     "alt": "Who's in charge of the lights?"
+    },
+    "l": {
+     "en": "That's very kind of you.",
+     "ko": "정말 친절하시네요.",
+     "alt": "I really appreciate it."
+    }
+   }
+  },
+  "2026-12-04": {
+   "advice": "소중한 사람에게\n오늘의 한마디를 건네자",
+   "eng": {
+    "c": {
+     "en": "Take a deep breath and try again.",
+     "ko": "숨 한번 크게 쉬고 다시 해 봐요.",
+     "alt": "You can do it. Try once more."
+    },
+    "l": {
+     "en": "Let's grab a coffee sometime.",
+     "ko": "언제 커피 한잔해요.",
+     "alt": "Are you free next week?"
+    }
+   }
+  }
+ }
+}
