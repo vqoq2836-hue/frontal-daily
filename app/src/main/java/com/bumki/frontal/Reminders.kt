@@ -98,7 +98,10 @@ object Reminders {
         if (arr == null) return emptyList()
         // days: 그 요일에만 하는 일 (0=일 … 5=금 6=토)
         val dow = date.dayOfWeek.value % 7
+        val isToday = s.optString("date") == date.toString()
         return (0 until arr.length()).map { arr.getJSONObject(it) }.filter { o ->
+            // 무지출 데이는 그날 고르므로, 다른 날은 '무지출 아닌 날'로 보고 알림을 잡음
+            if (!isToday && o.optString("cond") == "nospend") return@filter false
             val d = o.optJSONArray("days") ?: return@filter true
             (0 until d.length()).any { d.optInt(it) == dow }
         }

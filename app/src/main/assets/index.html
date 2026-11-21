@@ -552,6 +552,31 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .m-bal.warn .m-bbar i{background:var(--ye)} .m-bal.bad .m-bbar i{background:var(--co)}
 .m-bbar b{position:absolute;top:-5px;bottom:-5px;width:2.5px;margin-left:-1px;background:var(--ink);border-radius:2px}
 .m-perday .tl{font-style:normal;font-weight:800;color:var(--ink)} .m-perday .tl.m-out{color:var(--m-out)}
+
+/* 오늘 하루 체크 */
+.dc{gap:12px}
+.dc-top{display:flex;align-items:center;gap:16px}
+.dc-ring{width:92px;height:92px;flex:none}
+.dc-ring .tr{fill:var(--surface-2);stroke:var(--co3);stroke-width:9}
+.dc-ring .pg{fill:none;stroke:var(--g500);stroke-width:9;stroke-linecap:round}
+.dc.ok .dc-ring .pg{stroke:var(--g600)}
+.dc-ring .gt{fill:var(--ye);stroke:var(--ink);stroke-width:1.4}
+.dc-ring text{font-size:22px;font-weight:850;fill:var(--ink)}
+.dc-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dc-txt b{font-size:26px;font-weight:850;letter-spacing:-.03em}.dc-txt b small{font-size:15px;color:var(--muted);font-weight:700}
+.dc-txt .g{color:var(--g700);font-weight:800}
+.dc-k{grid-template-columns:repeat(4,1fr)!important}
+.dc-bars{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:120px;align-items:end;padding:4px 2px 0}
+.dc-b{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.dc-b i{display:block;width:70%;border:1.3px solid var(--ink);border-radius:5px 5px 2px 2px;background:var(--surface-2)}
+.dc-b i.part{background:var(--g200)} .dc-b i.ok{background:var(--g500);box-shadow:2px 2px 0 var(--co2)}
+.dc-b .v{font-size:11px;font-weight:700;color:var(--muted)} .dc-b .l{font-size:12px;font-weight:700;color:var(--muted)}
+.dc-b.today .l{color:var(--ink);text-decoration:underline;text-decoration-color:var(--co);text-decoration-thickness:2px}
+/* 무지출 데이 고르기 */
+.nsp{gap:8px}
+.nsp.on{background:var(--grain),var(--co3)!important;background-size:160px!important}
+.nsp-mini{align-self:stretch;border:1.2px dashed rgba(31,42,58,.45);background:transparent;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:700;color:var(--ink);text-align:left}
+.nsp-mini u{text-decoration-color:var(--co);text-decoration-thickness:2px}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -1093,6 +1118,70 @@ function treeCard(compact){
       ${compact?"":`<span class="small muted">남은 일 ${left}개${missed.length?` · <button class="linkish small" data-goto="day">놓친 일 ${missed.length}개</button>`:""}</span>`}
     </div></section>`;
 }
+
+/* ---------- 오늘 하루 체크: 점수로 하루를 마무리 (66일 나무 대신) ---------- */
+function dcBars(end){
+  const out=[]; for(let i=6;i>=0;i--){ const d=addDays(end,-i), has=!!S.days[d] && d>=(S.settings.startDate||d);
+    const mx=has?maxPts(d):0, s=has?score(d):0, ok=has&&success(d);
+    out.push({d, s, mx, ok, pct:mx?Math.round(s/mx*100):0, has}); }
+  return out;
+}
+function dcBarsHtml(end){
+  return `<div class="dc-bars">${dcBars(end).map(x=>{ const dd=parse(x.d); return `<div class="dc-b ${x.d===today()?"today":""}"><span class="v num">${x.has?x.s:""}</span><i class="${x.ok?"ok":x.s?"part":""}" style="height:${Math.max(x.has?4:0,x.pct)}%"></i><span class="l">${"일월화수목금토"[dd.getDay()]}</span></div>`; }).join("")}</div>`;
+}
+function dayCheckCard(d,full){
+  const v=day(d), s=score(d), g=goal(d), mx=maxPts(d), tasks=dayTasks(d);
+  const done=tasks.filter(t=>v.done[t.id]&&v.done[t.id].lvl).length, skip=tasks.filter(t=>v.done[t.id]&&v.done[t.id].skipped&&!v.done[t.id].lvl).length;
+  const missed=missedTasks(d).length, left=tasks.length-done-skip;
+  const R=34, C=2*Math.PI*R, p=mx?s/mx:0, gp=mx?g/mx:0, ok=s>=g;
+  const ga=gp*2*Math.PI-Math.PI/2, gx=40+R*Math.cos(ga), gy=40+R*Math.sin(ga);
+  return `<section class="glass card dc ${ok?"ok":""}">
+    <div class="dc-top">
+      <svg class="dc-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${R}" class="tr"/><circle cx="40" cy="40" r="${R}" class="pg" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/><circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="3.6" class="gt"/><text x="40" y="44" text-anchor="middle" class="num">${s}</text></svg>
+      <div class="dc-txt"><span class="eyebrow">오늘 하루 점수</span><b>${s}점 <small>/ 목표 ${g}점</small></b>
+        <span class="small ${ok?"g":""}">${ok?"오늘 목표 달성! 이대로 마무리해요":`목표까지 ${g-s}점 · 최대 ${mx}점`}</span></div>
+    </div>
+    ${full?`<div class="m-rep-k dc-k"><div><small>완료</small><b>${done}</b></div><div><small>넘김</small><b>${skip}</b></div><div><small>놓침</small><b>${missed}</b></div><div><small>남음</small><b>${Math.max(0,left-missed)}</b></div></div>`:""}
+    ${dcBarsHtml(d)}
+    <p class="small muted">초록 막대 = 목표를 채운 날 · 핵심 미션은 ‘제대로’ 하면 2점</p>
+  </section>`;
+}
+function historyScoreCard(){
+  const t=today(), bars=dcBars(t), has=bars.filter(x=>x.has&&x.d<=t);
+  const avg=has.length?Math.round(has.reduce((a,x)=>a+x.pct,0)/has.length):0, okN=has.filter(x=>x.ok).length;
+  const st=streak(); let best=0; Object.keys(S.days).forEach(d=>{ if(d>=(S.settings.startDate||d)&&d<=t){ const s=score(d); if(s>best) best=s; } });
+  return `<section class="glass card dc"><span class="eyebrow">최근 7일 하루 점수</span>
+    <div class="m-rep-k"><div><small>평균 달성률</small><b>${avg}%</b></div><div><small>목표 채운 날</small><b>${okN}/${has.length||0}일</b></div><div><small>연속</small><b>${st.n}일</b></div></div>
+    ${dcBarsHtml(t)}<p class="small muted">최고 점수 ${best}점 · 하루 마지막에 ‘오늘 하루 체크’에서 점수를 확인해요</p></section>`;
+}
+
+/* ---------- 무지출 데이: 그날 아침에 고름 (주 2회 목표) ---------- */
+function nospendWeek(){
+  const mon=weekDates(today())[0]; let chosen=0, kept=0;
+  for(let i=0;i<7;i++){ const d=addDays(mon,i), v=S.days[d]; if(v&&v.nospend){ chosen++; if(d<=today() && typeof moneyDayOut==="function" && moneyDayOut(d)<=0) kept++; } }
+  return {chosen, kept};
+}
+function nospendCard(v){
+  const w=nospendWeek(), h=new Date().getHours();
+  if(v.nospend===true){
+    const spent=typeof moneyDayOut==="function"?moneyDayOut(today()):0;
+    return `<section class="glass card nsp on"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><div><b>💳 오늘은 무지출 데이</b><p class="small ${spent>0?"m-out":"muted"}">${spent>0?`오늘 ${won(spent)}원 나갔어요 · 내일 다시 도전해요`:"아직 0원이에요 · 사 둔 재료로 저녁"} · 이번 주 ${w.chosen}/2</p></div><button class="btn sm" data-nsp="undo">취소</button></div></section>`;
+  }
+  if(v.nospend===undefined && h<21){
+    return `<section class="glass card nsp"><b>오늘 무지출 데이 할까요?</b>
+      <p class="small muted">이번 주 ${w.chosen}/2일 골랐어요. 고르면 ‘카드 쓰지 않기’와 저녁 ‘사 둔 재료로 집밥’이 오늘 할 일에 들어가요.</p>
+      <div class="row"><button class="btn primary" data-nsp="yes">오늘 할래요</button><button class="btn" data-nsp="no">오늘은 아니에요</button></div></section>`;
+  }
+  return `<button class="nsp-mini" data-nsp="yes">💳 이번 주 무지출 데이 ${w.chosen}/2 · <u>오늘로 바꾸기</u></button>`;
+}
+document.addEventListener("click", ev=>{
+  const b=ev.target.closest("[data-nsp]"); if(!b) return;
+  const d=today(), v=day(d), a=b.dataset.nsp;
+  if(a==="yes") v.nospend=true; else if(a==="no") v.nospend=false; else delete v.nospend;
+  saveDay(d); try{ nativeSync(); }catch(e){}
+  toast(a==="yes"?"오늘은 무지출 데이예요. 카드는 지갑 안쪽에!":a==="no"?"오늘은 쓰는 날로 둘게요":"무지출 데이를 취소했어요");
+  render();
+});
 const NOVELTY = [
   "처음 가 보는 길로 퇴근하기","안 써 본 재료 하나로 도시락 만들기","왼손으로 양치하기",
   "처음 듣는 장르의 앨범 한 장을 끝까지 듣기","카메라 수동 모드로 사진 5장 찍기",
@@ -1157,10 +1246,10 @@ const C = (core,time) => ({core, time});
 const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), T("t_creatine","크레아틴 먹기","07:16"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키·영양제 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", days:[2,4]}]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), T("t_creatine","크레아틴 먹기","07:16"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키·영양제 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", cond:"nospend"}]},
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:10"), T("t_walk","점심 먹고 10분 걷기","12:30"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
-    {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", days:[1,3,5]}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", days:[2,4]}, T("t_dishes","설거지","19:10")]},
+    {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", cond:"spend"}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", cond:"nospend"}, T("t_dishes","설거지","19:10")]},
     {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:00", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), C("steps","21:50")]},
     {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
   ],
@@ -1187,7 +1276,7 @@ const S = { settings:null, days:{}, weeks:{}, tab:"now", loaded:false, health:{s
 function taskInfo(t){
   if(!t) return null;
   if(t.core){ const m=MISSIONS.find(x=>x.id===t.core); return m?{id:m.id, title:m.title, time:t.time||m.time, core:m}:null; }
-  if(t.id) return {id:t.id, title:t.title, time:t.time||"", core:null, days:Array.isArray(t.days)?t.days:null};
+  if(t.id) return {id:t.id, title:t.title, time:t.time||"", core:null, days:Array.isArray(t.days)?t.days:null, cond:t.cond||null};
   return null;
 }
 function blocksFor(type){ return (S.settings&&S.settings.blocks&&S.settings.blocks[type])||DEFAULT_BLOCKS[type]; }
@@ -1204,6 +1293,7 @@ function dayTasks(d){
     const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return;
     if(ti.core&&md.skip.includes(ti.id)) return;
     if(ti.days&&!ti.days.includes(parse(d).getDay())) return; /* 특정 요일에만 하는 일 */
+    if(ti.cond==="nospend"&&!v.nospend) return; if(ti.cond==="spend"&&v.nospend) return; /* 무지출 데이는 그날 고름 */
     seen.add(ti.id); out.push(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}));
   }));
   return out.sort((a,b)=>(toMin(a.time)||0)-(toMin(b.time)||0));
@@ -1248,7 +1338,7 @@ function nativeSync(){
     Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.lvl) done[k]=x.lvl; });
     const skip=md.skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
     const snz={}; Object.entries(v.snooze||{}).forEach(([k,t])=>{ if(t>Date.now()) snz[k]=t; });
-    const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
+    const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, cond:t.cond||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
     NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), todoTimes:["12:15","16:45","21:00"]}));
@@ -1382,7 +1472,8 @@ function renderNow(){
     h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
   if(f.t && f.t.id==="t_eng") h+=engCard();
-  h+=treeCard(false);
+  h+=nospendCard(v);
+  h+=dayCheckCard(d,false);
   if(f.t && f.t.id==="t_money") h+=moneyWeekCard();
   h+=moneyReportNudge();
   { const n=((S.money&&S.money.meta&&S.money.meta.review)||[]).length; if(n) h+=`<a class="glass card m-nudge" href="#money"><span>💳 돈 내역 <b>${n}건</b>을 확인해 주세요</span><span class="small muted">결제인지·어떤 항목인지 애매한 것들 ›</span></a>`; }
@@ -1409,6 +1500,7 @@ function renderDay(){
   const w=isoWeek(d), wk=S.weeks[w]||{};
   h+=`<div class="section-h"><h2>이번 주</h2><span class="small muted">${esc(w)}</span></div>
   <section class="glass card">${WEEKLY.map(x=>`<button class="chk" data-week="${x.id}" aria-pressed="${!!wk[x.id]}"><span class="box"></span><span><b>${esc(x.title)}</b><br><span class="small muted">${esc(x.sub)}</span></span></button>`).join("")}</section>`;
+  h+=`<div class="section-h"><h2>오늘 하루 체크</h2><span class="small muted">점수는 체크할 때마다 바로 바뀌어요</span></div>`+dayCheckCard(d,true);
   return h;
 }
 
@@ -1426,7 +1518,7 @@ function renderRoutine(){
     h+=`<section class="glass card">
       <input type="text" data-bk="${i}:title" value="${esc(b.title)}" aria-label="시간대 이름" style="font-weight:700;font-size:16px">
       <div class="row"><input type="time" data-bk="${i}:start" value="${esc(b.start)}" aria-label="시작" style="width:auto;flex:1"><span class="muted">–</span><input type="time" data-bk="${i}:end" value="${esc(b.end)}" aria-label="끝" style="width:auto;flex:1"></div>
-      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small ed-t">${ricon(ti,"xs")}<span>${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}${ti.days?`<span class="dchips">${(type==="weekend"?[6,0]:[1,2,3,4,5]).map(n=>`<button class="dchip" data-tday="${i}:${j}:${n}" aria-pressed="${ti.days.includes(n)}">${"일월화수목금토"[n]}</button>`).join("")}</span>`:""}</span></span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
+      ${b.tasks.map((t,j)=>{ const ti=taskInfo(t); if(!ti) return ""; return `<div class="ed-row"><input type="time" data-tt="${i}:${j}" value="${esc(ti.time)}" aria-label="${esc(ti.title)} 알림 시각"><span class="small ed-t">${ricon(ti,"xs")}<span>${esc(ti.title)}${ti.core?`<span class="tag">핵심</span>`:""}${ti.cond==="nospend"?`<span class="tag">무지출 데이에만</span>`:ti.cond==="spend"?`<span class="tag">무지출 아닌 날</span>`:""}${ti.days?`<span class="dchips">${(type==="weekend"?[6,0]:[1,2,3,4,5]).map(n=>`<button class="dchip" data-tday="${i}:${j}:${n}" aria-pressed="${ti.days.includes(n)}">${"일월화수목금토"[n]}</button>`).join("")}</span>`:""}</span></span><button class="btn sm" data-up-task="${i}:${j}" aria-label="위로">↑</button><button class="btn sm" data-del-task="${i}:${j}">삭제</button></div>`; }).join("")}
       <div class="ed-row" style="grid-template-columns:92px 1fr auto"><input type="time" id="addt-${i}" value="${esc(b.start)}" aria-label="새 할 일 시각"><input type="text" id="add-${i}" placeholder="할 일 추가 (예: 분리수거)"><button class="btn" data-add-task="${i}">추가</button></div>
       ${coreOpts.length?`<div class="row"><select id="core-${i}" style="flex:1;width:auto">${coreOpts.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join("")}</select><button class="btn" data-add-core="${i}">핵심 미션 넣기</button></div>`:""}
     </section>`;
@@ -1982,6 +2074,7 @@ function renderMoney(){
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">가계부</span><b>${mo}월의 돈</b></div><div class="row" style="gap:6px"><button class="btn sm" data-m="prev" aria-label="이전 달">‹</button><button class="btn sm" data-m="next" aria-label="다음 달" ${ym>=ymOf(today())?"disabled":""}>›</button></div></div>`;
   h+=moneyPermCard();
   h+=moneyBudgetCard(ym);
+  if(ym===ymOf(today())) h+=nospendCard(day(today()));
   /* 합계 */
   h+=`<section class="glass card m-sum"><div class="row" style="justify-content:space-between;align-items:flex-end">
       <div><span class="eyebrow">${y===new Date().getFullYear()?"":y+"년 "}${mo}월 합계</span><div class="m-big ${st.net<0?"m-out":"m-in"}">${st.net>0?"+":""}${won(st.net)}</div></div>
@@ -2284,7 +2377,7 @@ function moneyReport(ym){
   if(out>0 && wkend/out>0.45) bad.push({w:wkend*0.5, t:`지출의 ${Math.round(wkend/out*100)}%가 주말에 몰렸어요`, tip:"주말엔 쓸 돈을 금요일에 미리 정해 두고 그 안에서만 써요"});
   if(biggest && out>0 && biggest.amount>out*0.2 && biggest.amount>=50000) bad.push({w:biggest.amount*0.6, t:`가장 큰 지출은 ${biggest.merchant} ${won(biggest.amount)}원 (생활 지출의 ${Math.round(biggest.amount/out*100)}%)`, tip:"5만 원이 넘는 건 장바구니에 하루 넣어 두고 다음 날 사요"});
   if(M.meta.budget && out>M.meta.budget) bad.push({w:out, t:`생활비 예산을 ${won(out-M.meta.budget)}원 넘었어요`, tip:"다음 달은 예산을 주 단위로 나눠 금요일마다 확인해요"});
-  if(zero<zeroGoal) bad.push({w:(zeroGoal-zero)*15000, t:`무지출 데이 ${zero}일 / 목표 ${zeroGoal}일`, tip:"화·목 무지출 데이 아침 알림을 보면 카드를 지갑 안쪽에 넣어 둬요"});
+  if(zero<zeroGoal) bad.push({w:(zeroGoal-zero)*15000, t:`무지출 데이 ${zero}일 / 목표 ${zeroGoal}일`, tip:"아침에 ‘오늘 무지출 데이’를 골라 두고, 카드는 지갑 안쪽에 넣어 둬요"});
   else good.push(`무지출 데이 ${zero}일로 목표(${zeroGoal}일)를 지켰어요`);
   if(M.meta.budget && out<=M.meta.budget) good.push(`예산 안에서 썼어요 (${won(M.meta.budget-out)}원 남음)`);
   if(!cafe.length && liv.length>5) good.push("카페 지출이 한 번도 없었어요");
@@ -2420,7 +2513,7 @@ function renderHistory(){
   const cells=[]; for(let d=firstMon; cells.length<77; d=addDays(d,1)) cells.push(d);
   const st=streak();
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">${firstMon===startMon?"시작한 주부터":"최근 11주"}</span><b>기록</b></div></div>
-  ${(()=>{ const n=grownDays(), [nm]=treeStage(n); return `<section class="glass card tree-big"><div class="tree-art">${treeSVG(n)}</div><div class="tree-txt"><span class="eyebrow">66일 나무</span><b>${nm} <span class="g">${n}일째</span></b><span class="small muted">${n<66?"목표를 채운 날만큼 자라요. 빠진 날은 시들지 않고 멈춰만 있어요.":"66일을 채웠어요. 이제 루틴이 몸에 붙었어요."}</span><div class="bar"><i style="width:${Math.min(100,n/66*100)}%"></i></div><div class="tree-steps small"><span class="${n>=1?"on":""}">🌱 새싹</span><span class="${n>=7?"on":""}">어린 싹 7</span><span class="${n>=21?"on":""}">🌿 줄기 21</span><span class="${n>=42?"on":""}">어린 나무 42</span><span class="${n>=66?"on":""}">🌳 66</span></div></div></section>`; })()}
+  ${historyScoreCard()}
   <section class="glass card"><div class="heat" role="img" aria-label="최근 11주 성공 기록">
   ${DOW.slice(1).concat(DOW[0]).map(x=>`<div class="small muted" style="text-align:center">${x}</div>`).join("")}
   ${cells.map(d=>{ let cls="c"; if(d>t) cls+=" future"; else if(d>=start){ const s=score(d), g=goal(d); if(s>=g) cls+=" s2"; else if(s>0) cls+=" s1"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; } if(d===t) cls+=" today"; return `<div class="${cls}" title="${d} · ${score(d)}점"></div>`; }).join("")}
@@ -2615,6 +2708,11 @@ async function boot(){
       add("weekday","22:30","novel"); add("weekend","21:20","novel");
       S.settings.eng=S.settings.eng||{c:0,l:0};
       S.settings.v13=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v14){ /* 2026-11-21 무지출 데이는 요일 고정 대신 그날 고름 */
+      Object.values(S.settings.blocks||{}).forEach(bs=>(bs||[]).forEach(b=>(b.tasks||[]).forEach(t=>{ if(!t||!t.id) return;
+        if(t.id==="t_nospend_am"||t.id==="t_nospend"){ delete t.days; t.cond="nospend"; }
+        if(t.id==="t_dinner"&&(Array.isArray(t.days)&&t.days.length<7)){ delete t.days; t.cond="spend"; } })));
+      S.settings.v14=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
