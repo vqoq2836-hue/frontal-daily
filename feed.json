@@ -1,6 +1,6 @@
 {
  "version": 1,
- "updated": "2026-11-20T22:30:00+09:00",
+ "updated": "2026-11-22T19:45:55+09:00",
  "days": {
   "2026-11-20": {
    "advice": "지친 날엔 목표를 줄이고\n루틴은 지키자",
@@ -224,6 +224,36 @@
      "en": "Let's grab a coffee sometime.",
      "ko": "언제 커피 한잔해요.",
      "alt": "Are you free next week?"
+    }
+   }
+  },
+  "2026-12-05": {
+   "advice": "토요일 오전엔\n약속을 하나만 잡자",
+   "eng": {
+    "c": {
+     "en": "Check the spelling of each word.",
+     "ko": "단어 철자를 하나씩 확인해요.",
+     "alt": "Read your sentence one more time."
+    },
+    "l": {
+     "en": "Where's the nearest bus stop?",
+     "ko": "제일 가까운 버스 정류장이 어디예요?",
+     "alt": "Which bus goes to the airport?"
+    }
+   }
+  },
+  "2026-12-06": {
+   "advice": "다음 주 할 일은\n일요일 저녁에 세 개만 적자",
+   "eng": {
+    "c": {
+     "en": "Put a check mark next to the ones you finished.",
+     "ko": "끝낸 것 옆에 체크 표시해요.",
+     "alt": "Cross out the ones you've already done."
+    },
+    "l": {
+     "en": "Is it okay if I bring a friend?",
+     "ko": "친구 한 명 데려가도 괜찮아요?",
+     "alt": "Should I bring anything?"
     }
    }
   }
