@@ -1001,6 +1001,15 @@ window.onNativeFeed = function(text){
   if(S.loaded) render();
 };
 
+/* 잠금화면에 보낼 오늘의 영어(교실 영어 문장) — 날짜 기록을 바꾸지 않고 읽기만 */
+function lockEngOf(d){
+  try{ const v=S.days[d];
+    if(v&&v.eng) { const it=engIt(v.eng,"c"); return {en:it.en, ko:it.ko}; }
+    const f=feedDay(d); if(f&&f.eng) return {en:f.eng.c.en, ko:f.eng.c.ko};
+    const p=(S.settings&&S.settings.eng)||{c:0}; const it=engItem("c",p.c%ENG_C.length); return {en:it.en, ko:it.ko};
+  }catch(e){ return null; }
+}
+
 /* ---------- 루틴 아이콘: 원·직선 위주, 한 팔레트·한 방향 (토스페이스식 규칙) ---------- */
 const IC_FAM = { /* [옅은 바탕, 별색] — 리소 인쇄 잉크 */
   sun:["#FFEDB8","#FFB511"], water:["#D6E9F8","#3D8FD1"], body:["#D3EEDF","#2DA86F"], money:["#FFE2C6","#FF8A3D"],
@@ -1345,7 +1354,7 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, cond:t.cond||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), todoTimes:["12:15","16:45","21:00"]}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), maxPts:maxPts(d), lockEng:lockEngOf(d), todoTimes:["12:15","16:45","21:00"]}));
   }catch(e){}
   checkBoard(false);
 }
