@@ -4,6 +4,7 @@ import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -50,7 +51,7 @@ object LockWallpaper {
         val list = todos(ctx)
         val advice = adviceFor(ctx, LocalDate.now())
         val sig = LocalDate.now().toString() + "|" + advice + "|" +
-            list.joinToString("|") { it.optString("text") + it.optBoolean("done") + it.optBoolean("top") } + "|v4"
+            list.joinToString("|") { it.optString("text") + it.optBoolean("done") + it.optBoolean("top") } + "|v5"
         val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (!force && prefs.getString(KEY_SIG, null) == sig) return "same"
         return try {
@@ -86,12 +87,18 @@ object LockWallpaper {
         return w to h
     }
 
-    // 어두운 바탕, 흰 굵은 글씨, 보라 포인트
-    private const val BG = 0xFF1B1C22.toInt()
-    private const val WHITE = 0xFFF1F1F5.toInt()
-    private const val SOFT = 0xFFB4B5C2.toInt()
-    private const val DIMW = 0xFF6C6D79.toInt()
-    private const val ACCENT = 0xFF8E95F2.toInt()
+    // 리소 판화: 크림 종이 + 남색 잉크 + 별색(그린·코랄·노랑). 앱 화면과 같은 색
+    private const val BG = 0xFFF3EFE6.toInt()
+    private const val CARD = 0xFFFFFDF8.toInt()
+    private const val INK = 0xFF1F2A3A.toInt()
+    private const val MUTED = 0xFF5E6573.toInt()
+    private const val FAINT = 0xFF8E93A0.toInt()
+    private const val GREEN = 0xFF43B489.toInt()
+    private const val MINT = 0xFFCDEBDB.toInt()
+    private const val MINT2 = 0xFFA9DDC3.toInt()
+    private const val PEACH = 0xFFFFD6C9.toInt()
+    private const val CORAL = 0xFFFF6F59.toInt()
+    private const val YELLOW = 0xFFFFD36E.toInt()
 
     /** 앱이 넘겨준 조언 목록에서 날짜마다 하나 (자정이 지나면 앱을 안 열어도 바뀜) */
     fun adviceFor(ctx: Context, date: LocalDate): String {
@@ -109,6 +116,19 @@ object LockWallpaper {
             textSize = size; this.color = color; textAlign = align
         }
 
+    private fun fill(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
+    private fun stroke(color: Int, width: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = color; style = Paint.Style.STROKE; strokeWidth = width
+        strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
+    }
+
+    /** 잉크 테두리 + 뒤로 어긋난 별색 판(그림자) */
+    private fun plate(c: Canvas, r: RectF, rad: Float, face: Int, shadow: Int, off: Float, line: Float) {
+        c.drawRoundRect(RectF(r.left + off, r.top + off, r.right + off, r.bottom + off), rad, rad, fill(shadow))
+        c.drawRoundRect(r, rad, rad, fill(face))
+        c.drawRoundRect(r, rad, rad, stroke(INK, line))
+    }
+
     fun render(w: Int, h: Int, list: List<JSONObject>, advice: String): Bitmap {
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
@@ -116,81 +136,121 @@ object LockWallpaper {
         val W = w.toFloat()
         val H = h.toFloat()
         val cx = W / 2
+        val line = 0.42f * u
         c.drawColor(BG)
+
+        // ---- 종이 입자 (옅게)
+        val rnd = java.util.Random(7)
+        val dot = Paint().apply { color = INK }
+        repeat((w * h / 900).coerceAtMost(4000)) {
+            dot.alpha = 10 + rnd.nextInt(18)
+            val x = rnd.nextFloat() * W; val y = rnd.nextFloat() * H; val s = 1f + rnd.nextFloat() * 1.6f
+            c.drawRect(x, y, x + s, y + s, dot)
+        }
+
+        // ---- 별색 면: 시계 뒤 복숭아 해, 왼쪽 노란 점, 아래 초록 언덕 (잉크 선은 살짝 어긋나게)
+        val sunX = W * 0.86f; val sunY = H * 0.12f; val sunR = W * 0.36f
+        c.drawCircle(sunX, sunY, sunR, fill(PEACH))
+        c.drawCircle(sunX - 1.2f * u, sunY - 1f * u, sunR, stroke(INK, line * 0.8f))
+        c.drawCircle(W * 0.11f, H * 0.235f, 3.6f * u, fill(YELLOW))
+        c.drawCircle(W * 0.11f - 0.7f * u, H * 0.235f - 0.6f * u, 3.6f * u, stroke(INK, line * 0.8f))
+        val hill = Path().apply {
+            moveTo(0f, H * 0.905f); cubicTo(W * 0.3f, H * 0.865f, W * 0.62f, H * 0.915f, W, H * 0.872f)
+            lineTo(W, H); lineTo(0f, H); close()
+        }
+        c.drawPath(hill, fill(MINT))
+        val hill2 = Path().apply {
+            moveTo(0f, H * 0.955f); cubicTo(W * 0.35f, H * 0.93f, W * 0.7f, H * 0.965f, W, H * 0.94f)
+            lineTo(W, H); lineTo(0f, H); close()
+        }
+        c.drawPath(hill2, fill(MINT2))
+        val ridge = Path().apply { moveTo(0f, H * 0.905f); cubicTo(W * 0.3f, H * 0.865f, W * 0.62f, H * 0.915f, W, H * 0.872f) }
+        c.save(); c.translate(-1f * u, -0.8f * u); c.drawPath(ridge, stroke(INK, line * 0.8f)); c.restore()
 
         val left = list.filter { !it.optBoolean("done") }.sortedBy { if (it.optBoolean("top")) 0 else 1 }
         val done = list.filter { it.optBoolean("done") }
 
-        // ---- 오늘 할 일 (시계 바로 아래)
-        val labelY = H * 0.292f
-        var listEnd = labelY + 18f * u   // 할 일 영역이 끝나는 높이 (그 아래에 '오늘의 한 줄')
-        when {
-            list.isEmpty() -> {
-                c.drawText("오늘 할 일", cx, labelY, tp(3.9f * u, ACCENT))
-                c.drawText("아직 안 적었어요", cx, labelY + 10f * u, tp(5.4f * u, WHITE))
-                c.drawText("아침에 앱에서 적으면 여기에 떠요", cx, labelY + 17f * u, tp(3.4f * u, DIMW, bold = false))
+        // ---- 오늘 할 일 카드 (시계 아래)
+        val cardL = 7f * u; val cardR = W - 7f * u
+        val cardTop = H * 0.285f
+        val item = tp(4.9f * u, INK, align = Paint.Align.LEFT)
+        val starP = tp(4.9f * u, CORAL, align = Paint.Align.LEFT)
+        val rows = (left + done).take(5)
+        val more = list.size - rows.size
+        val step = 9.4f * u
+        val firstY = cardTop + 12.5f * u
+        val cardBottom = if (list.isEmpty()) cardTop + 22f * u
+            else firstY + step * (rows.size - 1) + (if (more > 0) 7.5f * u else 4.5f * u)
+        plate(c, RectF(cardL, cardTop, cardR, cardBottom), 4f * u, CARD, GREEN, 1.5f * u, line)
+
+        // 머리 딱지
+        val chipText = when {
+            list.isEmpty() -> "오늘 할 일"
+            left.isEmpty() -> "오늘 할 일 모두 끝 ✓"
+            else -> "오늘 할 일 · ${left.size}개 남음"
+        }
+        val chipP = tp(3.5f * u, INK, align = Paint.Align.LEFT)
+        val chipW = chipP.measureText(chipText) + 5f * u
+        val chip = RectF(cardL + 4f * u, cardTop - 3.4f * u, cardL + 4f * u + chipW, cardTop + 3.4f * u)
+        plate(c, chip, 1.8f * u, GREEN, INK, 0.8f * u, line)
+        c.drawText(chipText, chip.left + 2.5f * u, chip.centerY() + 1.25f * u, chipP)
+
+        if (list.isEmpty()) {
+            c.drawText("아직 안 적었어요", cx, cardTop + 12f * u, tp(5f * u, INK))
+            c.drawText("아침에 앱에서 적으면 여기에 떠요", cx, cardTop + 18f * u, tp(3.3f * u, MUTED, bold = false))
+        } else {
+            val bs = 4.6f * u
+            val x0 = cardL + 5f * u
+            val textX = x0 + bs + 3f * u
+            val maxW = cardR - 4f * u - textX
+            val dash = stroke(INK, 0.22f * u).apply { alpha = 70; pathEffect = DashPathEffect(floatArrayOf(1.2f * u, 1.2f * u), 0f) }
+            var y = firstY
+            rows.forEachIndexed { i, t ->
+                val isDone = t.optBoolean("done")
+                val star = t.optBoolean("top") && !isDone
+                val mid = y - 1.75f * u
+                val r = RectF(x0, mid - bs / 2, x0 + bs, mid + bs / 2)
+                if (isDone) {
+                    c.drawRoundRect(r, 1.1f * u, 1.1f * u, fill(GREEN))
+                    val p = Path()
+                    p.moveTo(r.left + bs * 0.24f, r.top + bs * 0.52f)
+                    p.lineTo(r.left + bs * 0.43f, r.top + bs * 0.72f)
+                    p.lineTo(r.left + bs * 0.78f, r.top + bs * 0.30f)
+                    c.drawPath(p, stroke(INK, 0.6f * u))
+                } else c.drawRoundRect(r, 1.1f * u, 1.1f * u, fill(CARD))
+                c.drawRoundRect(r, 1.1f * u, 1.1f * u, stroke(INK, line))
+                var tx = textX
+                val starW = if (star) starP.measureText("★ ") else 0f
+                if (star) { c.drawText("★", tx, y, starP); tx += starW }
+                item.color = if (isDone) FAINT else INK
+                item.isStrikeThruText = isDone
+                val txt = TextUtils.ellipsize(t.optString("text"), item, maxW - starW, TextUtils.TruncateAt.END).toString()
+                c.drawText(txt, tx, y, item)
+                if (i < rows.size - 1) c.drawLine(x0, y + 3.6f * u, cardR - 5f * u, y + 3.6f * u, dash)
+                y += step
             }
-            else -> {
-                c.drawText(if (left.isEmpty()) "오늘 할 일 모두 끝 ✓" else "오늘 할 일 · ${left.size}개 남음", cx, labelY, tp(3.9f * u, ACCENT))
-                val rows = (left + done).take(5)
-                val more = list.size - rows.size
-                val item = tp(5.4f * u, WHITE, align = Paint.Align.LEFT)
-                val starP = tp(5.4f * u, ACCENT, align = Paint.Align.LEFT)
-                val bs = 5.0f * u
-                val gapX = 3.0f * u
-                val texts = rows.map { TextUtils.ellipsize(it.optString("text"), item, 70f * u, TextUtils.TruncateAt.END).toString() }
-                val starW = starP.measureText("★ ")
-                val blockW = bs + gapX + rows.indices.maxOf { i ->
-                    item.measureText(texts[i]) + if (rows[i].optBoolean("top") && !rows[i].optBoolean("done")) starW else 0f
-                }
-                val x0 = maxOf(8f * u, cx - blockW / 2)
-                val box = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 0.5f * u; color = SOFT }
-                val boxFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF4A4C66.toInt() }
-                val check = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    style = Paint.Style.STROKE; strokeWidth = 0.7f * u; color = ACCENT
-                    strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND
-                }
-                var y = labelY + 13.5f * u
-                val step = minOf(11.6f * u, (H * 0.55f - y) / rows.size)
-                rows.forEachIndexed { i, t ->
-                    val isDone = t.optBoolean("done")
-                    val mid = y - 1.9f * u
-                    val r = RectF(x0, mid - bs / 2, x0 + bs, mid + bs / 2)
-                    if (isDone) {
-                        c.drawRoundRect(r, 1.2f * u, 1.2f * u, boxFill)
-                        val p = Path()
-                        p.moveTo(r.left + bs * 0.24f, r.top + bs * 0.52f)
-                        p.lineTo(r.left + bs * 0.43f, r.top + bs * 0.72f)
-                        p.lineTo(r.left + bs * 0.78f, r.top + bs * 0.30f)
-                        c.drawPath(p, check)
-                    } else c.drawRoundRect(r, 1.2f * u, 1.2f * u, box)
-                    var tx = x0 + bs + gapX
-                    if (t.optBoolean("top") && !isDone) { c.drawText("★", tx, y, starP); tx += starW }
-                    item.color = if (isDone) DIMW else WHITE
-                    item.isStrikeThruText = isDone
-                    c.drawText(texts[i], tx, y, item)
-                    y += step
-                }
-                listEnd = y - step + 2f * u
-                if (more > 0) { c.drawText("외 ${more}개", cx, y - step * 0.25f, tp(3.4f * u, DIMW, bold = false)); listEnd = y }
-            }
+            if (more > 0) c.drawText("외 ${more}개", cx, y - step + 6.2f * u, tp(3.2f * u, MUTED, bold = false))
         }
 
-        // ---- 오늘의 한 줄 (아래쪽, 매일 바뀜)
-        val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ACCENT }
-        // 화면 지문 센서(아래쪽 ~75% 이하)를 피해서, 할 일 바로 아래에 둠
-        val top = minOf(listEnd + 9f * u, H * 0.585f)
-        c.drawRoundRect(RectF(cx - 4f * u, top, cx + 4f * u, top + 0.5f * u), 0.25f * u, 0.25f * u, bar)
-        c.drawText("오늘의 한 줄", cx, top + 6f * u, tp(3.3f * u, ACCENT))
-        val qp = tp(4.8f * u, WHITE, align = Paint.Align.LEFT)
-        val layout = StaticLayout.Builder.obtain(advice, 0, advice.length, qp, (78f * u).toInt())
+        // ---- 오늘의 한 줄: 복숭아 딱지 (화면 지문 센서보다 위)
+        val qp = tp(4.5f * u, INK, align = Paint.Align.LEFT)
+        val boxL = 11f * u; val boxR = W - 11f * u
+        val layout = StaticLayout.Builder.obtain(advice, 0, advice.length, qp, (boxR - boxL - 8f * u).toInt())
             .setAlignment(Layout.Alignment.ALIGN_CENTER)
-            .setLineSpacing(1.2f * u, 1f)
+            .setLineSpacing(1.1f * u, 1f)
             .setMaxLines(2)
             .setEllipsize(TextUtils.TruncateAt.END)
             .build()
+        val top = minOf(cardBottom + 9f * u, H * 0.6f)
+        val box = RectF(boxL, top, boxR, top + layout.height + 10f * u)
+        plate(c, box, 4f * u, PEACH, CORAL, 1.3f * u, line)
+        val labP = tp(3f * u, CARD)
+        val labW = labP.measureText("오늘의 한 줄") + 4.5f * u
+        val lab = RectF(cx - labW / 2, top - 2.9f * u, cx + labW / 2, top + 2.9f * u)
+        c.drawRoundRect(lab, 1.6f * u, 1.6f * u, fill(INK))
+        c.drawText("오늘의 한 줄", cx, lab.centerY() + 1.05f * u, labP)
         c.save()
-        c.translate(cx - 39f * u, top + 9.5f * u)
+        c.translate(boxL + 4f * u, top + 5.6f * u)
         layout.draw(c)
         c.restore()
         return bmp
