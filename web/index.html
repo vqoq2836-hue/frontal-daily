@@ -1329,15 +1329,15 @@ const DEFAULT_BLOCKS = {
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","폰 끄기","08:45"), C("detox","12:10"), T("t_walk","점심 먹고 10분 걷기","12:30"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
     {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", cond:"spend"}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", cond:"nospend"}, T("t_dishes","설거지","19:10")]},
-    {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:00", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), T("t_nosns","쇼츠·SNS 그만 보기","21:30"), C("steps","21:50")]},
-    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:50"), T("t_sleep","불 끄고 눕기","22:55"), C("phone","23:00")]}
+    {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"21:30", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00")]},
+    {id:"night", title:"자기 전", start:"21:30", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","21:30"), C("steps","21:50"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), {core:"journal", time:"22:40", title:"필사 + 저녁 3줄 기록"}, T("t_warm","여자친구에게 따뜻한 한마디","22:40"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:50"), T("t_sleep","불 끄고 눕기","22:55"), C("phone","23:00")]}
   ],
   weekend:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 개고 창문 열기","07:00"), T("t_water","물 한 잔 마시며 크레아틴 먹기","07:03"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
-    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), T("t_eng","밤 영어 10분 · 교실·일상 문장","21:20"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:08"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), T("t_eng","밤 영어 10분 · 교실·일상 문장","21:20"), {core:"journal", time:"21:40", title:"필사 + 저녁 3줄 기록"}, T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:08"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
   ]
 };
 const NEWDAY_MISSION = {id:"newday", title:"오늘의 새로운 루틴", pillar:"새로움", kind:"newday", time:"12:50",
@@ -1354,7 +1354,7 @@ const S = { settings:null, days:{}, weeks:{}, tab:"now", loaded:false, health:{s
 
 function taskInfo(t){
   if(!t) return null;
-  if(t.core){ const m=MISSIONS.find(x=>x.id===t.core); return m?{id:m.id, title:m.title, time:t.time||m.time, core:m}:null; }
+  if(t.core){ const m=MISSIONS.find(x=>x.id===t.core); return m?{id:m.id, title:t.title||m.title, time:t.time||m.time, core:m}:null; }
   if(t.id) return {id:t.id, title:t.title, time:t.time||"", core:null, days:Array.isArray(t.days)?t.days:null, cond:t.cond||null};
   return null;
 }
@@ -1511,7 +1511,9 @@ function heroBody(t,v){
   } else if(m.kind==="journal"){
     const j=v.journal||{};
     const jf=(k,lab)=>`<div class="field"><label for="j-${k}">${lab}</label><div class="jrow"><textarea id="j-${k}" data-j="${k}" rows="1" placeholder="글로 쓰거나 🎙를 눌러 말해 보세요">${esc(j[k])}</textarea><button class="jmic" data-jmic="${k}" aria-label="${lab} 말로 쓰기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div></div>`;
-    top=jf("good","오늘 잘한 것 하나")+jf("bad","다르게 하고 싶은 것 하나")+jf("next","내일 가장 먼저 할 일 하나")+`
+    const withNovel=!dayTasks(v.date||today()).some(x=>x.id==="novel");
+    const nq=withNovel?QUOTES[(v.novelty?v.novelty.idx:hashIdx(v.date))%QUOTES.length]:null;
+    top=(nq?`<p class="small muted" style="margin:0">① 오늘의 글귀를 노트에 옮겨 적고</p><blockquote class="quote"><p>${esc(nq[0])}</p><cite>${esc(nq[1])}</cite></blockquote>${v.novelty&&v.novelty.rerolled?"":`<button class="linkish" id="reroll">다른 글귀로 바꾸기</button>`}<p class="small muted" style="margin:4px 0 0">② 오늘 하루를 세 줄로</p>`:"")+jf("good","오늘 잘한 것 하나")+jf("bad","다르게 하고 싶은 것 하나")+jf("next","내일 가장 먼저 할 일 하나")+`
       <div class="field"><label>오늘 스트레스는 어느 정도였나요?</label><div class="seg">${[1,2,3,4,5].map(n=>`<button data-stress="${n}" aria-pressed="${v.stress===n}"><b>${n}</b><span>${["아주 낮음","낮음","보통","높음","아주 높음"][n-1]}</span></button>`).join("")}</div></div>`;
     main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 +${pts(1)}점 · 세 줄 +${pts(3)}점</small></button>`;
   } else if(m.kind==="novel"){
@@ -2873,6 +2875,16 @@ async function boot(){
         if(ph&&th){ const pm=toMin(ph.time||"22:10"); th.time=String(Math.floor((pm-2)/60)).padStart(2,"0")+":"+String((pm-2)%60).padStart(2,"0"); }
         wn.tasks.sort((a,b)=>(toMin(taskInfo(a)&&taskInfo(a).time)||0)-(toMin(taskInfo(b)&&taskInfo(b).time)||0)); }
       S.settings.v17=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v18){ /* 2026-11-23 편집 알바 20:00~21:30, 필사+3줄 기록 한 번에 */
+      const blocks=t=>(S.settings.blocks[t]||[]);
+      const wk=blocks("weekday"), side=wk.find(b=>b.id==="side"), night=wk.find(b=>b.id==="night");
+      if(side&&night){ side.end="21:30"; night.start="21:30";
+        const mv=side.tasks.filter(t=>t&&(t.id==="t_nosns"||t.core==="steps")); side.tasks=side.tasks.filter(t=>!mv.includes(t)); night.tasks=mv.concat(night.tasks); }
+      ["weekday","weekend"].forEach(type=>blocks(type).forEach(b=>{
+        const n=b.tasks.findIndex(t=>t&&t.core==="novel"), j=b.tasks.findIndex(t=>t&&t.core==="journal");
+        if(j>=0){ const jt=b.tasks[j]; jt.title="필사 + 저녁 3줄 기록"; if(n>=0){ const nt=b.tasks[n]; if((toMin(nt.time)||0)<(toMin(jt.time)||0)) jt.time=nt.time; b.tasks.splice(n,1); } }
+        b.tasks.sort((a,c)=>(toMin(taskInfo(a)&&taskInfo(a).time)||0)-(toMin(taskInfo(c)&&taskInfo(c).time)||0)); }));
+      S.settings.v18=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
