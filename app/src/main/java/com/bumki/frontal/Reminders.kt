@@ -155,7 +155,12 @@ object Reminders {
             val p = pending.getJSONObject(i)
             val id = p.optString("id")
             if (p.optString("date") != today() || id in counted) continue
-            if ((done?.optInt(id, 0) ?: 0) == 0) score += p.optInt("lvl", 0)
+            if ((done?.optInt(id, 0) ?: 0) == 0) {
+                // 앱과 같은 점수 무게: 핵심 미션 조금 1 · 제대로 3, 밤 영어 1 · 2, 나머지 1
+                val lvl = p.optInt("lvl", 0)
+                val two = its.firstOrNull { it.optString("id") == id }?.optBoolean("two") ?: false
+                score += when { lvl <= 0 -> 0; two -> if (lvl >= 2) 3 else 1; id == "t_eng" -> minOf(lvl, 2); else -> 1 }
+            }
             counted.add(id)
         }
         val steps = if (sameDay && s.has("steps") && !s.isNull("steps")) s.optLong("steps") else null

@@ -594,6 +594,7 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .tl-row .lab em{font-style:normal;font-size:10.5px;color:var(--faint)}
 .tl-row .lab .pt{font-size:12.5px;font-weight:700;color:var(--faint)}
 .tl-row .lab .pt.on{color:var(--g700);font-weight:850}
+.eng-tts{border:1.3px solid var(--ink);border-radius:12px;background:var(--ye);padding:10px 12px;display:flex;flex-direction:column;gap:6px;box-shadow:2px 2px 0 var(--ink)}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -947,7 +948,7 @@ function engCard(){
   return `<section class="glass eng-card" id="eng">
     <div class="eng-h"><div><h3>밤 영어 10분</h3><span class="small">듣기 3번 → 따라 말하기 → 바꿔 말하기${rv.length?" → 복습":""}</span></div>
       <svg class="tl-art" viewBox="0 0 130 70" aria-hidden="true"><g style="mix-blend-mode:multiply"><rect x="50" y="10" width="58" height="34" rx="12" fill="#FFD36E"/><path d="M66 44l-6 12 14-12z" fill="#FFD36E"/><rect x="18" y="28" width="40" height="26" rx="10" fill="#FFFDF8"/></g><g fill="none" stroke="#1F2A3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(-2 -1.6)"><rect x="50" y="10" width="58" height="34" rx="12"/><path d="M66 44l-6 12 14-12"/><rect x="18" y="28" width="40" height="26" rx="10"/><path d="M62 22h34M62 31h24M27 38h22M27 45h14"/></g></svg></div>
-    <div class="eng-b">${engSentence("c",e)}${engSentence("l",e)}${rvh}
+    <div class="eng-b">${engTtsHelp()}${engSentence("c",e)}${engSentence("l",e)}${rvh}
       ${x&&x.lvl?`<p class="small g" style="text-align:center">오늘 영어 끝 · ${x.lvl===2?"제대로 했어요":"했어요"}</p><button class="linkish small" data-eng="undo" style="align-self:center">다시 열기</button>`
         :`<button class="big" data-eng="fin">오늘 영어 끝<small>${(e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70)?"두 문장 다 말했어요 · +"+pts(2)+"점":"+"+pts(1)+"점 · 두 문장을 70% 넘게 말하면 +"+pts(2)+"점"}</small></button>`}
     </div></section>`;
@@ -1026,6 +1027,25 @@ function lockEngOf(d){
     const p=(S.settings&&S.settings.eng)||{c:0}; const it=engItem("c",p.c%ENG_C.length); return {en:it.en, ko:it.ko};
   }catch(e){ return null; }
 }
+
+/* 영어 읽어 주기가 안 될 때: 이유와 바로 고치는 버튼 */
+function engTtsHelp(){
+  const k=S.ttsIssue; if(!k||k==="ok") return "";
+  const msg={mute:"미디어 볼륨이 0이에요. 볼륨 버튼으로 ‘미디어’ 소리를 올려 주세요.",
+    nolang:"휴대폰 음성 엔진에 영어 음성이 없어요. ‘영어 음성 받기’에서 English (United States)를 받아 주세요.",
+    noengine:"휴대폰에 글자 읽어주기(TTS) 엔진이 없거나 꺼져 있어요. 설정에서 ‘Google 음성 인식 및 합성’이나 삼성 TTS를 골라 주세요.",
+    error:"읽어 주는 중에 문제가 생겼어요. 음성 설정에서 엔진과 영어 음성을 확인해 주세요."}[k]||"";
+  return `<div class="eng-tts"><b>소리가 안 나요?</b><p class="small">${msg}</p>${k==="mute"?"":`<div class="row"><button class="btn sm" data-eng="ttsdata">영어 음성 받기</button><button class="btn sm" data-eng="ttsset">음성 설정 열기</button></div>`}</div>`;
+}
+window.onNativeTts = function(code){
+  if(code==="ok"){ if(S.ttsIssue&&S.ttsIssue!=="mute"){ S.ttsIssue=null; render(); } else S.ttsIssue=null; return; }
+  if(S.ttsIssue===code) return;
+  S.ttsIssue=code; toast(code==="mute"?"미디어 볼륨이 꺼져 있어요":"영어 음성을 재생하지 못했어요"); render();
+};
+document.addEventListener("click", ev=>{
+  const b=ev.target.closest('[data-eng="ttsdata"],[data-eng="ttsset"]'); if(!b||!NATIVE) return;
+  try{ if(b.dataset.eng==="ttsdata") NATIVE.installTtsData(); else NATIVE.openTtsSettings(); }catch(e){ toast("설정을 열지 못했어요"); }
+});
 
 /* ---------- 루틴 아이콘: 원·직선 위주, 한 팔레트·한 방향 (토스페이스식 규칙) ---------- */
 const IC_FAM = { /* [옅은 바탕, 별색] — 리소 인쇄 잉크 */
@@ -1170,7 +1190,7 @@ function dayCheckCard(d,full){
     </div>
     ${full?`<div class="m-rep-k dc-k"><div><small>완료</small><b>${done}</b></div><div><small>넘김</small><b>${skip}</b></div><div><small>놓침</small><b>${missed}</b></div><div><small>남음</small><b>${Math.max(0,left-missed)}</b></div></div>`:""}
     ${dcBarsHtml(d)}
-    <p class="small muted">초록 막대 = 목표를 채운 날 · 하루 총점은 100점 · 핵심 미션은 ‘제대로’ 하면 두 배</p>
+    <p class="small muted">초록 막대 = 목표를 채운 날 · 하루 총점은 100점 · 핵심 미션은 ‘조금’ 1배 · ‘제대로’ 3배</p>
   </section>`;
 }
 function historyScoreCard(){
@@ -1325,8 +1345,10 @@ function dayTasks(d){
   }));
   return out.sort((a,b)=>(toMin(a.time)||0)-(toMin(b.time)||0));
 }
-const maxOf = t => t.core ? (t.id==="newday"?1:2) : (t.id==="t_eng"?2:1);
-function score(d){ const v=S.days[d]; if(!v) return 0; return dayTasks(d).reduce((a,t)=>{ const x=v.done[t.id]; return a+Math.min(maxOf(t), x&&x.lvl||0); },0); }
+/* 점수 무게: 핵심 미션은 조금 1 · 제대로 3, 밤 영어는 1 · 2, 나머지 1 */
+const lvlPts = (t,lvl) => !lvl ? 0 : (t.core && t.id!=="newday") ? (lvl>=2?3:1) : t.id==="t_eng" ? (lvl>=2?2:1) : 1;
+const maxOf = t => lvlPts(t,2);
+function score(d){ const v=S.days[d]; if(!v) return 0; return dayTasks(d).reduce((a,t)=>{ const x=v.done[t.id]; return a+lvlPts(t, x&&x.lvl||0); },0); }
 function maxPts(d){ return dayTasks(d).reduce((a,t)=>a+maxOf(t),0); }
 function goal(d){ return Math.ceil(maxPts(d)*MODES[modeOf(S.days[d])].pct); }
 function success(d){ return S.days[d] ? score(d)>=goal(d) : false; }
@@ -1369,7 +1391,7 @@ function nativeSync(){
     Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.lvl) done[k]=x.lvl; });
     const skip=md.skip.slice(); Object.entries(v.done||{}).forEach(([k,x])=>{ if(x&&x.skipped&&!x.lvl) skip.push(k); });
     const snz={}; Object.entries(v.snooze||{}).forEach(([k,t])=>{ if(t>Date.now()) snz[k]=t; });
-    const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, cond:t.cond||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)===2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
+    const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, cond:t.cond||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)>=2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
     NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), maxPts:maxPts(d), lockEng:lockEngOf(d), todoTimes:["12:15","16:45","21:00"]}));
@@ -1436,34 +1458,34 @@ function heroBody(t,v){
   const how=m.how?`<details class="how"><summary>왜 하는지, 어떻게 하는지</summary><p class="small" style="margin-top:8px">${esc(m.why)}</p><ol>${m.how.map(h=>`<li>${esc(h)}</li>`).join("")}</ol>${m.tip?`<p class="tip">${esc(m.tip)}</p>`:""}</details>`:"";
   let top="", main="", extra="";
   if(m.kind==="check"){
-    main=`<button class="big" data-do="${t.id}" data-l="2">제대로 했어요<small>${esc(m.full)} · +${pts(2)}점</small></button>`;
-    extra=`<button class="ghost" data-do="${t.id}" data-l="1">조금만 했어요<small>${esc(m.mini)}</small></button>`;
+    main=`<button class="big" data-do="${t.id}" data-l="2">제대로 했어요<small>${esc(m.full)} · +${pts(3)}점</small></button>`;
+    extra=`<button class="ghost" data-do="${t.id}" data-l="1">조금만 했어요<small>${esc(m.mini)} · +${pts(1)}점</small></button>`;
   } else if(m.kind==="plan"){
     const td=v.todos||[];
     top=`<div class="todo-edit">${td.map(x=>`<div class="todo-row"><button class="star ${x.top?"on":""}" data-todo-top="${x.id}" aria-label="1순위로 표시" aria-pressed="${!!x.top}">★</button><span>${esc(x.text)}</span><button class="btn sm" data-todo-del="${x.id}">삭제</button></div>`).join("")}
       <div class="todo-add"><input type="text" id="todoIn" placeholder="오늘 할 일 (예: 4학년 학부모 문자 보내기)" enterkeyhint="done"><button class="btn primary" data-todo-add="1">추가</button></div></div>`;
-    main=`<button class="big" data-confirm="plan">다 적었어요<small>${td.length?td.length+"개 · ":""}3개 이상+★ +${pts(2)}점 · 1개 이상 +${pts(1)}점</small></button>`;
+    main=`<button class="big" data-confirm="plan">다 적었어요<small>${td.length?td.length+"개 · ":""}3개 이상+★ +${pts(3)}점 · 1개 이상 +${pts(1)}점</small></button>`;
   } else if(m.kind==="breath"){
-    main=`<button class="big" data-breath="180">3분 호흡 시작<small>끝나면 자동으로 +${pts(2)}점</small></button>`;
+    main=`<button class="big" data-breath="180">3분 호흡 시작<small>끝나면 자동으로 +${pts(3)}점</small></button>`;
     extra=`<button class="ghost" data-breath="60">1분만<small>+${pts(1)}점</small></button>`;
   } else if(m.kind==="sleep"){
     top=`<div class="readout"><b>${v.sleepH==null?"–":esc(v.sleepH)}</b><span class="muted">시간 잤어요</span></div>
       <div class="row"><input type="number" id="sleepH" min="0" max="14" step="0.5" inputmode="decimal" value="${v.sleepH==null?"":v.sleepH}" placeholder="직접 입력" style="width:120px">${healthRow()}</div>`;
-    main=`<button class="big" data-confirm="sleep">확인했어요<small>7시간 이상이면 +${pts(2)}점</small></button>`;
+    main=`<button class="big" data-confirm="sleep">확인했어요<small>7시간 이상이면 +${pts(3)}점</small></button>`;
   } else if(m.kind==="steps"){
     top=`<div class="readout"><b>${v.steps==null?"–":Number(v.steps).toLocaleString()}</b><span class="muted">보</span></div>
       <div class="row"><input type="number" id="stepsN" min="0" max="100000" step="100" inputmode="numeric" value="${v.steps==null?"":v.steps}" placeholder="직접 입력" style="width:120px">${healthRow()}</div>`;
-    main=`<button class="big" data-confirm="steps">확인했어요<small>${STEP.full.toLocaleString()}보 +${pts(2)}점 · ${STEP.mini.toLocaleString()}보 +${pts(1)}점</small></button>`;
+    main=`<button class="big" data-confirm="steps">확인했어요<small>${STEP.full.toLocaleString()}보 +${pts(3)}점 · ${STEP.mini.toLocaleString()}보 +${pts(1)}점</small></button>`;
   } else if(m.kind==="journal"){
     const j=v.journal||{};
     const jf=(k,lab)=>`<div class="field"><label for="j-${k}">${lab}</label><div class="jrow"><textarea id="j-${k}" data-j="${k}" rows="1" placeholder="글로 쓰거나 🎙를 눌러 말해 보세요">${esc(j[k])}</textarea><button class="jmic" data-jmic="${k}" aria-label="${lab} 말로 쓰기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div></div>`;
     top=jf("good","오늘 잘한 것 하나")+jf("bad","다르게 하고 싶은 것 하나")+jf("next","내일 가장 먼저 할 일 하나")+`
       <div class="field"><label>오늘 스트레스는 어느 정도였나요?</label><div class="seg">${[1,2,3,4,5].map(n=>`<button data-stress="${n}" aria-pressed="${v.stress===n}"><b>${n}</b><span>${["아주 낮음","낮음","보통","높음","아주 높음"][n-1]}</span></button>`).join("")}</div></div>`;
-    main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 +${pts(1)}점 · 세 줄 +${pts(2)}점</small></button>`;
+    main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 +${pts(1)}점 · 세 줄 +${pts(3)}점</small></button>`;
   } else if(m.kind==="novel"){
     const q=QUOTES[(v.novelty?v.novelty.idx:hashIdx(v.date))%QUOTES.length];
     top=`<blockquote class="quote"><p>${esc(q[0])}</p><cite>${esc(q[1])}</cite></blockquote>${v.novelty&&v.novelty.rerolled?"":`<button class="linkish" id="reroll">다른 글귀로 바꾸기</button>`}`;
-    main=`<button class="big" data-do="novel" data-l="2">생각 한 줄까지 썼어요<small>+${pts(2)}점</small></button>`;
+    main=`<button class="big" data-do="novel" data-l="2">생각 한 줄까지 썼어요<small>+${pts(3)}점</small></button>`;
     extra=`<button class="ghost" data-do="novel" data-l="1">옮겨만 썼어요<small>+${pts(1)}점</small></button>`;
   } else if(m.kind==="newday"){
     const nd=v.newday||{idx:hashIdx(v.date+"n")%NOVELTY.length};
@@ -1524,7 +1546,7 @@ function renderDay(){
   blocks.forEach(b=>{
     const its=tasks.filter(t=>t.block===b.id); if(!its.length) return;
     const dn=its.filter(t=>settled(v,t.id)).length;
-    const M=maxPts(d)||1, earnedRaw=t=>Math.min(maxOf(t),(v.done[t.id]&&v.done[t.id].lvl)||0);
+    const M=maxPts(d)||1, earnedRaw=t=>lvlPts(t,(v.done[t.id]&&v.done[t.id].lvl)||0);
     const bEarn=Math.round(its.reduce((a,t)=>a+earnedRaw(t),0)*100/M), bMax=Math.round(its.reduce((a,t)=>a+maxOf(t),0)*100/M);
     h+=`<section class="glass tl-block" data-blk="${esc(b.id)}"><div class="tl-h"><div class="tl-ht"><h3>${esc(b.title)}</h3><span class="small num">${esc(b.start)}–${esc(b.end)} · ${dn}/${its.length}</span><span class="tl-score"><b class="num">${bEarn}</b>/${bMax}점</span><span class="tl-pg" aria-hidden="true"><i style="width:${Math.round(dn/its.length*100)}%"></i></span></div>${blkArt(b.id)}</div><div class="tl-body">
     ${its.map(t=>{ const x=v.done[t.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":x&&x.skipped?"sk":(f.t&&f.t.id===t.id?"cur":""); const lab=x&&x.lvl===2?"제대로":x&&x.lvl===1?(t.core?"조금":"완료"):x&&x.skipped?"넘김":snoozed(v,t.id)?"미룸":""; return `<button class="tl-row ${c}" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"xs")}<span class="n">${esc(t.title)}${t.core?`<span class="tag">핵심</span>`:""}</span><span class="lab">${(()=>{ const e=earnedRaw(t), pe=Math.round(e*100/M), pm=Math.round(maxOf(t)*100/M);

@@ -59,15 +59,53 @@ class MainActivity : ComponentActivity() {
     /** 음성 인식 결과를 돌려줄 JS 함수 이름 (일정 넣기 = onNativeVoice, 밤 영어 = onNativeEngVoice) */
     private var voiceCb = "onNativeVoice"
 
-    /** 밤 영어: 휴대폰 TTS로 영어 문장 읽기 */
+    /** 밤 영어: 휴대폰 TTS로 영어 문장 읽기.
+     *  기본 음성 엔진에 영어가 없으면 구글 음성 엔진으로 한 번 더 시도하고, 그래도 안 되면 이유를 화면에 알림 */
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var ttsStarting = false
+    private var ttsTriedGoogle = false
     private var ttsPending: Pair<String, Float>? = null
+
+    private fun ttsReport(code: String) = js("window.onNativeTts && window.onNativeTts('$code')")
+
+    private fun ttsInit(engine: String?) {
+        ttsStarting = true
+        val listener = TextToSpeech.OnInitListener { st ->
+            ttsStarting = false
+            val t = tts
+            if (st == TextToSpeech.SUCCESS && t != null) {
+                var r = t.setLanguage(Locale.US)
+                if (r < TextToSpeech.LANG_AVAILABLE) r = t.setLanguage(Locale.ENGLISH)
+                if (r >= TextToSpeech.LANG_AVAILABLE) {
+                    ttsReady = true
+                    t.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                        override fun onStart(id: String?) {}
+                        override fun onDone(id: String?) {}
+                        @Deprecated("old api") override fun onError(id: String?) { runOnUiThread { ttsReport("error") } }
+                    })
+                    ttsPending?.let { speakNow(it.first, it.second) }
+                    ttsPending = null
+                    return@OnInitListener
+                }
+            }
+            // 실패: 구글 음성 엔진이 있으면 그걸로 다시
+            runCatching { tts?.shutdown() }; tts = null; ttsReady = false
+            val google = "com.google.android.tts"
+            val hasGoogle = runCatching { packageManager.getPackageInfo(google, 0); true }.getOrDefault(false)
+            if (!ttsTriedGoogle && hasGoogle && engine != google) { ttsTriedGoogle = true; ttsInit(google) }
+            else { ttsPending = null; ttsReport(if (st == TextToSpeech.SUCCESS) "nolang" else "noengine") }
+        }
+        tts = if (engine == null) TextToSpeech(this, listener) else TextToSpeech(this, listener, engine)
+    }
+
     private fun speakNow(text: String, rate: Float) {
         val t = tts ?: return
-        t.language = Locale.US
+        val am = getSystemService(android.media.AudioManager::class.java)
+        if (am != null && am.getStreamVolume(android.media.AudioManager.STREAM_MUSIC) == 0) ttsReport("mute")
         t.setSpeechRate(rate)
-        t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "eng")
+        val r = t.speak(text, TextToSpeech.QUEUE_FLUSH, null, "eng")
+        if (r != TextToSpeech.SUCCESS) ttsReport("error") else ttsReport("ok")
     }
 
     private val notificationPermissionLauncher =
@@ -136,18 +174,31 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun speak(text: String, rate: Double): Boolean {
             runOnUiThread {
-                if (tts == null) {
-                    ttsPending = text to rate.toFloat()
-                    tts = TextToSpeech(this@MainActivity) { st ->
-                        ttsReady = st == TextToSpeech.SUCCESS
-                        if (ttsReady) ttsPending?.let { speakNow(it.first, it.second) }
-                        else js("window.toastNative && window.toastNative('영어 읽어 주기를 시작하지 못했어요')")
-                        ttsPending = null
-                    }
-                } else if (ttsReady) speakNow(text, rate.toFloat())
-                else ttsPending = text to rate.toFloat()
+                when {
+                    ttsReady && tts != null -> speakNow(text, rate.toFloat())
+                    ttsStarting -> ttsPending = text to rate.toFloat()
+                    else -> { ttsPending = text to rate.toFloat(); ttsTriedGoogle = false; ttsInit(null) }
+                }
             }
             return true
+        }
+
+        /** 글자 읽어주기(TTS) 설정 화면 */
+        @JavascriptInterface
+        fun openTtsSettings() {
+            runOnUiThread {
+                runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
+                    .onFailure { runCatching { startActivity(Intent(Settings.ACTION_SETTINGS)) } }
+            }
+        }
+
+        /** 영어 음성 데이터 받기 화면 */
+        @JavascriptInterface
+        fun installTtsData() {
+            runOnUiThread {
+                runCatching { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
+                    .onFailure { runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) } }
+            }
         }
 
         /** 새 문장(조언·영어) 묶음을 GitHub 릴리스에서 받아 window.onNativeFeed 로 넘김 */
