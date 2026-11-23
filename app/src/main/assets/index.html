@@ -1060,6 +1060,7 @@ const IC = {
   scale:["body",`<rect x="6" y="7" width="28" height="27" rx="7"/><path d="M13.5 18.5a6.5 6.5 0 0 1 13 0" stroke="${W}" stroke-width="2.4" fill="none"/><path d="M20 18.5l3-3.5" stroke="${W}" stroke-width="2.2" stroke-linecap="round"/>`],
   phonebell:["love",`<path d="M20 33S7 25.5 7 15.5a6.5 6.5 0 0 1 13-1.8 6.5 6.5 0 0 1 13 1.8C33 25.5 20 33 20 33z" opacity=".35"/><rect x="13" y="9" width="14" height="22" rx="3.5"/>`],
   chat:["water",`<rect x="4" y="6" width="24" height="17" rx="6"/><path d="M10 23l-3 7 9-7z"/><rect x="16" y="17" width="20" height="14" rx="5" opacity=".55"/><path d="M10 12.5h12M10 17h8" stroke="${W}" stroke-width="2.2" stroke-linecap="round"/>`],
+  think:["night",`<circle cx="22" cy="15" r="11"/><circle cx="11" cy="30" r="3.4" opacity=".75"/><circle cx="6" cy="36" r="2" opacity=".55"/><path d="M17 13h10M17 18.5h6" stroke="${W}" stroke-width="2.3" stroke-linecap="round"/>`],
   dot:["body",`<circle cx="20" cy="20" r="9"/>`]
 };
 const IC_BY_ID = {
@@ -1067,9 +1068,9 @@ const IC_BY_ID = {
   t_nospend_am:"wallet", t_nospend:"wallet", t_jail:"jail", detox:"phoneok", t_walk:"shoe", t_work:"brief", move:"dumbbell",
   t_dinner:"bowl", t_dishes:"dish", t_money:"chart", focus:"film", steps:"feet", t_nosns:"nosns", t_tidy:"broom", t_shower:"shower",
   t_clothes:"shirt", novel:"pen", journal:"note", t_warm:"heart", phone:"box", t_sleep:"moon", t_laundry:"washer", newday:"spark",
-  t_clean:"broom", t_market:"cart", t_mealprep:"lunch", t_thanks:"phonebell", t_week:"cal", t_body:"scale", t_prep:"lunch", breath:"spark", t_eng:"chat"
+  t_clean:"broom", t_market:"cart", t_mealprep:"lunch", t_thanks:"phonebell", t_week:"cal", t_body:"scale", t_prep:"lunch", breath:"spark", t_eng:"chat", t_think:"think"
 };
-const IC_BY_WORD = [[/영어|English/i,"chat"],[/물|수분/,"drop"],[/샤워|목욕/,"shower"],[/운동|헬스|근력/,"dumbbell"],[/걷|산책|러닝/,"shoe"],[/책|독서|필사|공부/,"pen"],[/기록|일기|메모/,"note"],[/잠|취침|눕기/,"moon"],[/청소|정리/,"broom"],[/빨래/,"washer"],[/장보기|마트/,"cart"],[/밥|식사|저녁|점심|아침/,"bowl"],[/돈|가계부|지출/,"wallet"],[/약|영양제|비타민/,"capsule"],[/연락|전화|한마디|감사/,"heart"],[/폰|휴대폰/,"box"],[/일정|계획/,"cal"],[/옷/,"shirt"]];
+const IC_BY_WORD = [[/영어|English/i,"chat"],[/사색|생각 정리|명상/,"think"],[/물|수분/,"drop"],[/샤워|목욕/,"shower"],[/운동|헬스|근력/,"dumbbell"],[/걷|산책|러닝/,"shoe"],[/책|독서|필사|공부/,"pen"],[/기록|일기|메모/,"note"],[/잠|취침|눕기/,"moon"],[/청소|정리/,"broom"],[/빨래/,"washer"],[/장보기|마트/,"cart"],[/밥|식사|저녁|점심|아침/,"bowl"],[/돈|가계부|지출/,"wallet"],[/약|영양제|비타민/,"capsule"],[/연락|전화|한마디|감사/,"heart"],[/폰|휴대폰/,"box"],[/일정|계획/,"cal"],[/옷/,"shirt"]];
 function iconKey(t){ const id=(t&&(t.id||t.core&&t.core.id))||""; if(IC_BY_ID[id]) return IC_BY_ID[id]; const ti=(t&&t.title)||""; for(const [re,k] of IC_BY_WORD) if(re.test(ti)) return k; return "dot"; }
 /* 리소 두 판: 별색으로 면을 찍고, 남색 잉크 선을 살짝 어긋나게 한 번 더 */
 function ricon(t,size){ const k=iconKey(t), [fam,inner]=IC[k]||IC.dot, [bg,fg]=IC_FAM[fam]; return `<span class="ric ${size||""}" style="--ib:${bg};color:${fg}" aria-hidden="true"><svg viewBox="0 0 40 40" fill="currentColor"><g class="f">${inner}</g><g class="o" transform="translate(-1.6 -1.3)">${inner}</g></svg></span>`; }
@@ -1268,14 +1269,14 @@ const DEFAULT_BLOCKS = {
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
     {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", cond:"spend"}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", cond:"nospend"}, T("t_dishes","설거지","19:10")]},
     {id:"side", title:"쉼 · 편집 알바", start:"20:00", end:"22:00", tasks:[{id:"t_money", title:"가계부 정리 · 한 주 돌아보기", time:"19:50", days:[5]}, C("focus","20:00"), C("steps","21:50")]},
-    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:52"), T("t_sleep","불 끄고 눕기","23:00")]}
   ],
   weekend:[
     {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 개고 창문 열기","07:00"), T("t_water","물 한 잔 마시며 크레아틴 먹기","07:03"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
-    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), T("t_eng","밤 영어 10분 · 교실·일상 문장","21:20"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10"), T("t_sleep","불 끄고 눕기","23:00")]}
+    {id:"night", title:"자기 전", start:"21:00", end:"23:30", tasks:[T("t_dishes","설거지","21:00"), T("t_eng","밤 영어 10분 · 교실·일상 문장","21:20"), C("novel","21:40"), C("journal","21:50"), T("t_week","다음 주 일정 훑어보기","22:00"), T("t_warm","여자친구에게 따뜻한 한마디","22:05"), C("phone","22:10"), T("t_think","사색 시간 · 폰 없이 생각 정리","22:12"), T("t_sleep","불 끄고 눕기","23:00")]}
   ]
 };
 const NEWDAY_MISSION = {id:"newday", title:"오늘의 새로운 루틴", pillar:"새로움", kind:"newday", time:"12:50",
@@ -2749,6 +2750,10 @@ async function boot(){
         else { const k=w.tasks.findIndex(t=>t&&t.id==="t_bed"); w.tasks.splice(k<0?0:k+1,0,{id:"t_water", title:"물 한 잔 마시며 크레아틴 먹기", time:type==="weekend"?"07:03":"07:04"}); }
         (S.settings.blocks[type]||[]).forEach(b=>{ b.tasks=(b.tasks||[]).filter(t=>!(t&&(t.id==="t_window"||t.id==="t_creatine"))); }); });
       S.settings.v15=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v16){ /* 2026-11-23 저녁 사색 시간 (폰 상자 바로 뒤) */
+      [["weekday","22:52"],["weekend","22:12"]].forEach(([type,time])=>{ const n=(S.settings.blocks[type]||[]).find(b=>b.id==="night"); if(!n||n.tasks.some(t=>t&&t.id==="t_think")) return;
+        const k=n.tasks.findIndex(t=>t&&(t.core==="phone"||t.id==="phone")); n.tasks.splice(k<0?n.tasks.length:k+1,0,{id:"t_think", title:"사색 시간 · 폰 없이 생각 정리", time}); });
+      S.settings.v16=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
