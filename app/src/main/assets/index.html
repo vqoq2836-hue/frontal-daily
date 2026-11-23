@@ -577,6 +577,14 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .nsp.on{background:var(--grain),var(--co3)!important;background-size:160px!important}
 .nsp-mini{align-self:stretch;border:1.2px dashed rgba(31,42,58,.45);background:transparent;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:700;color:var(--ink);text-align:left}
 .nsp-mini u{text-decoration-color:var(--co);text-decoration-thickness:2px}
+
+/* 기록 칸: 날짜 + 점수 */
+.heat .c{position:relative;display:flex;align-items:center;justify-content:center}
+.heat .c .dn{position:absolute;left:4px;top:2px;font-size:9.5px;font-weight:700;color:var(--faint);line-height:1}
+.heat .c b{font-size:15px;font-weight:850;color:var(--ink);letter-spacing:-.03em;margin-top:6px}
+.heat .c.s0{background:var(--g50);border:1.2px solid var(--ink)}
+.heat .c.s2 .dn,.heat .c.s1 .dn,.heat .c.s0 .dn{color:rgba(31,42,58,.6)}
+.heat .c.future .dn{opacity:.5}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -2523,15 +2531,21 @@ function renderHistory(){
   /* 시작한 주가 맨 윗줄, 아래로 한 주씩 채워짐 (11주가 넘으면 최근 11주) */
   const startMon = weekDates(start||t)[0], recentMon = weekDates(addDays(t,-70))[0];
   const firstMon = startMon > recentMon ? startMon : recentMon;
-  const cells=[]; for(let d=firstMon; cells.length<77; d=addDays(d,1)) cells.push(d);
+  const endSun=addDays(weekDates(t)[0],6); const cells=[]; for(let d=firstMon; d<=endSun && cells.length<77; d=addDays(d,1)) cells.push(d); /* 이번 주까지만 */
   const st=streak();
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">${firstMon===startMon?"시작한 주부터":"최근 11주"}</span><b>기록</b></div></div>
   ${historyScoreCard()}
   <section class="glass card"><div class="heat" role="img" aria-label="최근 11주 성공 기록">
   ${DOW.slice(1).concat(DOW[0]).map(x=>`<div class="small muted" style="text-align:center">${x}</div>`).join("")}
-  ${cells.map(d=>{ let cls="c"; if(d>t) cls+=" future"; else if(d>=start){ const s=score(d), g=goal(d); if(s>=g) cls+=" s2"; else if(s>0) cls+=" s1"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; } if(d===t) cls+=" today"; return `<div class="${cls}" title="${d} · ${score100(d)}점"></div>`; }).join("")}
+  ${cells.map(d=>{ let cls="c", sc=""; const dn=parse(d).getDate();
+      if(d>t) cls+=" future";
+      else if(d>=start && S.days[d]){ const s=score100(d), g=goal100(d); sc=s;
+        if(success(d)) cls+=" s2"; else if(s>=g/2) cls+=" s1"; else if(s>0) cls+=" s0"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; }
+      if(d===t) cls+=" today";
+      return `<div class="${cls}" title="${d} · ${sc===""?"기록 없음":sc+"점"}"><span class="dn">${dn}</span>${sc!==""?`<b class="num">${sc}</b>`:""}</div>`; }).join("")}
   </div>
-  <div class="legend"><span><i style="background:var(--accent)"></i>목표 달성</span><span><i style="background:var(--mini)"></i>일부 체크</span><span><i style="background:var(--amber-soft);border-color:var(--amber)"></i>쉼표(하루 쉼)</span></div>
+  <div class="legend"><span><i style="background:var(--g500)"></i>목표 달성</span><span><i style="background:var(--g200)"></i>목표 절반 이상</span><span><i style="background:var(--g50)"></i>조금</span><span><i style="background:var(--co3);border-color:var(--co)"></i>쉼표(하루 쉼)</span></div>
+  <p class="small muted" style="margin:-4px 0 0">칸 숫자 = 그날 점수(100점 만점)</p>
   <p class="small muted">연속 ${st.n}일 · 시작일 ${esc(start)}</p></section>`;
   // 영역별 30일 체크율
   const last30=Array.from({length:30},(_,i)=>addDays(t,-i)).filter(d=>d>=start);
