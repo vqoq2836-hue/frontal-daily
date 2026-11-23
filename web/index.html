@@ -1227,18 +1227,18 @@ function historyScoreCard(){
 /* ---------- 무지출 데이: 그날 아침에 고름 (주 2회 목표) ---------- */
 function nospendWeek(){
   const mon=weekDates(today())[0]; let chosen=0, kept=0;
-  for(let i=0;i<7;i++){ const d=addDays(mon,i), v=S.days[d]; if(v&&v.nospend){ chosen++; if(d<=today() && typeof moneyDayOut==="function" && moneyDayOut(d)<=0) kept++; } }
+  for(let i=0;i<7;i++){ const d=addDays(mon,i), v=S.days[d]; if(v&&v.nospend){ chosen++; if(d<=today() && typeof moneyDayFree==="function" && moneyDayFree(d)<=0) kept++; } }
   return {chosen, kept};
 }
 function nospendCard(v){
   const w=nospendWeek(), h=new Date().getHours();
   if(v.nospend===true){
-    const spent=typeof moneyDayOut==="function"?moneyDayOut(today()):0;
-    return `<section class="glass card nsp on"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><div><b>💳 오늘은 무지출 데이</b><p class="small ${spent>0?"m-out":"muted"}">${spent>0?`오늘 ${won(spent)}원 나갔어요 · 내일 다시 도전해요`:"아직 0원이에요 · 사 둔 재료로 저녁"} · 이번 주 ${w.chosen}/2</p></div><button class="btn sm" data-nsp="undo">취소</button></div></section>`;
+    const spent=typeof moneyDayFree==="function"?moneyDayFree(today()):0;
+    return `<section class="glass card nsp on"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:nowrap"><div><b>💳 오늘은 무지출 데이</b><p class="small ${spent>0?"m-out":"muted"}">${spent>0?`외식·카페·장보기·쇼핑 ${won(spent)}원 · 내일 다시 도전해요`:"아직 0원이에요 · 사 둔 재료로 저녁"} · 이번 주 ${w.chosen}/2</p></div><button class="btn sm" data-nsp="undo">취소</button></div></section>`;
   }
   if(v.nospend===undefined && h<21){
     return `<section class="glass card nsp"><b>오늘 무지출 데이 할까요?</b>
-      <p class="small muted">이번 주 ${w.chosen}/2일 골랐어요. 고르면 ‘카드 쓰지 않기’와 저녁 ‘사 둔 재료로 집밥’이 오늘 할 일에 들어가요.</p>
+      <p class="small muted">외식·배달·카페·장보기·쇼핑을 하지 않는 날이에요. 공과금·통신비·자동납부·교통은 세지 않아요. 이번 주 ${w.chosen}/2일 골랐어요. 고르면 ‘카드 쓰지 않기’와 저녁 ‘사 둔 재료로 집밥’이 오늘 할 일에 들어가요.</p>
       <div class="row"><button class="btn primary" data-nsp="yes">오늘 할래요</button><button class="btn" data-nsp="no">오늘은 아니에요</button></div></section>`;
   }
   return `<button class="nsp-mini" data-nsp="yes">💳 이번 주 무지출 데이 ${w.chosen}/2 · <u>오늘로 바꾸기</u></button>`;
@@ -2296,8 +2296,6 @@ function moneyBudgetCard(ym){
       <div class="m-bud">
         <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="small">${j.mo}월 생활비 ${won(j.b)}원 중</span><span class="small"><b class="${j.left<0?"m-out":""}">${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b> · ${j.pct}%</span></div>
         <div class="m-bbar sm" title="세로 선 = 오늘까지 써도 되는 만큼" aria-hidden="true"><i style="width:${Math.min(100,j.pct)}%"></i><b style="left:${j.expPct}%"></b></div>
-        <p class="small">오늘 <b>${j.todayCap>0?won(j.todayCap):0}원</b>까지 · 쓴 돈 ${won(j.usedToday)}원${j.todayCap>0?` · <span class="${j.todayLeft<0?"m-out":""}">${j.todayLeft>=0?won(j.todayLeft)+"원 남음":won(-j.todayLeft)+"원 넘음"}</span>`:""}</p>
-        ${j.forecast!=null?`<p class="small muted">이 속도면 이번 달 약 ${won(j.forecast)}원 ${j.forecast<=j.b?"· 예산 안":"· 예산 "+won(j.forecast-j.b)+"원 초과"}</p>`:""}
       </div>
       <button class="linkish small" data-m="budget">생활비 바꾸기</button></section>`;
   }
@@ -2307,8 +2305,6 @@ function moneyBudgetCard(ym){
     <div class="m-bbar" aria-hidden="true"><i style="width:${Math.min(100,j.pct)}%"></i>${j.isCur?`<b style="left:${j.expPct}%"></b>`:""}</div>
     ${j.isCur?`<p class="small muted" style="margin-top:-4px">세로 선 = 오늘(${j.dom}일)까지 써도 되는 만큼 · ${won(Math.round(j.b*j.dom/j.dim))}원</p>`:""}`;
   if(j.isCur){
-    h+=`<div class="m-perday"><span><b>오늘 ${j.todayCap>0?won(j.todayCap):0}원</b>까지 쓸 수 있어요</span><span class="small muted">남은 ${j.dLeft}일로 나눈 금액 · 오늘 쓴 돈 ${won(j.usedToday)}원${j.todayCap>0?` · <em class="tl ${j.todayLeft<0?"m-out":""}">${j.todayLeft>=0?won(j.todayLeft)+"원 남음":won(-j.todayLeft)+"원 넘음"}</em>`:""}</span></div>`;
-    if(j.forecast!=null) h+=`<p class="small">지금 속도면 이번 달 약 <b>${won(j.forecast)}원</b> ${j.forecast<=j.b?"· 예산 안에 들어와요":"· 예산을 "+won(j.forecast-j.b)+"원 넘어요"}</p>`;
   } else {
     h+=`<p class="small">${j.left>=0?`예산 안에서 썼어요 · ${won(j.left)}원 남겼어요`:`예산보다 ${won(-j.left)}원 더 썼어요`}</p>`;
   }
@@ -2322,11 +2318,11 @@ function moneyCalendar(ym,st){
   let cells=""; for(let i=0;i<lead;i++) cells+=`<div class="mc empty"></div>`;
   for(let d=1; d<=days; d++){
     const ds=ym+"-"+pad(d), x=st.byDay[ds], isT=ds===today(), isS=ds===M.sel;
-    const nospend = ds<=today() && ds>=(M.meta.trackFrom||"9999") && moneyDayOut(ds)<=0;
+    const nospend = ds<=today() && ds>=(M.meta.trackFrom||"9999") && moneyDayFree(ds)<=0;
     const ov=x&&x.out||0, heat=nospend?"zero":ov>=50000?"h3":ov>=15000?"h2":ov>0?"h1":"";
     cells+=`<button class="mc ${heat} ${isS?"sel":""} ${isT?"today":""}" data-m="day" data-a="${ds}"><span class="n">${d}</span>${x&&x.inc?`<span class="m-in">+${won(x.inc)}</span>`:""}${x&&x.out?`<span class="m-out">-${won(x.out)}</span>`:""}${nospend?`<i class="m-zero" title="무지출"></i>`:""}</button>`;
   }
-  let h=`<section class="glass card m-cal"><div class="m-dow">${"월화수목금토일".split("").map(c=>`<span>${c}</span>`).join("")}</div><div class="m-grid">${cells}</div><p class="small muted m-zl"><i class="m-zero"></i> 지출 0원인 날(무지출)</p></section>`;
+  let h=`<section class="glass card m-cal"><div class="m-dow">${"월화수목금토일".split("").map(c=>`<span>${c}</span>`).join("")}</div><div class="m-grid">${cells}</div><p class="small muted m-zl"><i class="m-zero"></i> 무지출 · 외식·카페·장보기·쇼핑이 0원인 날</p></section>`;
   const sel=M.sel&&ymOf(M.sel)===ym?M.sel:null;
   const list=sel?(S.money.months[ym]||{tx:[]}).tx.filter(t=>t.date===sel).sort((a,b)=>b.ts-a.ts):[];
   const sd=sel?parse(sel):null;
@@ -2454,14 +2450,14 @@ async function moneyHandle(b){
 }
 /* 금요일 '가계부 정리' 시간에 지금 화면에 보여 줄 한 주 요약 */
 function moneyZeroDays(mon){ /* 이번 주(오늘까지) 지출 0원인 날 */
-  let n=0; for(let i=0;i<7;i++){ const d=addDays(mon,i); if(d>today()||d<(S.money.meta.trackFrom||"9999")) continue; if(moneyDayOut(d)<=0) n++; } return n;
+  let n=0; for(let i=0;i<7;i++){ const d=addDays(mon,i); if(d>today()||d<(S.money.meta.trackFrom||"9999")) continue; if(moneyDayFree(d)<=0) n++; } return n;
 }
 function moneyWeekCard(){
   const mon=weekDates(today())[0], v=moneyWeekOut(mon), pv=moneyWeekOut(addDays(mon,-7));
   const st=moneyMonthStats(ymOf(today())); const top=Object.entries(st.byCat).sort((a,b)=>b[1]-a[1]).slice(0,3);
   return `<section class="glass card"><div class="row" style="justify-content:space-between"><span class="eyebrow">이번 주 돈 돌아보기</span><a class="small" href="#money">가계부 열기 ›</a></div>
     <p style="margin:6px 0 4px">이번 주 지출 <b>${won(v)}원</b> · 지난주 ${won(pv)}원</p>
-    ${(()=>{ const j=moneyBudgetJudge(ymOf(today())); return j?`<p class="small" style="margin:0 0 4px">생활비 ${won(j.b)}원 중 <b>${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b> · 오늘 ${won(Math.max(0,j.todayCap))}원까지</p>`:""; })()}
+    ${(()=>{ const j=moneyBudgetJudge(ymOf(today())); return j?`<p class="small" style="margin:0 0 4px">생활비 ${won(j.b)}원 중 <b>${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b></p>`:""; })()}
     <p class="small" style="margin:0 0 4px">무지출 데이 <b>${moneyZeroDays(mon)}일</b> / 목표 2일 ${moneyZeroDays(mon)>=2?"· 달성 🎉":""}</p>
     ${top.length?`<p class="small muted" style="margin:0">이번 달 많이 쓴 곳: ${top.map(([id,x])=>catOf(id).icon+" "+catOf(id).name+" "+won(x)).join(" · ")}</p>`:""}
     <p class="small muted" style="margin:6px 0 0">반성 한 줄: 다음 주에 줄일 항목 하나만 정해 ‘저녁 3줄 기록’에 적어 보세요.</p></section>`;
@@ -2471,6 +2467,11 @@ function moneyWeekCard(){
 /* ---------- 한 달 결산: 아쉬운 점·잘한 점·다음 달 한 가지 ---------- */
 function josa(w,a,b){ const ch=String(w||"").replace(/[^가-힣]/g,"").slice(-1); if(!ch) return w+a; return w+(((ch.charCodeAt(0)-0xAC00)%28)?a:b); }
 function moneyIsLiving(t){ return t.type==="out" && !t.excluded && t.cat!=="transfer"; }
+/* 무지출 데이는 '선택 지출'만 봄: 외식·카페·장보기·쇼핑·문화·모임·기타.
+   공과금·통신·교통·의료·교육·이체, 자동납부는 피할 수 없는 돈이라 빼요 */
+const FREE_CATS=new Set(["food","cafe","mart","shop","culture","social","etc"]);
+function moneyIsFree(t){ return moneyIsLiving(t) && FREE_CATS.has(t.cat||"etc") && !/자동납부/.test(String(t.body||"")+String(t.merchant||"")); }
+function moneyDayFree(d){ const m=S.money.months[ymOf(d)]; return m?m.tx.filter(t=>moneyIsFree(t)&&t.date===d).reduce((s,t)=>s+t.amount,0):0; }
 function moneyDayOut(d){ const m=S.money.months[ymOf(d)]; return m?m.tx.filter(t=>moneyIsLiving(t)&&t.date===d).reduce((s,t)=>s+t.amount,0):0; }
 function moneyReport(ym){
   const M=S.money, tx=(M.months[ym]||{tx:[]}).tx, liv=tx.filter(t=>moneyIsLiving(t)&&t.amount>0);
@@ -2481,7 +2482,7 @@ function moneyReport(ym){
   const byCat={}; liv.forEach(t=>byCat[t.cat]=(byCat[t.cat]||0)+t.amount);
   const prevYm=ymAdd(ym,-1), prev=M.months[prevYm]&&M.months[prevYm].tx.some(t=>t.type==="out")?M.months[prevYm].tx.filter(t=>moneyIsLiving(t)&&t.amount>0):null;
   const prevOut=prev?prev.reduce((s,t)=>s+t.amount,0):null, prevCat={}; if(prev) prev.forEach(t=>prevCat[t.cat]=(prevCat[t.cat]||0)+t.amount);
-  let days=0, zero=0; for(let d=from; d<=end; d=addDays(d,1)){ days++; if(moneyDayOut(d)<=0) zero++; }
+  let days=0, zero=0; for(let d=from; d<=end; d=addDays(d,1)){ days++; if(moneyDayFree(d)<=0) zero++; }
   const weeks=Math.max(1,Math.round(days/7)), zeroGoal=weeks*2;
   const small=liv.filter(t=>t.amount<10000), cafe=liv.filter(t=>t.cat==="cafe"), mart=liv.filter(t=>t.cat==="mart");
   const late=liv.filter(t=>{ const h=new Date(t.ts).getHours(); return h>=22||h<4; });
