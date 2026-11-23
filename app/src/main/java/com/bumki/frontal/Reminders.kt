@@ -301,7 +301,7 @@ object Reminders {
         val title = m.optString("title", "미션")
         val head = if (nag == 0) "지금: $title" else "아직이에요 ($nag/$MAX_NAGS) · $title 했어요?"
         val body = if (nag == 0) m.optString("cue", "") + " → " + title
-        else "작게라도 하면 1점이에요. " + m.optString("mini", "")
+        else "작게라도 하면 점수가 올라가요. " + m.optString("mini", "")
 
         val open = PendingIntent.getActivity(
             ctx, notificationId(id),

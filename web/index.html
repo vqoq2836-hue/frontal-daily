@@ -932,7 +932,7 @@ function engCard(){
       <svg class="tl-art" viewBox="0 0 130 70" aria-hidden="true"><g style="mix-blend-mode:multiply"><rect x="50" y="10" width="58" height="34" rx="12" fill="#FFD36E"/><path d="M66 44l-6 12 14-12z" fill="#FFD36E"/><rect x="18" y="28" width="40" height="26" rx="10" fill="#FFFDF8"/></g><g fill="none" stroke="#1F2A3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(-2 -1.6)"><rect x="50" y="10" width="58" height="34" rx="12"/><path d="M66 44l-6 12 14-12"/><rect x="18" y="28" width="40" height="26" rx="10"/><path d="M62 22h34M62 31h24M27 38h22M27 45h14"/></g></svg></div>
     <div class="eng-b">${engSentence("c",e)}${engSentence("l",e)}${rvh}
       ${x&&x.lvl?`<p class="small g" style="text-align:center">오늘 영어 끝 · ${x.lvl===2?"제대로 했어요":"했어요"}</p><button class="linkish small" data-eng="undo" style="align-self:center">다시 열기</button>`
-        :`<button class="big" data-eng="fin">오늘 영어 끝<small>${(e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70)?"두 문장 다 말했어요 · 2점":"1점 · 두 문장을 70% 넘게 말하면 2점"}</small></button>`}
+        :`<button class="big" data-eng="fin">오늘 영어 끝<small>${(e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70)?"두 문장 다 말했어요 · +"+pts(2)+"점":"+"+pts(1)+"점 · 두 문장을 70% 넘게 말하면 +"+pts(2)+"점"}</small></button>`}
     </div></section>`;
 }
 function engSpeak(text,rate){
@@ -958,7 +958,7 @@ document.addEventListener("click", ev=>{
     const full=e.said.c&&e.said.c.pct>=70&&e.said.l&&e.said.l.pct>=70;
     v.done.t_eng={lvl:full?2:1, at:Date.now()}; e.fin=true;
     if(!e.adv && e.src!=="feed"){ const p=S.settings.eng||{c:0,l:0}; S.settings.eng={c:p.c+1,l:p.l+1}; e.adv=true; try{ setDoc("meta/settings",S.settings); }catch(x){} }
-    saveDay(d); try{ nativeSync(); }catch(x){} toast(full?"오늘 영어 제대로 했어요 · 2점":"오늘 영어 했어요 · 1점"); render(); return; }
+    saveDay(d); try{ nativeSync(); }catch(x){} toast(full?"오늘 영어 제대로 했어요 · +"+pts(2)+"점":"오늘 영어 했어요 · +"+pts(1)+"점"); render(); return; }
   if(a==="undo"){ delete v.done.t_eng; saveDay(d); try{ nativeSync(); }catch(x){} render(); return; }
 });
 function engStats(){
@@ -1122,34 +1122,34 @@ function treeCard(compact){
 /* ---------- 오늘 하루 체크: 점수로 하루를 마무리 (66일 나무 대신) ---------- */
 function dcBars(end){
   const out=[]; for(let i=6;i>=0;i--){ const d=addDays(end,-i), has=!!S.days[d] && d>=(S.settings.startDate||d);
-    const mx=has?maxPts(d):0, s=has?score(d):0, ok=has&&success(d);
-    out.push({d, s, mx, ok, pct:mx?Math.round(s/mx*100):0, has}); }
+    const s=has?score100(d):0, ok=has&&success(d);
+    out.push({d, s, ok, pct:s, has}); }
   return out;
 }
 function dcBarsHtml(end){
   return `<div class="dc-bars">${dcBars(end).map(x=>{ const dd=parse(x.d); return `<div class="dc-b ${x.d===today()?"today":""}"><span class="v num">${x.has?x.s:""}</span><i class="${x.ok?"ok":x.s?"part":""}" style="height:${Math.max(x.has?4:0,x.pct)}%"></i><span class="l">${"일월화수목금토"[dd.getDay()]}</span></div>`; }).join("")}</div>`;
 }
 function dayCheckCard(d,full){
-  const v=day(d), s=score(d), g=goal(d), mx=maxPts(d), tasks=dayTasks(d);
+  const v=day(d), s=score100(d), g=goal100(d), ok=success(d), tasks=dayTasks(d);
   const done=tasks.filter(t=>v.done[t.id]&&v.done[t.id].lvl).length, skip=tasks.filter(t=>v.done[t.id]&&v.done[t.id].skipped&&!v.done[t.id].lvl).length;
   const missed=missedTasks(d).length, left=tasks.length-done-skip;
-  const R=34, C=2*Math.PI*R, p=mx?s/mx:0, gp=mx?g/mx:0, ok=s>=g;
+  const R=34, C=2*Math.PI*R, p=s/100, gp=g/100;
   const ga=gp*2*Math.PI-Math.PI/2, gx=40+R*Math.cos(ga), gy=40+R*Math.sin(ga);
   return `<section class="glass card dc ${ok?"ok":""}">
     <div class="dc-top">
       <svg class="dc-ring" viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="${R}" class="tr"/><circle cx="40" cy="40" r="${R}" class="pg" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/><circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="3.6" class="gt"/><text x="40" y="44" text-anchor="middle" class="num">${s}</text></svg>
-      <div class="dc-txt"><span class="eyebrow">오늘 하루 점수</span><b>${s}점 <small>/ 목표 ${g}점</small></b>
-        <span class="small ${ok?"g":""}">${ok?"오늘 목표 달성! 이대로 마무리해요":`목표까지 ${g-s}점 · 최대 ${mx}점`}</span></div>
+      <div class="dc-txt"><span class="eyebrow">오늘 하루 점수</span><b>${s}점 <small>/ 100점 · 목표 ${g}점</small></b>
+        <span class="small ${ok?"g":""}">${ok?"오늘 목표 달성! 이대로 마무리해요":`목표까지 ${Math.max(1,g-s)}점`}</span></div>
     </div>
     ${full?`<div class="m-rep-k dc-k"><div><small>완료</small><b>${done}</b></div><div><small>넘김</small><b>${skip}</b></div><div><small>놓침</small><b>${missed}</b></div><div><small>남음</small><b>${Math.max(0,left-missed)}</b></div></div>`:""}
     ${dcBarsHtml(d)}
-    <p class="small muted">초록 막대 = 목표를 채운 날 · 핵심 미션은 ‘제대로’ 하면 2점</p>
+    <p class="small muted">초록 막대 = 목표를 채운 날 · 하루 총점은 100점 · 핵심 미션은 ‘제대로’ 하면 두 배</p>
   </section>`;
 }
 function historyScoreCard(){
   const t=today(), bars=dcBars(t), has=bars.filter(x=>x.has&&x.d<=t);
   const avg=has.length?Math.round(has.reduce((a,x)=>a+x.pct,0)/has.length):0, okN=has.filter(x=>x.ok).length;
-  const st=streak(); let best=0; Object.keys(S.days).forEach(d=>{ if(d>=(S.settings.startDate||d)&&d<=t){ const s=score(d); if(s>best) best=s; } });
+  const st=streak(); let best=0; Object.keys(S.days).forEach(d=>{ if(d>=(S.settings.startDate||d)&&d<=t){ const s=score100(d); if(s>best) best=s; } });
   return `<section class="glass card dc"><span class="eyebrow">최근 7일 하루 점수</span>
     <div class="m-rep-k"><div><small>평균 달성률</small><b>${avg}%</b></div><div><small>목표 채운 날</small><b>${okN}/${has.length||0}일</b></div><div><small>연속</small><b>${st.n}일</b></div></div>
     ${dcBarsHtml(t)}<p class="small muted">최고 점수 ${best}점 · 하루 마지막에 ‘오늘 하루 체크’에서 점수를 확인해요</p></section>`;
@@ -1298,11 +1298,15 @@ function dayTasks(d){
   }));
   return out.sort((a,b)=>(toMin(a.time)||0)-(toMin(b.time)||0));
 }
-const maxOf = t => t.core ? (t.id==="newday"?1:2) : 1;
+const maxOf = t => t.core ? (t.id==="newday"?1:2) : (t.id==="t_eng"?2:1);
 function score(d){ const v=S.days[d]; if(!v) return 0; return dayTasks(d).reduce((a,t)=>{ const x=v.done[t.id]; return a+Math.min(maxOf(t), x&&x.lvl||0); },0); }
 function maxPts(d){ return dayTasks(d).reduce((a,t)=>a+maxOf(t),0); }
 function goal(d){ return Math.ceil(maxPts(d)*MODES[modeOf(S.days[d])].pct); }
 function success(d){ return S.days[d] ? score(d)>=goal(d) : false; }
+/* 화면에 보이는 점수는 하루 총점 100점 기준 */
+function score100(d){ const m=maxPts(d); return m?Math.round(score(d)*100/m):0; }
+function goal100(d){ const m=maxPts(d); return m?Math.round(goal(d)*100/m):0; }
+function pts(n,d){ const m=maxPts(d||today()); return m?Math.max(1,Math.round(n*100/m)):0; }
 function settled(v,id){ const x=v.done[id]; return !!(x&&(x.lvl>0||x.skipped)); }
 function snoozed(v,id){ return v.snooze&&v.snooze[id]&&v.snooze[id]>Date.now(); }
 function currentBlockIndex(blocks){
@@ -1401,43 +1405,43 @@ function heroBody(t,v){
   const snz=`<button class="ghost" data-snooze="${t.id}">${SNOOZE_MIN}분 뒤<small>다시 알림</small></button>`;
   const skp=`<button class="ghost" data-skip="${t.id}">넘기기<small>오늘은 패스</small></button>`;
   const undo=(lvl||(x&&x.skipped))?`<button class="ghost wide" data-undo="${t.id}">체크 취소</button>`:"";
-  if(!m) return `<button class="big" data-do="${t.id}" data-l="1">했어요<small>1점</small></button><div class="acts">${snz}${skp}<button class="ghost" data-goto="day">하루 보기<small>전체 일정</small></button>${undo}</div>`;
+  if(!m) return `<button class="big" data-do="${t.id}" data-l="1">했어요<small>+${pts(1)}점</small></button><div class="acts">${snz}${skp}<button class="ghost" data-goto="day">하루 보기<small>전체 일정</small></button>${undo}</div>`;
   const how=m.how?`<details class="how"><summary>왜 하는지, 어떻게 하는지</summary><p class="small" style="margin-top:8px">${esc(m.why)}</p><ol>${m.how.map(h=>`<li>${esc(h)}</li>`).join("")}</ol>${m.tip?`<p class="tip">${esc(m.tip)}</p>`:""}</details>`:"";
   let top="", main="", extra="";
   if(m.kind==="check"){
-    main=`<button class="big" data-do="${t.id}" data-l="2">제대로 했어요<small>${esc(m.full)} · 2점</small></button>`;
+    main=`<button class="big" data-do="${t.id}" data-l="2">제대로 했어요<small>${esc(m.full)} · +${pts(2)}점</small></button>`;
     extra=`<button class="ghost" data-do="${t.id}" data-l="1">조금만 했어요<small>${esc(m.mini)}</small></button>`;
   } else if(m.kind==="plan"){
     const td=v.todos||[];
     top=`<div class="todo-edit">${td.map(x=>`<div class="todo-row"><button class="star ${x.top?"on":""}" data-todo-top="${x.id}" aria-label="1순위로 표시" aria-pressed="${!!x.top}">★</button><span>${esc(x.text)}</span><button class="btn sm" data-todo-del="${x.id}">삭제</button></div>`).join("")}
       <div class="todo-add"><input type="text" id="todoIn" placeholder="오늘 할 일 (예: 4학년 학부모 문자 보내기)" enterkeyhint="done"><button class="btn primary" data-todo-add="1">추가</button></div></div>`;
-    main=`<button class="big" data-confirm="plan">다 적었어요<small>${td.length?td.length+"개 · ":""}3개 이상+★ 2점 · 1개 이상 1점</small></button>`;
+    main=`<button class="big" data-confirm="plan">다 적었어요<small>${td.length?td.length+"개 · ":""}3개 이상+★ +${pts(2)}점 · 1개 이상 +${pts(1)}점</small></button>`;
   } else if(m.kind==="breath"){
-    main=`<button class="big" data-breath="180">3분 호흡 시작<small>끝나면 자동으로 2점</small></button>`;
-    extra=`<button class="ghost" data-breath="60">1분만<small>1점</small></button>`;
+    main=`<button class="big" data-breath="180">3분 호흡 시작<small>끝나면 자동으로 +${pts(2)}점</small></button>`;
+    extra=`<button class="ghost" data-breath="60">1분만<small>+${pts(1)}점</small></button>`;
   } else if(m.kind==="sleep"){
     top=`<div class="readout"><b>${v.sleepH==null?"–":esc(v.sleepH)}</b><span class="muted">시간 잤어요</span></div>
       <div class="row"><input type="number" id="sleepH" min="0" max="14" step="0.5" inputmode="decimal" value="${v.sleepH==null?"":v.sleepH}" placeholder="직접 입력" style="width:120px">${healthRow()}</div>`;
-    main=`<button class="big" data-confirm="sleep">확인했어요<small>7시간 이상이면 2점</small></button>`;
+    main=`<button class="big" data-confirm="sleep">확인했어요<small>7시간 이상이면 +${pts(2)}점</small></button>`;
   } else if(m.kind==="steps"){
     top=`<div class="readout"><b>${v.steps==null?"–":Number(v.steps).toLocaleString()}</b><span class="muted">보</span></div>
       <div class="row"><input type="number" id="stepsN" min="0" max="100000" step="100" inputmode="numeric" value="${v.steps==null?"":v.steps}" placeholder="직접 입력" style="width:120px">${healthRow()}</div>`;
-    main=`<button class="big" data-confirm="steps">확인했어요<small>${STEP.full.toLocaleString()}보 2점 · ${STEP.mini.toLocaleString()}보 1점</small></button>`;
+    main=`<button class="big" data-confirm="steps">확인했어요<small>${STEP.full.toLocaleString()}보 +${pts(2)}점 · ${STEP.mini.toLocaleString()}보 +${pts(1)}점</small></button>`;
   } else if(m.kind==="journal"){
     const j=v.journal||{};
     const jf=(k,lab)=>`<div class="field"><label for="j-${k}">${lab}</label><div class="jrow"><textarea id="j-${k}" data-j="${k}" rows="1" placeholder="글로 쓰거나 🎙를 눌러 말해 보세요">${esc(j[k])}</textarea><button class="jmic" data-jmic="${k}" aria-label="${lab} 말로 쓰기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></button></div></div>`;
     top=jf("good","오늘 잘한 것 하나")+jf("bad","다르게 하고 싶은 것 하나")+jf("next","내일 가장 먼저 할 일 하나")+`
       <div class="field"><label>오늘 스트레스는 어느 정도였나요?</label><div class="seg">${[1,2,3,4,5].map(n=>`<button data-stress="${n}" aria-pressed="${v.stress===n}"><b>${n}</b><span>${["아주 낮음","낮음","보통","높음","아주 높음"][n-1]}</span></button>`).join("")}</div></div>`;
-    main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 1점 · 세 줄 2점</small></button>`;
+    main=`<button class="big" data-confirm="journal">다 썼어요<small>한 줄 +${pts(1)}점 · 세 줄 +${pts(2)}점</small></button>`;
   } else if(m.kind==="novel"){
     const q=QUOTES[(v.novelty?v.novelty.idx:hashIdx(v.date))%QUOTES.length];
     top=`<blockquote class="quote"><p>${esc(q[0])}</p><cite>${esc(q[1])}</cite></blockquote>${v.novelty&&v.novelty.rerolled?"":`<button class="linkish" id="reroll">다른 글귀로 바꾸기</button>`}`;
-    main=`<button class="big" data-do="novel" data-l="2">생각 한 줄까지 썼어요<small>2점</small></button>`;
-    extra=`<button class="ghost" data-do="novel" data-l="1">옮겨만 썼어요<small>1점</small></button>`;
+    main=`<button class="big" data-do="novel" data-l="2">생각 한 줄까지 썼어요<small>+${pts(2)}점</small></button>`;
+    extra=`<button class="ghost" data-do="novel" data-l="1">옮겨만 썼어요<small>+${pts(1)}점</small></button>`;
   } else if(m.kind==="newday"){
     const nd=v.newday||{idx:hashIdx(v.date+"n")%NOVELTY.length};
     top=`<p class="quote" style="font-size:18px;font-weight:600;line-height:1.5">${esc(NOVELTY[nd.idx%NOVELTY.length])}</p>${nd.rerolled?"":`<button class="linkish" id="rerollNew">다른 제안으로 바꾸기</button>`}`;
-    main=`<button class="big" data-do="newday" data-l="1">해 봤어요<small>1점</small></button>`;
+    main=`<button class="big" data-do="newday" data-l="1">해 봤어요<small>+${pts(1)}점</small></button>`;
   }
   const acts=[extra,snz,skp].filter(Boolean);
   return `${top}${main}<div class="acts">${acts.join("")}${undo}</div>${how}`;
@@ -1469,7 +1473,7 @@ function renderNow(){
       ${f.state==="pick"?`<button class="linkish" data-unpick="1">지금 할 일로 돌아가기</button>`:""}
     </section>`;
   } else {
-    h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${s}<span style="font-size:24px">/${g}점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
+    h+=`<section class="hero glass done-card"><span class="state is-next"><i></i>오늘 루틴 끝</span><div class="hero-time">${score100(d)}<span style="font-size:24px">/100점</span></div><p class="hero-title" style="font-size:22px">${s>=g?"오늘도 해냈어요. 푹 자는 것까지가 루틴이에요.":"오늘은 여기까지. 내일 아침 첫 알림부터 다시 시작해요."}</p></section>`;
   }
   if(f.t && f.t.id==="t_eng") h+=engCard();
   h+=nospendCard(v);
@@ -1610,7 +1614,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.todoToggle){ const x=(v.todos||[]).find(y=>y.id===b.dataset.todoToggle); if(x){ x.done=!x.done; saveDay(d); render(); const left=v.todos.filter(y=>!y.done).length; toast(x.done?(left?"좋아요 · 남은 일 "+left+"개":"오늘 적은 일을 모두 끝냈어요!"):"다시 남은 일로 돌렸어요"); } return; }
   if(b.dataset.stress){ v.stress=Number(b.dataset.stress); saveDay(d); render(); return; }
   if(b.id==="sheetBtn"){ S.sheet=!S.sheet; render(); return; }
-  if(b.dataset.mode){ v.mode=b.dataset.mode; delete v.busy; saveDay(d); render(); toast(MODES[v.mode].label+" · 오늘 목표 "+goal(d)+"점"); return; }
+  if(b.dataset.mode){ v.mode=b.dataset.mode; delete v.busy; saveDay(d); render(); toast(MODES[v.mode].label+" · 오늘 목표 "+goal100(d)+"점 (100점 만점)"); return; }
   if(b.dataset.daytype){ v.dayType=b.dataset.daytype; S.pick=null; saveDay(d); render(); toast(DAYTYPES[v.dayType].label+" 루틴으로 바꿨어요"); return; }
   if(b.id==="reroll"){ v.novelty={idx:((v.novelty?v.novelty.idx:hashIdx(d))+17)%QUOTES.length, rerolled:true}; saveDay(d); render(); return; }
   if(b.id==="rerollNew"){ const cur=v.newday?v.newday.idx:hashIdx(d+"n"); v.newday={idx:(cur+11)%NOVELTY.length, rerolled:true}; saveDay(d); render(); return; }
@@ -2516,7 +2520,7 @@ function renderHistory(){
   ${historyScoreCard()}
   <section class="glass card"><div class="heat" role="img" aria-label="최근 11주 성공 기록">
   ${DOW.slice(1).concat(DOW[0]).map(x=>`<div class="small muted" style="text-align:center">${x}</div>`).join("")}
-  ${cells.map(d=>{ let cls="c"; if(d>t) cls+=" future"; else if(d>=start){ const s=score(d), g=goal(d); if(s>=g) cls+=" s2"; else if(s>0) cls+=" s1"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; } if(d===t) cls+=" today"; return `<div class="${cls}" title="${d} · ${score(d)}점"></div>`; }).join("")}
+  ${cells.map(d=>{ let cls="c"; if(d>t) cls+=" future"; else if(d>=start){ const s=score(d), g=goal(d); if(s>=g) cls+=" s2"; else if(s>0) cls+=" s1"; else if(d<t && success(addDays(d,-1)) && success(addDays(d,1))) cls+=" rest"; } if(d===t) cls+=" today"; return `<div class="${cls}" title="${d} · ${score100(d)}점"></div>`; }).join("")}
   </div>
   <div class="legend"><span><i style="background:var(--accent)"></i>목표 달성</span><span><i style="background:var(--mini)"></i>일부 체크</span><span><i style="background:var(--amber-soft);border-color:var(--amber)"></i>쉼표(하루 쉼)</span></div>
   <p class="small muted">연속 ${st.n}일 · 시작일 ${esc(start)}</p></section>`;

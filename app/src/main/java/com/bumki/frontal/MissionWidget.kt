@@ -77,7 +77,7 @@ class MissionWidget : AppWidgetProvider() {
             val base = Reminders.notificationId(id) * 4
             if (two) {
                 rv.setViewVisibility(R.id.w_mini, View.VISIBLE)
-                rv.setTextViewText(R.id.w_full, "제대로 2점")
+                rv.setTextViewText(R.id.w_full, "제대로 했어요")
                 rv.setOnClickPendingIntent(R.id.w_mini, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 1, base + 101))
                 rv.setOnClickPendingIntent(R.id.w_full, Reminders.actionIntent(ctx, Reminders.ACTION_DONE, id, 2, base + 102))
             } else {
