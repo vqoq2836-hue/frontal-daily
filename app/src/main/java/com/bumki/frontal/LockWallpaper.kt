@@ -257,7 +257,8 @@ object LockWallpaper {
 
         val left = list.filter { !it.optBoolean("done") }.sortedBy { if (it.optBoolean("top")) 0 else 1 }
         val done = list.filter { it.optBoolean("done") }
-        val all = left + done
+        val all = left   // 다 한 일은 빼고, 남은 일만 위에서부터
+        val allDone = list.isNotEmpty() && left.isEmpty()
 
         // ---- 자리 계산: 영어 딱지 아래 끝이 지문 센서(화면 약 78% 아래) 위에 오도록, 넘치면 할 일 줄 수를 줄임
         val bandTop = H * 0.283f; val bandH = 10f * u
@@ -270,7 +271,7 @@ object LockWallpaper {
         val koLayout = layoutOf(ex.engKo, tp(3.0f * u, MUTED, bold = false, align = Paint.Align.LEFT), boxW, 1, u)
         val limit = H * 0.775f
         var n = minOf(4, all.size)
-        fun cardBottom(k: Int, more: Int) = if (list.isEmpty()) cardTop + 20f * u else cardTop + 12f * u + step * (k - 1) + (if (more > 0) 7f * u else 4.5f * u)
+        fun cardBottom(k: Int, more: Int) = if (list.isEmpty() || allDone) cardTop + 20f * u else cardTop + 12f * u + step * (k - 1) + 4.5f * u
         fun endOf(k: Int): Float {
             val cb = cardBottom(k, all.size - k)
             val advB = cb + 8f * u + advLayout.height + 9f * u
@@ -316,6 +317,9 @@ object LockWallpaper {
         if (list.isEmpty()) {
             c.drawText("아직 안 적었어요", cx, cardTop + 11.5f * u, tp(4.8f * u, INK))
             c.drawText("아침에 앱에서 적으면 여기에 떠요", cx, cardTop + 17f * u, tp(3.2f * u, MUTED, bold = false))
+        } else if (allDone) {
+            c.drawText("오늘 할 일 ${done.size}개 모두 끝!", cx - 6f * u, cardTop + 11.5f * u, tp(4.8f * u, INK))
+            c.drawText("남은 시간은 루틴과 쉼에 써요", cx - 6f * u, cardTop + 17f * u, tp(3.2f * u, MUTED, bold = false))
         } else {
             val item = tp(4.7f * u, INK, align = Paint.Align.LEFT)
             val starP = tp(4.7f * u, CORAL, align = Paint.Align.LEFT)
@@ -343,12 +347,16 @@ object LockWallpaper {
                 item.isStrikeThruText = isDone
                 // 도장과 겹치는 아래쪽 줄은 글자 폭을 줄임
                 val rightEdge = if (y > stampY - stampR - 3f * u) stampX - stampR - 2f * u else cardR - 4f * u
-                val txt = TextUtils.ellipsize(t.optString("text"), item, rightEdge - tx, TextUtils.TruncateAt.END).toString()
+                val last = i == rows.size - 1 && more > 0
+                val moreP = tp(3.1f * u, MUTED, align = Paint.Align.LEFT)
+                val moreT = "외 ${more}개"
+                val room = if (last) moreP.measureText(moreT) + 3f * u else 0f
+                val txt = TextUtils.ellipsize(t.optString("text"), item, rightEdge - tx - room, TextUtils.TruncateAt.END).toString()
                 c.drawText(txt, tx, y, item)
+                if (last) c.drawText(moreT, tx + item.measureText(txt) + 2.5f * u, y, moreP)
                 if (i < rows.size - 1) c.drawLine(x0, y + 3.3f * u, cardR - 5f * u, y + 3.3f * u, dash)
                 y += step
             }
-            if (more > 0) c.drawText("외 ${more}개", x0 + 22f * u, y - step + 5.8f * u, tp(3.1f * u, MUTED, bold = false))
         }
 
         // ---- 점수 도장 (카드 오른쪽 아래, 살짝 기울게)
