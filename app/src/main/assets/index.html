@@ -1246,7 +1246,7 @@ const C = (core,time) => ({core, time});
 const T = (id,title,time) => ({id, title, time});
 const DEFAULT_BLOCKS = {
   weekday:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), T("t_water","물 한 잔 마시기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), T("t_creatine","크레아틴 먹기","07:16"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키·영양제 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", cond:"nospend"}]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"08:10", tasks:[T("t_bed","이부자리 개고 창문 열기","07:00"), T("t_water","물 한 잔 마시며 크레아틴 먹기","07:04"), C("sleep","07:06"), T("t_lunch","점심 도시락 챙기기","07:15"), C("plan","07:35"), T("t_pack","폰·시계·가방·차키·영양제 챙기기","07:50"), {id:"t_nospend_am", title:"오늘은 무지출 데이 · 카드 쓰지 않기", time:"08:00", cond:"nospend"}]},
     {id:"work", title:"근무 시간 · 디지털 디톡스", start:"08:10", end:"16:40", tasks:[T("t_jail","휴대폰 감옥에 넣기","08:45"), C("detox","12:10"), T("t_walk","점심 먹고 10분 걷기","12:30"), T("t_work","오후 업무 시작 · 할 일 처리","14:00")]},
     {id:"after", title:"퇴근 후 · 운동", start:"16:40", end:"18:30", tasks:[C("move","17:00")]},
     {id:"home", title:"집 · 저녁", start:"18:30", end:"20:00", tasks:[{id:"t_dinner", title:"집에 와서 저녁 먹기", time:"18:40", cond:"spend"}, {id:"t_nospend", title:"무지출 데이 · 사 둔 재료로 집밥", time:"18:40", cond:"nospend"}, T("t_dishes","설거지","19:10")]},
@@ -1254,7 +1254,7 @@ const DEFAULT_BLOCKS = {
     {id:"night", title:"자기 전", start:"22:00", end:"23:15", tasks:[T("t_nosns","쇼츠·SNS 그만 보기","22:00"), T("t_tidy","10분 정리·청소","22:05"), T("t_shower","샤워하기","22:20"), T("t_clothes","내일 옷·가방 챙기기","22:27"), T("t_eng","밤 영어 10분 · 교실·일상 문장","22:30"), C("novel","22:40"), C("journal","22:40"), T("t_warm","여자친구에게 따뜻한 한마디","22:40"), C("phone","22:50"), T("t_sleep","불 끄고 눕기","23:00")]}
   ],
   weekend:[
-    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 정리하기","07:00"), T("t_window","창문 열어 환기하기","07:02"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00"), T("t_creatine","크레아틴 먹기","08:05")]},
+    {id:"wake", title:"아침 시작", start:"07:00", end:"09:00", tasks:[T("t_bed","이부자리 개고 창문 열기","07:00"), T("t_water","물 한 잔 마시며 크레아틴 먹기","07:03"), C("sleep","07:05"), {id:"t_body", title:"몸무게·눈바디 기록", time:"07:10", days:[6]}, C("plan","08:00")]},
     {id:"am", title:"오전", start:"09:00", end:"12:00", tasks:[C("move","09:30"), T("t_laundry","빨래 돌리기","11:00")]},
     {id:"pm", title:"오후", start:"12:00", end:"18:00", tasks:[C("newday","13:00"), T("t_clean","대청소 20분","15:00"), T("t_market","장보기","16:00"), T("t_mealprep","다음 주 도시락 준비","17:00")]},
     {id:"eve", title:"저녁", start:"18:00", end:"21:00", tasks:[T("t_thanks","고마운 사람에게 연락하기","19:00"), C("focus","19:30"), C("steps","20:50")]},
@@ -2713,6 +2713,15 @@ async function boot(){
         if(t.id==="t_nospend_am"||t.id==="t_nospend"){ delete t.days; t.cond="nospend"; }
         if(t.id==="t_dinner"&&(Array.isArray(t.days)&&t.days.length<7)){ delete t.days; t.cond="spend"; } })));
       S.settings.v14=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
+    if(!S.settings.v15){ /* 2026-11-23 아침 묶기: 이부자리+창문, 물+크레아틴 */
+      ["weekday","weekend"].forEach(type=>{ const w=(S.settings.blocks[type]||[]).find(b=>b.id==="wake"); if(!w) return;
+        const all=(S.settings.blocks[type]||[]).flatMap(b=>b.tasks||[]);
+        const bed=w.tasks.find(t=>t&&t.id==="t_bed"); if(bed) bed.title="이부자리 개고 창문 열기";
+        let wat=all.find(t=>t&&t.id==="t_water");
+        if(wat) wat.title="물 한 잔 마시며 크레아틴 먹기";
+        else { const k=w.tasks.findIndex(t=>t&&t.id==="t_bed"); w.tasks.splice(k<0?0:k+1,0,{id:"t_water", title:"물 한 잔 마시며 크레아틴 먹기", time:type==="weekend"?"07:03":"07:04"}); }
+        (S.settings.blocks[type]||[]).forEach(b=>{ b.tasks=(b.tasks||[]).filter(t=>!(t&&(t.id==="t_window"||t.id==="t_creatine"))); }); });
+      S.settings.v15=true; try{ await setDoc("meta/settings",S.settings); }catch(e){} }
     S.days = await loadDays(addDays(today(),-100));
     const wks=[isoWeek(today()), isoWeek(addDays(today(),-7))];
     for(const w of wks){ const v=await getDoc("weeks/"+w); if(v) S.weeks[w]=v; }
