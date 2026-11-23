@@ -312,7 +312,7 @@ object LockWallpaper {
             plate(c, sr, 1.8f * u, SKY, INK, 0.8f * u, line)
             c.drawText(t, sr.left + 2.5f * u, sr.centerY() + 1.15f * u, sp)
         }
-        val stampX = W - 16f * u; val stampY = cardB - 2f * u; val stampR = 10.5f * u
+        val stampX = W - 15.5f * u; val stampY = cardB - 6f * u; val stampR = 7.6f * u
         if (list.isEmpty()) {
             c.drawText("아직 안 적었어요", cx, cardTop + 11.5f * u, tp(4.8f * u, INK))
             c.drawText("아침에 앱에서 적으면 여기에 떠요", cx, cardTop + 17f * u, tp(3.2f * u, MUTED, bold = false))
@@ -354,13 +354,13 @@ object LockWallpaper {
         // ---- 점수 도장 (카드 오른쪽 아래, 살짝 기울게)
         c.save()
         c.rotate(-12f, stampX, stampY)
-        c.drawCircle(stampX + 0.7f * u, stampY + 0.7f * u, stampR, fill(INK))
+        c.drawCircle(stampX + 0.6f * u, stampY + 0.6f * u, stampR, fill(INK))
         c.drawCircle(stampX, stampY, stampR, fill(CORAL))
         c.drawCircle(stampX, stampY, stampR, stroke(INK, line))
-        c.drawCircle(stampX, stampY, stampR - 1.6f * u, stroke(CARD, 0.3f * u))
-        c.drawText("오늘", stampX, stampY - 3.4f * u, tp(2.5f * u, CARD))
-        c.drawText("${ex.score100}점", stampX, stampY + 1.9f * u, tp(5f * u, CARD))
-        c.drawText("목표 ${ex.goal100}", stampX, stampY + 6f * u, tp(2.2f * u, CARD))
+        c.drawCircle(stampX, stampY, stampR - 1.2f * u, stroke(CARD, 0.25f * u))
+        c.drawText("오늘", stampX, stampY - 2.5f * u, tp(1.9f * u, CARD))
+        c.drawText("${ex.score100}점", stampX, stampY + 1.4f * u, tp(3.7f * u, CARD))
+        c.drawText("목표 ${ex.goal100}", stampX, stampY + 4.5f * u, tp(1.7f * u, CARD))
         c.restore()
 
         // ---- 오늘의 한 줄 (복숭아)
