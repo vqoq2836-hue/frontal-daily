@@ -585,6 +585,15 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .heat .c.s0{background:var(--g50);border:1.2px solid var(--ink)}
 .heat .c.s2 .dn,.heat .c.s1 .dn,.heat .c.s0 .dn{color:rgba(31,42,58,.6)}
 .heat .c.future .dn{opacity:.5}
+
+/* 하루 탭 점수 */
+.tl-score{align-self:flex-start;margin:4px 0 0;font-size:12.5px;font-weight:700;background:var(--surface);border:1.3px solid var(--ink);border-radius:8px;padding:1px 8px;box-shadow:2px 2px 0 var(--ink);color:var(--muted)}
+.tl-score b{font-size:15px;font-weight:850;color:var(--ink);margin-right:1px}
+.tl-block[data-blk="night"] .tl-score{background:var(--ye)}
+.tl-row .lab{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.15}
+.tl-row .lab em{font-style:normal;font-size:10.5px;color:var(--faint)}
+.tl-row .lab .pt{font-size:12.5px;font-weight:700;color:var(--faint)}
+.tl-row .lab .pt.on{color:var(--g700);font-weight:850}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -1515,8 +1524,11 @@ function renderDay(){
   blocks.forEach(b=>{
     const its=tasks.filter(t=>t.block===b.id); if(!its.length) return;
     const dn=its.filter(t=>settled(v,t.id)).length;
-    h+=`<section class="glass tl-block" data-blk="${esc(b.id)}"><div class="tl-h"><div class="tl-ht"><h3>${esc(b.title)}</h3><span class="small num">${esc(b.start)}–${esc(b.end)} · ${dn}/${its.length}</span><span class="tl-pg" aria-hidden="true"><i style="width:${Math.round(dn/its.length*100)}%"></i></span></div>${blkArt(b.id)}</div><div class="tl-body">
-    ${its.map(t=>{ const x=v.done[t.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":x&&x.skipped?"sk":(f.t&&f.t.id===t.id?"cur":""); const lab=x&&x.lvl===2?"제대로":x&&x.lvl===1?(t.core?"조금":"완료"):x&&x.skipped?"넘김":snoozed(v,t.id)?"미룸":""; return `<button class="tl-row ${c}" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"xs")}<span class="n">${esc(t.title)}${t.core?`<span class="tag">핵심</span>`:""}</span><span class="lab">${lab}</span></button>`; }).join("")}
+    const M=maxPts(d)||1, earnedRaw=t=>Math.min(maxOf(t),(v.done[t.id]&&v.done[t.id].lvl)||0);
+    const bEarn=Math.round(its.reduce((a,t)=>a+earnedRaw(t),0)*100/M), bMax=Math.round(its.reduce((a,t)=>a+maxOf(t),0)*100/M);
+    h+=`<section class="glass tl-block" data-blk="${esc(b.id)}"><div class="tl-h"><div class="tl-ht"><h3>${esc(b.title)}</h3><span class="small num">${esc(b.start)}–${esc(b.end)} · ${dn}/${its.length}</span><span class="tl-score"><b class="num">${bEarn}</b>/${bMax}점</span><span class="tl-pg" aria-hidden="true"><i style="width:${Math.round(dn/its.length*100)}%"></i></span></div>${blkArt(b.id)}</div><div class="tl-body">
+    ${its.map(t=>{ const x=v.done[t.id]; const c=x&&x.lvl===2?"s2":x&&x.lvl===1?"s1":x&&x.skipped?"sk":(f.t&&f.t.id===t.id?"cur":""); const lab=x&&x.lvl===2?"제대로":x&&x.lvl===1?(t.core?"조금":"완료"):x&&x.skipped?"넘김":snoozed(v,t.id)?"미룸":""; return `<button class="tl-row ${c}" data-pick="${t.id}"><span class="t">${esc(t.time)}</span>${ricon(t,"xs")}<span class="n">${esc(t.title)}${t.core?`<span class="tag">핵심</span>`:""}</span><span class="lab">${(()=>{ const e=earnedRaw(t), pe=Math.round(e*100/M), pm=Math.round(maxOf(t)*100/M);
+      return `${lab?`<em>${lab}</em>`:""}<b class="pt ${e?"on":""}">${e?"+"+Math.max(1,pe):Math.max(1,pm)}점</b>`; })()}</span></button>`; }).join("")}
     </div></section>`;
   });
   const w=isoWeek(d), wk=S.weeks[w]||{};
