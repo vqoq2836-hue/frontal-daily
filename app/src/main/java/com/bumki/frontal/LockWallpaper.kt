@@ -168,7 +168,7 @@ object LockWallpaper {
 
     /** 이름표 붙은 딱지 (오늘의 한 줄 · 오늘의 영어) */
     private fun labeledBox(c: Canvas, u: Float, cx: Float, top: Float, bottom: Float, label: String, face: Int, shadow: Int, line: Float) {
-        plate(c, RectF(11f * u, top, c.width - 11f * u, bottom), 4f * u, face, shadow, 1.3f * u, line)
+        plate(c, RectF(7f * u, top, c.width - 7f * u, bottom), 4f * u, face, shadow, 1.4f * u, line)
         val labP = tp(2.9f * u, CARD)
         val labW = labP.measureText(label) + 4.5f * u
         val lab = RectF(cx - labW / 2, top - 2.8f * u, cx + labW / 2, top + 2.8f * u)
@@ -264,7 +264,7 @@ object LockWallpaper {
         val bandTop = H * 0.283f; val bandH = 10f * u
         val cardTop = bandTop + bandH + 7.5f * u
         val step = 8.6f * u
-        val boxW = (W - 22f * u - 8f * u).toInt()
+        val boxW = (W - 14f * u - 8f * u).toInt()   // 할 일 카드와 같은 폭(7u~93u) 안쪽
         val advLayout = layoutOf(advice.replace("\n", " "), tp(4.1f * u, INK, align = Paint.Align.LEFT), boxW, 2, u)
         val hasEng = ex.engEn.isNotBlank()
         val enLayout = layoutOf(ex.engEn, tp(3.6f * u, INK, align = Paint.Align.LEFT), boxW, 2, u)
@@ -284,7 +284,7 @@ object LockWallpaper {
 
         // ---- 다음 할 일 띠 (남색)
         val band = RectF(7f * u, bandTop, W - 7f * u, bandTop + bandH)
-        plate(c, band, 3.5f * u, NAVY, YELLOW, 1.2f * u, line)
+        plate(c, band, 4f * u, NAVY, YELLOW, 1.4f * u, line)
         val labP = tp(3.1f * u, YELLOW, align = Paint.Align.LEFT)
         c.drawText(ex.nextLabel, band.left + 4.5f * u, band.centerY() + 1.1f * u, labP)
         val nxP = tp(4.2f * u, CARD, align = Paint.Align.LEFT)
@@ -294,7 +294,7 @@ object LockWallpaper {
 
         // ---- 오늘 할 일 카드
         val cardL = 7f * u; val cardR = W - 7f * u
-        plate(c, RectF(cardL, cardTop, cardR, cardB), 4f * u, CARD, GREEN, 1.5f * u, line)
+        plate(c, RectF(cardL, cardTop, cardR, cardB), 4f * u, CARD, GREEN, 1.4f * u, line)
         val chipText = when {
             list.isEmpty() -> "오늘 할 일"
             left.isEmpty() -> "오늘 할 일 모두 끝 ✓"
@@ -375,14 +375,14 @@ object LockWallpaper {
         val advTop = cardB + 8f * u
         val advB = advTop + advLayout.height + 9f * u
         labeledBox(c, u, cx, advTop, advB, "오늘의 한 줄", PEACH, CORAL, line)
-        c.save(); c.translate(15f * u, advTop + 4.8f * u); advLayout.draw(c); c.restore()
+        c.save(); c.translate(11f * u, advTop + 4.8f * u); advLayout.draw(c); c.restore()
 
         // ---- 오늘의 영어 (하늘색)
         if (hasEng) {
             val eTop = advB + 7f * u
             val eB = eTop + enLayout.height + koLayout.height + 10f * u
             labeledBox(c, u, cx, eTop, eB, "오늘의 영어", SKY, BLUE, line)
-            c.save(); c.translate(15f * u, eTop + 4.8f * u); enLayout.draw(c); c.translate(0f, enLayout.height + 0.8f * u); koLayout.draw(c); c.restore()
+            c.save(); c.translate(11f * u, eTop + 4.8f * u); enLayout.draw(c); c.translate(0f, enLayout.height + 0.8f * u); koLayout.draw(c); c.restore()
         }
         return bmp
     }
