@@ -313,7 +313,7 @@ object LockWallpaper {
             plate(c, sr, 1.8f * u, SKY, INK, 0.8f * u, line)
             c.drawText(t, sr.left + 2.5f * u, sr.centerY() + 1.15f * u, sp)
         }
-        val stampX = W - 15.5f * u; val stampY = cardB - 6f * u; val stampR = 7.6f * u
+        val stampX = W - 11.5f * u; val stampY = cardB - 3.6f * u; val stampR = 7.6f * u   // 카드 오른쪽 아래 모서리에 걸쳐 찍힘
         if (list.isEmpty()) {
             c.drawText("아직 안 적었어요", cx, cardTop + 11.5f * u, tp(4.8f * u, INK))
             c.drawText("아침에 앱에서 적으면 여기에 떠요", cx, cardTop + 17f * u, tp(3.2f * u, MUTED, bold = false))
