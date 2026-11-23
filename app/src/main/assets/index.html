@@ -599,9 +599,9 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 /* 루틴 탭: 책갈피 페이지 */
 [data-blk="wake"],[data-blk="eve"]{--bb:var(--co3)} [data-blk="work"],[data-blk="pm"]{--bb:#D3E8F8} [data-blk="after"]{--bb:#D3EEDF}
 [data-blk="home"],[data-blk="am"]{--bb:#FFE9BF} [data-blk="side"]{--bb:#E7DFFB} [data-blk="night"]{--bb:#2B3A55}
-.bkm{display:flex;gap:5px;overflow-x:auto;padding:8px 4px 0 2px;margin:4px 0 -16px;position:relative;z-index:2;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.bkm{display:flex;gap:3px;overflow:visible;padding:8px 4px 0 2px;margin:4px 0 -16px;position:relative;z-index:2;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .bkm::-webkit-scrollbar{display:none}
-.bk{flex:none;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.15;border:1.4px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;padding:7px 12px 14px;font-size:14px;font-weight:850;background:var(--bb,var(--surface-2));color:var(--ink);transform:translateY(8px);transition:transform .15s ease}
+.bk{flex:1 1 0;min-width:0;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.15;border:1.4px solid var(--ink);border-bottom:0;border-radius:12px 12px 0 0;padding:7px 3px 14px;font-size:13px;font-weight:850;letter-spacing:-.04em;background:var(--bb,var(--surface-2));color:var(--ink);transform:translateY(8px);transition:transform .15s ease}
 .bk small{font-size:10px;font-weight:700;opacity:.65}
 .bk.set{--bb:var(--surface-2)}
 .bk[data-blk="night"]{color:#FFFDF8}
@@ -1252,7 +1252,7 @@ document.addEventListener("click", ev=>{
   document.addEventListener("touchstart",e=>{ const pgEl=e.target.closest(".ed-page"); if(!pgEl||e.target.closest("input,select,textarea")){ x0=null; return; } x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
   document.addEventListener("touchend",e=>{ if(x0==null) return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
     if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.7) return;
-    const n=(S.draft&&S.draft[S.editType]||[]).length, cur=S.edPage==="set"?n:(+S.edPage||0), nx=cur+(dx<0?1:-1);
+    const n=routinePages(S.draft&&S.draft[S.editType]||[]).length, cur=S.edPage==="set"?n:(+S.edPage||0), nx=cur+(dx<0?1:-1);
     if(nx<0||nx>n) return; S.edPage = nx===n?"set":nx; render(); },{passive:true});
 })();
 const NOVELTY = [
@@ -1589,23 +1589,32 @@ function renderDay(){
 /* ---------- 루틴 화면 ---------- */
 function ensureDraft(){ if(!S.draft) S.draft=clone(S.settings.blocks||DEFAULT_BLOCKS); if(!S.editType) S.editType=dayTypeOf(day(today())); }
 function bkName(t){ const a=String(t||"").split(" · ")[0].trim(); return a.length>4 ? a.split(" ")[0] : a; }
-function routineTabs(bl,pg){
-  return `<nav class="bkm" role="tablist" aria-label="시간대 페이지">${bl.map((b,i)=>`<button class="bk" role="tab" data-edpage="${i}" data-blk="${esc(b.id)}" aria-selected="${pg===i}">${esc(bkName(b.title))}<small>${esc(b.start)}</small></button>`).join("")}<button class="bk set" role="tab" data-edpage="set" aria-selected="${pg==="set"}">설정<small>알림·잠금</small></button></nav>`;
+/* 책갈피 묶음: 저녁 쉼(또는 주말 저녁)과 자기 전은 한 장에 */
+function routinePages(bl){
+  const out=[]; bl.forEach((b,i)=>{ const prev=out[out.length-1];
+    if(b.id==="night" && prev && ["side","eve"].includes(bl[prev[prev.length-1]].id)) prev.push(i); else out.push([i]); });
+  return out;
 }
-function routinePager(bl,pg){
-  return `<div class="ed-pager"><button class="btn sm" data-edpage="${pg-1}" ${pg<=0?"disabled":""}>‹ ${pg>0?esc(bkName(bl[pg-1].title)):"처음"}</button><span class="small muted num">${pg+1} / ${bl.length}</span><button class="btn sm" data-edpage="${pg<bl.length-1?pg+1:"set"}">${pg<bl.length-1?esc(bkName(bl[pg+1].title)):"설정"} ›</button></div>`;
+function pageName(bl,g){ return g.map(i=>bkName(bl[i].title)).join("·"); }
+function routineTabs(bl,pages,pg){
+  return `<nav class="bkm" role="tablist" aria-label="시간대 페이지">${pages.map((g,k)=>`<button class="bk" role="tab" data-edpage="${k}" data-blk="${esc(bl[g[g.length-1]].id==="night"&&g.length>1?bl[g[0]].id:bl[g[0]].id)}" aria-selected="${pg===k}">${esc(pageName(bl,g))}<small>${esc(bl[g[0]].start)}</small></button>`).join("")}<button class="bk set" role="tab" data-edpage="set" aria-selected="${pg==="set"}">설정<small>알림·잠금</small></button></nav>`;
+}
+function routinePager(bl,pages,pg){
+  const n=pages.length;
+  return `<div class="ed-pager"><button class="btn sm" data-edpage="${pg-1}" ${pg<=0?"disabled":""}>‹ ${pg>0?esc(pageName(bl,pages[pg-1])):"처음"}</button><span class="small muted num">${pg+1} / ${n}</span><button class="btn sm" data-edpage="${pg<n-1?pg+1:"set"}">${pg<n-1?esc(pageName(bl,pages[pg+1])):"설정"} ›</button></div>`;
 }
 function renderRoutine(){
   ensureDraft();
   const type=S.editType, bl=S.draft[type];
   /* 루틴 탭 안은 책갈피로 넘기는 페이지: 시간대마다 한 장 + 설정 한 장 */
-  const pg=(S.edPage==="set")?"set":Math.min(Math.max(0,+S.edPage||0),bl.length-1);
+  const pages=routinePages(bl);
+  const pg=(S.edPage==="set")?"set":Math.min(Math.max(0,+S.edPage||0),pages.length-1);
   let h=`<div class="topbar"><div class="date"><span class="eyebrow">루틴 관리</span><b>시간표와 알림</b></div></div>
   ${pg==="set"?`<section class="glass card"><p class="small">할 일마다 정한 시각에 알림이 와요. 체크하지 않으면 ${SNOOZE_MIN}분 뒤에 한 번, 그 뒤 한 번 더 다시 알려 줘요. 알림에서 바로 [했어요]·[${SNOOZE_MIN}분 뒤]·[넘기기]를 누를 수 있어요.</p>
   </section>`:""}
   <div class="seg rt-seg" role="group" aria-label="편집할 루틴">${Object.entries(DAYTYPES).map(([k,m])=>`<button data-edittype="${k}" aria-pressed="${type===k}"><b>${m.label} 루틴</b><span>${k==="weekday"?"월~금":"토·일"}</span></button>`).join("")}</div>`;
-  h+=routineTabs(bl,pg);
-  bl.forEach((b,i)=>{ if(pg!==i) return;
+  h+=routineTabs(bl,pages,pg);
+  bl.forEach((b,i)=>{ if(pg==="set"||!pages[pg].includes(i)) return;
     const have=new Set(b.tasks.filter(t=>t.core).map(t=>t.core));
     const coreOpts=MISSIONS.filter(m=>!have.has(m.id));
     h+=`<section class="glass card ed-page" data-blk="${esc(b.id)}">
@@ -1616,7 +1625,7 @@ function renderRoutine(){
       ${coreOpts.length?`<div class="row"><select id="core-${i}" style="flex:1;width:auto">${coreOpts.map(m=>`<option value="${m.id}">${esc(m.title)}</option>`).join("")}</select><button class="btn" data-add-core="${i}">핵심 미션 넣기</button></div>`:""}
     </section>`;
   });
-  if(pg!=="set") h+=routinePager(bl,pg);
+  if(pg!=="set") h+=routinePager(bl,pages,pg);
   if(pg!=="set") h+=`<section class="glass card"><div class="row"><button class="btn primary" id="saveBlocks">루틴 저장</button><button class="btn" id="resetBlocks">${esc(DAYTYPES[type].label)} 기본값으로</button></div><p class="small muted">저장해야 오늘 화면과 알림에 적용돼요.</p></section>`;
   if(pg==="set" && NATIVE){
     h+=`<section class="glass card"><h2>알림이 확실히 오게 하려면</h2>
