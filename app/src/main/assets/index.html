@@ -1596,7 +1596,7 @@ function routinePages(bl){
     if(["side","night"].includes(b.id) && prev && ["home","side","eve"].includes(bl[prev[prev.length-1]].id)) prev.push(i); else out.push([i]); });
   return out;
 }
-function pageName(bl,g){ if(g.length>1 && g.some(i=>bl[i].id==="home")) return "귀가 후"; if(g.length===1) return bkName(bl[g[0]].title); return g.map(i=>bkName(bl[i].title).replace(/\s/g,"")).join("·"); }
+function pageName(bl,g){ if(g.length>1 && g.some(i=>bl[i].id==="home")) return "저녁"; if(g.length===1) return bkName(bl[g[0]].title); return g.map(i=>bkName(bl[i].title).replace(/\s/g,"")).join("·"); }
 function routineTabs(bl,pages,pg){
   return `<nav class="bkm" role="tablist" aria-label="시간대 페이지">${pages.map((g,k)=>`<button class="bk ${pageName(bl,g).length>5?"long":""}" role="tab" data-edpage="${k}" data-blk="${esc(bl[g[0]].id)}" aria-selected="${pg===k}">${esc(pageName(bl,g))}<small>${esc(bl[g[0]].start)}</small></button>`).join("")}<button class="bk set" role="tab" data-edpage="set" aria-selected="${pg==="set"}">설정<small>알림·잠금</small></button></nav>`;
 }
