@@ -617,6 +617,7 @@ nav.tabs a[aria-current="page"]{color:var(--ink)!important;background:var(--ye)!
 .m-bud{display:flex;flex-direction:column;gap:5px;border-top:1.2px dashed rgba(31,42,58,.25);padding-top:12px;margin-top:2px}
 .m-bbar.sm{height:8px;margin:2px 0}
 .m-bbar.sm b{top:-4px;bottom:-4px;width:2px}
+.m-pct{font-size:16px;font-weight:850;letter-spacing:-.02em;margin-left:2px}
 </style>
 
 <div class="bgfx" aria-hidden="true"></div>
@@ -2294,7 +2295,7 @@ function moneyBudgetCard(ym){
         <div><span class="eyebrow">통장 잔액${bal.acct?" · "+esc(bal.src||"")+" ··"+esc(bal.acct):""}</span><div class="m-big m-balbig">${won(bal.amount)}<small>원</small></div><span class="small muted">${when} 기준</span></div>
         <span class="m-lv">${lab}</span></div>
       <div class="m-bud">
-        <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="small">${j.mo}월 생활비 ${won(j.b)}원 중</span><span class="small"><b class="${j.left<0?"m-out":""}">${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b> · ${j.pct}%</span></div>
+        <div class="row" style="justify-content:space-between;align-items:baseline;flex-wrap:nowrap"><span class="small">${j.mo}월 생활비 ${won(j.b)}원 중 <b class="m-pct ${j.pct>100?"m-out":""}">${j.pct}% 사용</b></span><span class="small ${j.left<0?"m-out":""}">${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</span></div>
         <div class="m-bbar sm" title="세로 선 = 오늘까지 써도 되는 만큼" aria-hidden="true"><i style="width:${Math.min(100,j.pct)}%"></i><b style="left:${j.expPct}%"></b></div>
       </div>
       <button class="linkish small" data-m="budget">생활비 바꾸기</button></section>`;
