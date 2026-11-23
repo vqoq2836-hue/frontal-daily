@@ -2295,8 +2295,9 @@ function moneyBudgetCard(ym){
         <div><span class="eyebrow">통장 잔액${bal.acct?" · "+esc(bal.src||"")+" ··"+esc(bal.acct):""}</span><div class="m-big m-balbig">${won(bal.amount)}<small>원</small></div><span class="small muted">${when} 기준</span></div>
         <span class="m-lv">${lab}</span></div>
       <div class="m-bud">
-        <div class="row" style="justify-content:space-between;align-items:baseline;flex-wrap:nowrap"><span class="small">${j.mo}월 생활비 ${won(j.b)}원 중 <b class="m-pct ${j.pct>100?"m-out":""}">${j.pct}% 사용</b></span><span class="small ${j.left<0?"m-out":""}">${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</span></div>
+        <div class="row" style="justify-content:space-between;align-items:baseline;flex-wrap:nowrap"><span class="small">${j.mo}월 생활비 ${won(j.b)}원</span><b class="m-pct ${j.pct>100?"m-out":""}">${j.pct}% 사용</b></div>
         <div class="m-bbar sm" title="세로 선 = 오늘까지 써도 되는 만큼" aria-hidden="true"><i style="width:${Math.min(100,j.pct)}%"></i><b style="left:${j.expPct}%"></b></div>
+        <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="small muted">쓴 돈 ${won(j.used)}원</span><span class="small ${j.left<0?"m-out":""}"><b>${j.left>=0?won(j.left)+"원 남음":won(-j.left)+"원 초과"}</b></span></div>
       </div>
       <button class="linkish small" data-m="budget">생활비 바꾸기</button></section>`;
   }
