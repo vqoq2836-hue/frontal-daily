@@ -94,6 +94,22 @@
                 android:resource="@xml/mission_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".MoneyEngWidget"
+            android:exported="false"
+            android:label="쓸 돈 · 오늘의 영어">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/money_eng_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".WidgetSpeakReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

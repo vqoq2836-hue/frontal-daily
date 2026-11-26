@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         web.addJavascriptInterface(Bridge(), "NativeApp")
-        web.loadUrl("https://$ASSET_HOST/assets/index.html")
+        web.loadUrl("https://$ASSET_HOST/assets/index.html" + hashFor(intent))
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -152,6 +152,18 @@ class MainActivity : ComponentActivity() {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         Reminders.scheduleAll(this)
+    }
+
+    /** 위젯에서 눌러 들어오면 해당 화면으로: money → 가계부, eng → 지금 화면의 영어 카드 */
+    private fun hashFor(i: Intent?): String = when (i?.getStringExtra(EXTRA_OPEN)) {
+        "money" -> "#money"; "eng" -> "#now"; else -> ""
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val where = intent.getStringExtra(EXTRA_OPEN) ?: return
+        js("window.onNativeOpen && window.onNativeOpen(" + JSONObject.quote(where) + ")")
     }
 
     override fun onResume() {
@@ -295,6 +307,7 @@ class MainActivity : ComponentActivity() {
             runCatching { Reminders.scheduleAll(this@MainActivity) }
             runCatching { Reminders.updateBoard(this@MainActivity) }
             runCatching { MissionWidget.updateAll(this@MainActivity) }
+            runCatching { MoneyEngWidget.updateAll(this@MainActivity) }
         }
 
         @JavascriptInterface
@@ -462,5 +475,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val FEED_URL = "https://raw.githubusercontent.com/vqoq2836-hue/frontal-daily/content/feed.json"
         const val ASSET_HOST = "appassets.androidplatform.net"
+        const val EXTRA_OPEN = "open"
     }
 }

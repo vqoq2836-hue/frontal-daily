@@ -1426,7 +1426,7 @@ function nativeSync(){
     const toItem=t=>({id:t.id, title:t.title, time:t.time, days:t.days||null, cond:t.cond||null, block:"b:"+t.block, blockTitle:t.blockTitle, start:t.start, end:t.end, two:!!(t.core&&maxOf(t)>=2), cue:t.core?t.core.cue:t.blockTitle, mini:t.core?t.core.mini:"", full:t.core?t.core.full:""});
     const items=dayTasks(d).map(toItem);
     const byType={}; Object.keys(DAYTYPES).forEach(type=>{ const seen=new Set(), arr=[]; blocksFor(type).forEach(b=>b.tasks.forEach(t=>{ const ti=taskInfo(t); if(!ti||seen.has(ti.id)) return; seen.add(ti.id); arr.push(toItem(Object.assign(ti,{block:b.id, blockTitle:b.title, start:b.start, end:b.end}))); })); byType[type]=arr; });
-    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), maxPts:maxPts(d), lockEng:lockEngOf(d), todoTimes:["12:15","16:45","21:00"]}));
+    NATIVE.syncState(JSON.stringify({date:d, done, skip, snoozed:snz, score:score(d), goal:goal(d), steps:v.steps, sleepH:v.sleepH, missions:[], items, itemsByType:byType, vibrate:vibrateSetting(), todos:(v.todos||[]).map(x=>({id:x.id, text:x.text, done:!!x.done, top:!!x.top})), todoBoard:(S.settings||{}).todoBoard!==false, lockWallpaper:(S.settings||{}).lockWallpaper!==false, advice:ADVICE, adviceByDate:feedAdviceMap(), maxPts:maxPts(d), lockEng:lockEngOf(d), money:moneyWidgetOf(), todoTimes:["12:15","16:45","21:00"]}));
   }catch(e){}
   checkBoard(false);
 }
@@ -2043,6 +2043,7 @@ async function moneyLoadMonth(ym){
   if(S.money.months[ym]) return S.money.months[ym];
   let doc=null; try{ doc=await getDoc("money/m/"+ym); }catch(e){}
   S.money.months[ym] = doc && Array.isArray(doc.tx) ? doc : {tx:[]};
+  if(ym===ymOf(today())) moneyWidgetPing();
   return S.money.months[ym];
 }
 async function moneyLoad(){
@@ -2071,8 +2072,17 @@ async function moneyLoad(){
   }
   S.money.loaded=true;
 }
-function moneySaveMonth(ym){ try{ setDoc("money/m/"+ym, S.money.months[ym]); }catch(e){} }
-function moneySaveMeta(){ try{ setDoc("money/meta", S.money.meta); }catch(e){} }
+function moneySaveMonth(ym){ try{ setDoc("money/m/"+ym, S.money.months[ym]); }catch(e){} moneyWidgetPing(); }
+function moneySaveMeta(){ try{ setDoc("money/meta", S.money.meta); }catch(e){} moneyWidgetPing(); }
+/* 홈 위젯(쓸 돈 · 오늘의 영어)용 요약: 이번 달 가계부를 불러온 뒤에만 보냄 */
+function moneyWidgetOf(){
+  try{ const ym=ymOf(today()); if(!S.money||!S.money.months||!S.money.months[ym]) return null;
+    const j=moneyBudgetJudge(ym); if(!j) return {ym, budget:0, used:0};
+    return {ym, budget:j.b, used:j.used};
+  }catch(e){ return null; }
+}
+let moneyWidgetT=null;
+function moneyWidgetPing(){ clearTimeout(moneyWidgetT); moneyWidgetT=setTimeout(()=>{ try{ nativeSync(); }catch(e){} }, 400); }
 function moneyAllTx(){ return Object.values(S.money.months).flatMap(m=>m.tx); }
 function smsOk(){ return !!(NATIVE && NATIVE.smsStatus && NATIVE.smsStatus()==="granted"); }
 function moneySync(){
@@ -2616,6 +2626,11 @@ window.onNativeHealth = function(str){
 window.onNativeHealthPermission = function(ok){
   if(ok){ S.health.msg=""; toast("삼성헬스와 연결했어요"); readHealth(); }
   else toast("권한이 허용되지 않았어요. 헬스 커넥트 설정에서 걸음·수면 읽기를 켜 주세요.");
+};
+/* 홈 위젯에서 눌러 들어올 때 */
+window.onNativeOpen = function(where){
+  if(where==="money"){ location.hash="money"; return; }
+  if(where==="eng"){ if(location.hash!=="#now") location.hash="now"; setTimeout(()=>{ const e=document.getElementById("eng"); if(e) e.scrollIntoView({behavior:"smooth",block:"center"}); }, 250); }
 };
 window.onNativeResume = function(){ if(!S.loaded) return; applyPending(); checkBoard(false); if(Date.now()-(S.money.meta.lastSync||0)>120000) moneySync(); readHealth(); checkUpdate(); feedFetch(false); render(); };
 function checkUpdate(){ if(NATIVE&&NATIVE.checkUpdate){ try{ NATIVE.checkUpdate(); }catch(e){} } }

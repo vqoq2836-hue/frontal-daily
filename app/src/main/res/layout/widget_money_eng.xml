@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w2_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/w2_img"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="이번 달 쓸 돈과 오늘의 영어"
+        android:scaleType="fitXY" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:id="@+id/w2_money"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="27" />
+
+        <FrameLayout
+            android:id="@+id/w2_eng"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="73">
+
+            <FrameLayout
+                android:id="@+id/w2_speak"
+                android:layout_width="64dp"
+                android:layout_height="56dp"
+                android:layout_gravity="top|end" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_desc">지금 할 미션 하나를 보여 주고, 홈 화면에서 바로 체크해요.</string>
+    <string name="widget_money_desc">이번 달 쓸 돈(남을수록 색이 바뀌어요)과 오늘의 영어를 보여 줘요.</string>
 </resources>
