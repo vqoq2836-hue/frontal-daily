@@ -49,7 +49,8 @@ object LockWallpaper {
     /** 잠금화면에 함께 그릴 오늘 정보 */
     data class Extra(
         val nextLabel: String, val nextText: String, val score100: Int, val goal100: Int,
-        val steps: Long?, val engEn: String, val engKo: String, val period: String
+        val steps: Long?, val engEn: String, val engKo: String, val period: String,
+        val engLabel: String = "오늘의 영어"
     )
 
     fun periodOf(hour: Int) = when (hour) { in 5..10 -> "dawn"; in 11..16 -> "day"; in 17..19 -> "dusk"; else -> "night" }
@@ -68,7 +69,8 @@ object LockWallpaper {
         }
         val eng = st.optJSONObject("lockEng")
         return Extra(lab, txt, sc.coerceIn(0, 100), gl, info?.steps,
-            eng?.optString("en") ?: "", eng?.optString("ko") ?: "", periodOf(java.time.LocalTime.now().hour))
+            eng?.optString("en") ?: "", eng?.optString("ko") ?: "", periodOf(java.time.LocalTime.now().hour),
+            eng?.optString("label")?.takeIf { it.isNotBlank() } ?: "오늘의 영어")
     }
 
     /** 바로 적용: "ok" · "same" · "error:..." */
@@ -78,7 +80,7 @@ object LockWallpaper {
         val ex = extra(ctx)
         val sig = LocalDate.now().toString() + "|" + advice + "|" +
             list.joinToString("|") { it.optString("text") + it.optBoolean("done") + it.optBoolean("top") } +
-            "|" + ex.nextText + "|" + ex.score100 + "|" + ((ex.steps ?: -1L) / 100) + "|" + ex.engEn + "|" + ex.period + "|v6"
+            "|" + ex.nextText + "|" + ex.score100 + "|" + ((ex.steps ?: -1L) / 100) + "|" + ex.engEn + "|" + ex.engLabel + "|" + ex.period + "|v7"
         val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (!force && prefs.getString(KEY_SIG, null) == sig) return "same"
         return try {
@@ -381,7 +383,7 @@ object LockWallpaper {
         if (hasEng) {
             val eTop = advB + 7f * u
             val eB = eTop + enLayout.height + koLayout.height + 10f * u
-            labeledBox(c, u, cx, eTop, eB, "오늘의 영어", SKY, BLUE, line)
+            labeledBox(c, u, cx, eTop, eB, ex.engLabel, SKY, BLUE, line)
             c.save(); c.translate(11f * u, eTop + 4.8f * u); enLayout.draw(c); c.translate(0f, enLayout.height + 0.8f * u); koLayout.draw(c); c.restore()
         }
         return bmp

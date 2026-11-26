@@ -91,7 +91,7 @@ class MoneyEngWidget : AppWidgetProvider() {
                 val cap = 720f / max(w, h); if (cap < 1f) { w *= cap; h *= cap }
 
                 val st = Reminders.stateObj(ctx)
-                val eng = st.optJSONObject("lockEng")
+                val eng = st.optJSONObject("widgetEng") ?: st.optJSONObject("lockEng")
                 val en = eng?.optString("en").orEmpty()
                 val ko = eng?.optString("ko").orEmpty()
                 val bmp = render(w.toInt().coerceAtLeast(120), h.toInt().coerceAtLeast(120), money(ctx), en, ko)
