@@ -2060,7 +2060,7 @@ function parseFinSms(body, ts, addr){
 function guessCat(tx, rules){
   const key = (tx.merchant||"").trim();
   if(rules && rules[key] && rules[key].cat) return rules[key].cat;
-  const hay = (key+" "+(tx.source||"")).toUpperCase();
+  const hay = (key+" "+String(tx.source||"").replace(/슈퍼\s*SOL|SOL\s*뱅크|SOL\s*페이|SOL/gi," ")).toUpperCase();
   const list = tx.type==="in" ? INCOME_CATS : MONEY_CATS;
   let best=null, bestLen=0;   /* 가장 길게 맞는 낱말이 이김: '하이마트'가 '마트'보다 우선 */
   for(const c of list) for(const k of c.kw){ const K=k.toUpperCase(); if(K.length>bestLen && hay.includes(K)){ best=c.id; bestLen=K.length; } }
@@ -2118,6 +2118,31 @@ async function moneyLoad(){
     M.meta.dirv=2; moneySaveMeta();
     if(n) setTimeout(()=>toast("입금인데 지출로 적힌 "+n+"건을 수입으로 고쳤어요"),1500);
   }
+  /* 같은 결제가 카드 문자와 은행 앱 알림으로 두 번 들어간 기록 정리: 카드 쪽(가게 이름이 정확한 쪽)을 남기고, 고른 항목은 살림 */
+  if((M.meta.dupv||1)<2){
+    let n=0; const kind=t=>/^noti:/.test(t.id||"")?"app":"msg";
+    for(const [ym,m] of Object.entries(M.months)){
+      const out=[], gone=new Set();
+      const L=m.tx.filter(t=>t.auto && !t.manual).sort((a,b)=>(a.ts||0)-(b.ts||0));
+      for(let i=0;i<L.length;i++){ const a=L[i]; if(gone.has(a.id)) continue;
+        for(let j=i+1;j<L.length;j++){ const b=L[j]; if(gone.has(b.id)) continue; if((b.ts||0)-(a.ts||0)>15*60000) break;
+          if(a.type!==b.type || a.amount!==b.amount) continue;
+          const pair = (kind(a)!==kind(b)) || (!!a.bank!==!!b.bank) || ((a.source||"")!==(b.source||""));
+          if(!pair || !(a.bank||b.bank||moneySameMerch(a.merchant,b.merchant))) continue;
+          /* 남길 쪽: 통장 출금보다 카드, 앱 알림보다 문자 */
+          const score=t=>(t.bank?0:2)+(kind(t)==="msg"?1:0);
+          const keep=score(a)>=score(b)?a:b, drop=keep===a?b:a;
+          if(drop.userCat && !keep.userCat){ keep.cat=drop.cat; keep.userCat=true; }
+          if(drop.memo && !keep.memo) keep.memo=drop.memo;
+          gone.add(drop.id); (M.meta.deleted=M.meta.deleted||[]).push(drop.id); n++;
+          if(drop===a) break;
+        }
+      }
+      if(gone.size){ m.tx=m.tx.filter(t=>!gone.has(t.id)); moneySaveMonth(ym); }
+    }
+    M.meta.dupv=2; moneySaveMeta();
+    if(n) setTimeout(()=>toast("두 번 들어간 결제 "+n+"건을 하나로 정리했어요"),2600);
+  }
   S.money.loaded=true;
 }
 function moneySaveMonth(ym){ try{ setDoc("money/m/"+ym, S.money.months[ym]); }catch(e){} moneyWidgetPing(); }
@@ -2159,14 +2184,16 @@ function moneyJudge(s,p){
   }
   return r;
 }
-function moneyDup(p){ /* 같은 결제가 문자·앱 알림·통장 출금으로 두 번 온 경우 */
-  const near=moneyAllTx().filter(t=>t.type===p.type && t.amount===p.amount && Math.abs((t.ts||0)-p.ts)<=15*60000);
+/* 같은 결제인지: 금액·방향이 같고 15분 안, 그리고 (한쪽이 통장 출금이거나 가게 이름 앞 4글자가 겹침) */
+function moneySameMerch(a,b){ const m=(a||"").replace(/\s/g,""), tm=(b||"").replace(/\s/g,""); return !m || !tm || tm.includes(m.slice(0,4)) || m.includes(tm.slice(0,4)); }
+function moneyDup(p){ /* 같은 결제가 문자·앱 알림·통장 출금으로 두 번 온 경우 (확인 대기 중인 것까지 봄) */
+  const pool=moneyAllTx().concat((S.money.meta.review||[]).map(x=>x.tx));
+  const near=pool.filter(t=>t.type===p.type && t.amount===p.amount && Math.abs((t.ts||0)-p.ts)<=15*60000);
   if(!near.length) return null;
   /* 체크카드 승인 + 통장 출금 = 같은 결제 하나. 가맹점은 카드 문자, 잔액은 통장 문자에서 */
   if(p.bank){ if(near.some(t=>!t.bank)) return "same"; }
   else { const b=near.find(t=>t.bank); if(b){ if(!b.userCat){ b.merchant=p.merchant; b.cat=guessCat(p,S.money.meta.rules); } b.source=p.source||b.source; b.bank=false; b.merged=true; return {merged:b}; } }
-  const m=(p.merchant||"").replace(/\s/g,"");
-  const same=near.find(t=>{ const tm=(t.merchant||"").replace(/\s/g,""); return !m || !tm || tm.includes(m.slice(0,4)) || m.includes(tm.slice(0,4)); });
+  const same=near.find(t=>moneySameMerch(p.merchant,t.merchant));
   return same ? "same" : "similar";
 }
 async function moneyIngest(arr, label){
@@ -2469,7 +2496,10 @@ async function moneyHandle(b){
   if(a==="noti"){ try{ NATIVE.openNotiAccess(); }catch(e){} return; }
   if(a==="rvAll"||a==="rvOk"||a==="rvNo"||a==="rvCat"||a==="rvEdit"||a==="rvSrc"){
     const R=M.meta.review||[]; const take=id=>{ const i=R.findIndex(x=>x.id===id); return i>=0?R.splice(i,1)[0]:null; };
-    const record=async (x,cat)=>{ const t=x.tx; if(cat){ t.cat=cat; M.meta.rules[t.merchant]={cat, excluded:!!t.excluded}; } const ym=ymOf(t.date); await moneyLoadMonth(ym); M.months[ym].tx.push(t); moneySaveMonth(ym); };
+    const record=async (x,cat)=>{ const t=x.tx; if(cat){ t.cat=cat; M.meta.rules[t.merchant]={cat, excluded:!!t.excluded}; } const ym=ymOf(t.date); await moneyLoadMonth(ym);
+      const twin=moneyAllTx().find(o=>o.id!==t.id && o.type===t.type && o.amount===t.amount && Math.abs((o.ts||0)-(t.ts||0))<=15*60000 && (o.bank||t.bank||moneySameMerch(o.merchant,t.merchant)));
+      if(twin){ if(cat){ twin.cat=cat; twin.userCat=true; } if(twin.bank&&!t.bank){ twin.merchant=t.merchant; twin.bank=false; twin.source=t.source||twin.source; } (M.meta.deleted=M.meta.deleted||[]).push(t.id); moneySaveMonth(ymOf(twin.date)); toast("이미 같은 결제가 있어서 하나로 합쳤어요"); return; }
+      M.months[ym].tx.push(t); moneySaveMonth(ym); };
     if(a==="rvAll"){ for(const x of R.splice(0)) await record(x); toast("모두 기록했어요"); }
     else if(a==="rvOk"){ const x=take(arg); if(x){ await record(x); toast("기록했어요"); } }
     else if(a==="rvCat"){ const x=take(arg); if(x){ await record(x,b.dataset.c); toast(catOf(b.dataset.c).name+"(으)로 기록했어요 · ‘"+x.tx.merchant+"’은 다음부터 자동"); } }
